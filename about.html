@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="logo/logo.png" type="image/png" />
+  <link rel="apple-touch-icon" href="logo/logo.png" />
+  <title>Nostalgia Collection · Σχετικά</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Montserrat:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/base.css?v=logo1" />
+  <link rel="stylesheet" href="css/about.css" />
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("nostalgia-theme");
+        if (t === "light" || t === "dark") {
+          document.documentElement.setAttribute("data-theme", t);
+        } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+          document.documentElement.setAttribute("data-theme", "dark");
+        } else {
+          document.documentElement.setAttribute("data-theme", "light");
+        }
+      } catch (e) {}
+      try {
+        var l = localStorage.getItem("nostalgia-lang");
+        if (l === "en" || l === "el") {
+          document.documentElement.lang = l;
+        }
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body data-page="about">
+  <div class="page-wrap">
+    <header class="site-header">
+      <nav class="site-header__bar" data-i18n-aria="nav_aria">
+        <div class="mobile-nav-panel" id="mobile-nav-panel">
+        <div class="site-nav site-nav--left">
+          <a href="index.html" data-i18n="nav_home">Αρχική</a>
+          <div class="site-nav__item site-nav__item--mega">
+            <a
+              href="collection.html"
+              class="site-nav__mega-trigger"
+              data-i18n="nav_collection"
+              aria-haspopup="true"
+              aria-expanded="false"
+              aria-controls="nav-mega-collection"
+            >Συλλογή</a>
+            <div class="nav-mega" id="nav-mega-collection" data-i18n-aria="nav_mega_aria">
+              <div class="nav-mega__panel">
+                <ul class="nav-mega__cats">
+                  <li class="nav-mega__cat" style="--mega-i: 0"><a href="collection.html#cat1"><span data-i18n="collection_cat1">Art Class Murano Candle</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 1"><a href="collection.html#cat2"><span data-i18n="collection_cat2">Driftwood Beeswax Flame</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 2"><a href="collection.html#cat3"><span data-i18n="collection_cat3">Liquid Eternal</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 3"><a href="collection.html#cat4"><span data-i18n="collection_cat4">Unique Art Objects</span></a></li>
+                </ul>
+                <div class="nav-mega__feature">
+                  <figure class="nav-mega__media">
+                    <img
+                      src="home%20page%20photo/home%20collection.png"
+                      alt=""
+                      width="640"
+                      height="420"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </figure>
+                  <div class="nav-mega__copy">
+                    <h3 class="nav-mega__title" data-i18n="nav_mega_title">Σφραγισμένες Μνήμες</h3>
+                    <p class="nav-mega__desc" data-i18n="nav_mega_desc">Τέσσερις συλλογές χειροποίητων κεριών — τέχνη, φως και ανάμνηση.</p>
+                    <a class="nav-mega__cta" href="collection.html" data-i18n="nav_mega_cta">Δείτε τη συλλογή</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <a class="site-header__logo site-header__logo--pulse" href="index.html" data-i18n-aria="logo_aria">
+          <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
+          <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
+        </a>
+        <div class="site-nav site-nav--right">
+          <div class="site-nav__item site-nav__item--mega site-nav__item--mega-right">
+            <a
+              href="about.html"
+              class="site-nav__mega-trigger"
+              aria-current="page"
+              data-i18n="nav_about"
+              aria-haspopup="true"
+              aria-expanded="false"
+              aria-controls="nav-mega-about"
+            >Σχετικά</a>
+            <div class="nav-mega" id="nav-mega-about" data-i18n-aria="nav_about_mega_aria">
+              <div class="nav-mega__panel">
+                <ul class="nav-mega__cats">
+                  <li class="nav-mega__cat" style="--mega-i: 0"><a href="about.html#story"><span data-i18n="about_tab_story">Η Ιστορία NI</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 1"><a href="about.html#soul"><span data-i18n="about_tab_soul">The Soul of Nostalgia</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 2"><a href="about.html#vision"><span data-i18n="about_tab_vision">Our Vision</span></a></li>
+                </ul>
+                <div class="nav-mega__feature">
+                  <figure class="nav-mega__media">
+                    <img
+                      src="home%20page%20photo/about%20photo%20.png"
+                      alt=""
+                      width="640"
+                      height="420"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </figure>
+                  <div class="nav-mega__copy">
+                    <h3 class="nav-mega__title" data-i18n="nav_about_mega_title">Σχετικά με τη Nostalgia</h3>
+                    <p class="nav-mega__desc" data-i18n="nav_about_mega_desc">Η ιστορία NI και η ψυχή πίσω από κάθε φλόγα — μνήμη, τέχνη και αγάπη.</p>
+                    <a class="nav-mega__cta" href="about.html" data-i18n="nav_about_mega_cta">Διαβάστε περισσότερα</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <a href="contact.html" data-i18n="nav_contact">Επικοινωνία</a>
+          <button type="button" class="lang-toggle" id="lang-toggle" aria-live="polite">English</button>
+          <button type="button" class="theme-toggle" id="theme-toggle" aria-live="polite"></button>
+        </div>
+        </div>
+        <a class="site-header__logo site-header__logo--topbar" href="index.html" data-i18n-aria="logo_aria">
+          <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
+          <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
+        </a>
+        <button class="mobile-nav-toggle" type="button" aria-controls="mobile-nav-panel" aria-expanded="false" aria-label="Open navigation">
+          <span></span><span></span><span></span>
+        </button>
+      </nav>
+    </header>
+
+    <main>
+      <header class="page-intro">
+        <h1 data-i18n="about_heading">Σχετικά με το Nostalgia</h1>
+        <p data-i18n="about_lead">Χειροποίητες λεπτομέρειες, φυσικά υλικά, διαχρονική αισθητική.</p>
+        <div class="section-rule" aria-hidden="true"></div>
+      </header>
+
+      <section class="about-section about-section--story" aria-labelledby="about-heading" data-about-tabs>
+        <h2 id="about-heading" class="visually-hidden" data-i18n="about_hidden">Περιεχόμενα</h2>
+
+        <div class="about-tabs" role="tablist" aria-label="About sections">
+          <button
+            type="button"
+            class="about-tab is-active"
+            role="tab"
+            data-about-tab="story"
+            aria-selected="true"
+            aria-controls="about-panel-story"
+            id="about-tab-story"
+          >
+            <span class="about-tab__label" data-i18n="about_tab_story">Η Ιστορία NI</span>
+          </button>
+          <button
+            type="button"
+            class="about-tab"
+            role="tab"
+            data-about-tab="soul"
+            aria-selected="false"
+            aria-controls="about-panel-soul"
+            id="about-tab-soul"
+          >
+            <span class="about-tab__label" data-i18n="about_tab_soul">The Soul of Nostalgia</span>
+          </button>
+          <button
+            type="button"
+            class="about-tab"
+            role="tab"
+            data-about-tab="vision"
+            aria-selected="false"
+            aria-controls="about-panel-vision"
+            id="about-tab-vision"
+          >
+            <span class="about-tab__label" data-i18n="about_tab_vision">Our Vision</span>
+          </button>
+        </div>
+
+        <div class="about-panels">
+        <div class="about-panel is-active" data-about-panel="story" id="about-panel-story" role="tabpanel" aria-labelledby="about-tab-story">
+          <div class="about-split about-split--story">
+            <div class="about-split__photo">
+              <img
+                src="home%20page%20photo/about%20photo%20new.png"
+                alt=""
+                width="600"
+                height="600"
+                decoding="async"
+              />
+            </div>
+            <div class="about-story" data-i18n-aria="about_story_aria">
+              <p class="about-story__p" data-i18n="about_p1"></p>
+              <p class="about-story__p" data-i18n="about_p2"></p>
+              <p class="about-story__p" data-i18n="about_p3"></p>
+              <p class="about-story__p" data-i18n="about_p4"></p>
+              <p class="about-story__p" data-i18n="about_p5"></p>
+              <p class="about-story__p" data-i18n="about_p6"></p>
+              <p class="about-story__p" data-i18n="about_p7"></p>
+              <p class="about-story__p" data-i18n="about_p8"></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="about-panel" data-about-panel="soul" id="about-panel-soul" role="tabpanel" aria-labelledby="about-tab-soul" hidden>
+          <div class="about-split about-split--story about-split--soul">
+            <div class="about-split__photo">
+              <img
+                src="home%20page%20photo/about%203.png"
+                alt="Μαρία Γεροστάθη"
+                width="346"
+                height="441"
+                decoding="async"
+              />
+            </div>
+            <div class="about-story about-story--soul" data-i18n-aria="about_soul_aria">
+              <h3 class="about-soul__title" data-i18n="about_soul_title">The Soul of Nostalgia</h3>
+              <p class="about-story__p" data-i18n="about_soul_p1"></p>
+              <p class="about-story__p" data-i18n="about_soul_p2"></p>
+              <p class="about-story__p" data-i18n="about_soul_p3"></p>
+              <p class="about-story__p" data-i18n="about_soul_p4"></p>
+              <p class="about-story__p" data-i18n="about_soul_p5"></p>
+              <p class="about-story__p" data-i18n="about_soul_p6"></p>
+              <blockquote class="about-story__quote" data-i18n="about_soul_quote"></blockquote>
+              <p class="about-story__p" data-i18n="about_soul_p7"></p>
+              <p class="about-story__p" data-i18n="about_soul_p8"></p>
+              <p class="about-story__p about-story__p--dialogue" data-i18n="about_soul_dialogue_q"></p>
+              <p class="about-story__p about-story__p--dialogue" data-i18n="about_soul_dialogue_a"></p>
+              <p class="about-story__p" data-i18n="about_soul_p9"></p>
+              <p class="about-story__p" data-i18n="about_soul_p10"></p>
+              <p class="about-story__p" data-i18n="about_soul_p11"></p>
+              <p class="about-story__p" data-i18n="about_soul_p12"></p>
+              <p class="about-story__p" data-i18n="about_soul_p13"></p>
+              <p class="about-story__p" data-i18n="about_soul_p14"></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="about-panel" data-about-panel="vision" id="about-panel-vision" role="tabpanel" aria-labelledby="about-tab-vision" hidden>
+          <div class="about-split about-split--story about-split--vision">
+            <div class="about-split__photo">
+              <img
+                src="home%20page%20photo/about%202.png"
+                alt="Μαρία Γεροστάθη"
+                width="346"
+                height="441"
+                decoding="async"
+              />
+            </div>
+            <div class="about-story about-story--vision" data-i18n-aria="about_vision_aria">
+              <h3 class="about-soul__title" data-i18n="about_vision_title">Το Όραμά μας</h3>
+              <p class="about-story__p" data-i18n="about_vision_p1"></p>
+              <p class="about-story__p" data-i18n="about_vision_p2"></p>
+              <p class="about-story__p" data-i18n="about_vision_p3"></p>
+              <p class="about-story__p" data-i18n="about_vision_p4"></p>
+              <p class="about-story__p" data-i18n="about_vision_p5"></p>
+              <p class="about-story__p" data-i18n="about_vision_p6"></p>
+              <p class="about-vision__signature">
+                <span class="about-vision__sign-name" data-i18n="about_vision_sign_name">Μαρία Γεροστάθη</span>
+                <span class="about-vision__sign-role" data-i18n="about_vision_sign_role">Founder & Creative Director</span>
+                <span class="about-vision__sign-brand" data-i18n="about_vision_sign_brand">Nostalgia Candle by Maria Gerostathi</span>
+              </p>
+            </div>
+          </div>
+        </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="site-footer__layout">
+        <div class="site-footer__aside">
+          <a
+            class="site-footer__instagram"
+            href="https://www.instagram.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-i18n-aria="footer_instagram_aria"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+            </svg>
+          </a>
+        </div>
+        <div class="site-footer__center">
+          <a class="site-footer__logo" href="index.html" data-i18n-aria="logo_aria">
+            <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="180" height="52" alt="Nostalgia Collection" />
+            <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="180" height="52" alt="Nostalgia Collection" />
+          </a>
+          <p class="site-footer__tagline" data-i18n="footer_tagline">
+            Κάθε προϊόν παρασκευάζεται με προσοχή και φυσικά υλικά
+          </p>
+          <ul class="site-footer__lines">
+            <li data-i18n="footer_address">Θεσσαλονίκη · Τ.Κ. 54351</li>
+            <li>
+              <span data-i18n="footer_phone_label">Τηλ:</span>
+              <a href="tel:+306939411774">+30 693 941 1774</a>
+            </li>
+            <li><a href="mailto:mgerostathi@gmail.com">mgerostathi@gmail.com</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="site-footer__bar">
+        <p class="site-footer__copyright" data-i18n="footer_copyright">© 2026 Nostalgia. Με επιφύλαξη παντός δικαιώματος.</p>
+        <p class="site-footer__hosting">
+          <span data-i18n="footer_hosting">Hosting by</span>
+          <a href="https://www.hostinger.com/" target="_blank" rel="noopener noreferrer">Hostinger</a>
+        </p>
+      </div>
+    </footer>
+    <button class="back-to-top" type="button" aria-label="Back to top">
+      <span aria-hidden="true">↑</span>
+    </button>
+  </div>
+  <script src="js/i18n.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/nav-mega.js"></script>
+  <script src="js/header-scroll.js"></script>
+  <script src="js/about-tabs.js"></script>
+</body>
+</html>

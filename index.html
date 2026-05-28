@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="logo/logo.png" type="image/png" />
+  <link rel="apple-touch-icon" href="logo/logo.png" />
+  <title>Nostalgia Collection · Αρχική</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Montserrat:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/base.css?v=logo1" />
+  <link rel="stylesheet" href="css/home.css" />
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("nostalgia-theme");
+        if (t === "light" || t === "dark") {
+          document.documentElement.setAttribute("data-theme", t);
+        } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+          document.documentElement.setAttribute("data-theme", "dark");
+        } else {
+          document.documentElement.setAttribute("data-theme", "light");
+        }
+      } catch (e) {}
+      try {
+        var l = localStorage.getItem("nostalgia-lang");
+        if (l === "en" || l === "el") {
+          document.documentElement.lang = l;
+        }
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body data-page="home">
+  <div class="page-wrap">
+    <header class="site-header">
+      <nav class="site-header__bar" data-i18n-aria="nav_aria">
+        <div class="mobile-nav-panel" id="mobile-nav-panel">
+        <div class="site-nav site-nav--left">
+          <a href="index.html" aria-current="page" data-i18n="nav_home">Αρχική</a>
+          <div class="site-nav__item site-nav__item--mega">
+            <a
+              href="collection.html"
+              class="site-nav__mega-trigger"
+              data-i18n="nav_collection"
+              aria-haspopup="true"
+              aria-expanded="false"
+              aria-controls="nav-mega-collection"
+            >Συλλογή</a>
+            <div class="nav-mega" id="nav-mega-collection" data-i18n-aria="nav_mega_aria">
+              <div class="nav-mega__panel">
+                <ul class="nav-mega__cats">
+                  <li class="nav-mega__cat" style="--mega-i: 0"><a href="collection.html#cat1"><span data-i18n="collection_cat1">Art Class Murano Candle</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 1"><a href="collection.html#cat2"><span data-i18n="collection_cat2">Driftwood Beeswax Flame</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 2"><a href="collection.html#cat3"><span data-i18n="collection_cat3">Liquid Eternal</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 3"><a href="collection.html#cat4"><span data-i18n="collection_cat4">Unique Art Objects</span></a></li>
+                </ul>
+                <div class="nav-mega__feature">
+                  <figure class="nav-mega__media">
+                    <img
+                      src="home%20page%20photo/home%20collection.png"
+                      alt=""
+                      width="640"
+                      height="420"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </figure>
+                  <div class="nav-mega__copy">
+                    <h3 class="nav-mega__title" data-i18n="nav_mega_title">Σφραγισμένες Μνήμες</h3>
+                    <p class="nav-mega__desc" data-i18n="nav_mega_desc">Τέσσερις συλλογές χειροποίητων κεριών — τέχνη, φως και ανάμνηση.</p>
+                    <a class="nav-mega__cta" href="collection.html" data-i18n="nav_mega_cta">Δείτε τη συλλογή</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <a class="site-header__logo site-header__logo--pulse" href="index.html" data-i18n-aria="logo_aria">
+          <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
+          <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
+        </a>
+        <div class="site-nav site-nav--right">
+          <div class="site-nav__item site-nav__item--mega site-nav__item--mega-right">
+            <a
+              href="about.html"
+              class="site-nav__mega-trigger"
+              data-i18n="nav_about"
+              aria-haspopup="true"
+              aria-expanded="false"
+              aria-controls="nav-mega-about"
+            >Σχετικά</a>
+            <div class="nav-mega" id="nav-mega-about" data-i18n-aria="nav_about_mega_aria">
+              <div class="nav-mega__panel">
+                <ul class="nav-mega__cats">
+                  <li class="nav-mega__cat" style="--mega-i: 0"><a href="about.html#story"><span data-i18n="about_tab_story">Η Ιστορία NI</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 1"><a href="about.html#soul"><span data-i18n="about_tab_soul">The Soul of Nostalgia</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 2"><a href="about.html#vision"><span data-i18n="about_tab_vision">Our Vision</span></a></li>
+                </ul>
+                <div class="nav-mega__feature">
+                  <figure class="nav-mega__media">
+                    <img
+                      src="home%20page%20photo/about%20photo%20.png"
+                      alt=""
+                      width="640"
+                      height="420"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </figure>
+                  <div class="nav-mega__copy">
+                    <h3 class="nav-mega__title" data-i18n="nav_about_mega_title">Σχετικά με τη Nostalgia</h3>
+                    <p class="nav-mega__desc" data-i18n="nav_about_mega_desc">Η ιστορία NI και η ψυχή πίσω από κάθε φλόγα — μνήμη, τέχνη και αγάπη.</p>
+                    <a class="nav-mega__cta" href="about.html" data-i18n="nav_about_mega_cta">Διαβάστε περισσότερα</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <a href="contact.html" data-i18n="nav_contact">Επικοινωνία</a>
+          <button type="button" class="lang-toggle" id="lang-toggle" aria-live="polite">English</button>
+          <button type="button" class="theme-toggle" id="theme-toggle" aria-live="polite"></button>
+        </div>
+        </div>
+        <a class="site-header__logo site-header__logo--topbar" href="index.html" data-i18n-aria="logo_aria">
+          <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
+          <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
+        </a>
+        <button class="mobile-nav-toggle" type="button" aria-controls="mobile-nav-panel" aria-expanded="false" aria-label="Open navigation">
+          <span></span><span></span><span></span>
+        </button>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero-home" data-i18n-aria="hero_aria">
+        <div class="hero-home__media" aria-hidden="true">
+          <img
+            class="hero-home__bg"
+            src="home%20page%20photo/home%20photo.png"
+            alt=""
+            width="1200"
+            height="800"
+            decoding="async"
+          />
+          <div class="hero-home__overlay"></div>
+        </div>
+        <div class="hero-home__inner">
+          <div class="hero-home__content">
+            <h1 class="hero-home__title" data-i18n="hero_title">Κεριά αναμνήσεων. Ποίηση που ανάβει.</h1>
+            <p class="hero-home__lead" data-i18n="hero_lead">
+              Μια συλλογή χειροποίητων αρωματικών κεριών εμπνευσμένη από ιστορίες, φυσικά υλικά και την τέχνη της ανάμνησης.
+            </p>
+            <a class="hero-home__cta" href="collection.html" data-i18n="hero_cta">Ανακαλύψτε τη συλλογή</a>
+            <p class="hero-home__whisper" data-i18n="hero_whisper">Νοσταλγείς όσα δεν πρόλαβες να πεις.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="home-manifesto" aria-labelledby="home-manifesto-heading">
+        <div class="home-manifesto__inner">
+          <span class="home-manifesto__ornament home-reveal" aria-hidden="true"></span>
+          <p class="home-manifesto__eyebrow home-reveal" data-i18n="home_manifesto_eyebrow">Nostalgia Art · Liquid Eternal by Maria Gerostathi</p>
+          <p class="home-manifesto__body home-reveal" id="home-manifesto-heading" data-i18n="home_manifesto_body">Η Nostalgia Candles γεννήθηκε από τη μνήμη, το φως και την ανάγκη να μετατραπεί το συναίσθημα σε αντικείμενο τέχνης.</p>
+          <p class="home-manifesto__quote home-reveal" data-i18n="home_manifesto_quote">Νοσταλγείς όσα δεν πρόλαβες να πεις.</p>
+          <a class="home-manifesto__cta home-reveal" href="collection.html" data-i18n="home_manifesto_cta">Ανακαλύψτε την συλλογή</a>
+        </div>
+      </section>
+
+      <section class="home-about" aria-labelledby="home-about-heading">
+        <div class="home-about__inner">
+          <div class="home-about__head home-reveal">
+            <h2 class="home-about__title" id="home-about-heading" data-i18n="home_about_section_title">Σχετικά με τη Nostalgia</h2>
+            <span class="home-about__rule" aria-hidden="true"></span>
+            <a class="home-about__cta" href="about.html" data-i18n="home_about_btn">Μάθετε περισσότερα</a>
+          </div>
+          <div class="home-about__cards">
+            <article class="home-about__card home-reveal home-reveal--d1">
+              <h3 class="home-about__card-title" data-i18n="home_about_card1_title">Η Φιλοσοφία μας</h3>
+              <p class="home-about__card-sub" data-i18n="home_about_card1_sub">Φτιαγμένο για να Συγκινεί. Να Μένει.</p>
+            </article>
+            <article class="home-about__card home-reveal home-reveal--d2">
+              <h3 class="home-about__card-title" data-i18n="home_about_card2_title">Η Τέχνη του Κεριού</h3>
+              <p class="home-about__card-sub" data-i18n="home_about_card2_sub">Χειροποίητο στην Ελλάδα</p>
+            </article>
+            <article class="home-about__card home-about__card--portrait home-reveal home-reveal--d3">
+              <div class="home-about__card-text">
+                <h3 class="home-about__card-title" data-i18n="home_about_card3_title">Δημιουργία</h3>
+                <p class="home-about__card-sub" data-i18n="home_about_card3_sub">Μαρία Γεροστάθη</p>
+              </div>
+              <figure class="home-about__portrait">
+                <img
+                  src="home%20page%20photo/home%20photo%201.png"
+                  alt="Μαρία Γεροστάθη"
+                  width="346"
+                  height="441"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </figure>
+            </article>
+          </div>
+        </div>
+        <div class="home-about__photo home-reveal">
+          <img
+            src="home%20page%20photo/about%20photo%20home%20.png"
+            alt=""
+            width="1600"
+            height="600"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+      </section>
+
+      <section class="home-collections" aria-labelledby="home-collections-heading">
+        <div class="home-collections__inner">
+          <article class="home-collections__feature home-reveal">
+            <img
+              class="home-collections__feature-img"
+              src="home%20page%20photo/home%20collection.png"
+              alt=""
+              width="1200"
+              height="800"
+              loading="lazy"
+              decoding="async"
+            />
+            <div class="home-collections__feature-overlay" aria-hidden="true"></div>
+            <div class="home-collections__feature-content">
+              <h2 class="home-collections__feature-title" data-i18n="home_collection_feature_title">Σφραγισμένες Μνήμες</h2>
+              <span class="home-collections__feature-rule" aria-hidden="true"></span>
+              <p class="home-collections__feature-sub" data-i18n="home_collection_feature_sub">Συλλεκτικά Κεριά · Τεχνουργήματα</p>
+              <a class="home-collections__feature-cta" href="collection.html" data-i18n="home_collection_feature_cta">Δείτε τη Συλλογή</a>
+            </div>
+          </article>
+
+          <div class="home-collections__list">
+            <div class="home-collections__head home-reveal">
+              <h3 class="home-collections__heading" id="home-collections-heading" data-i18n="home_collections_heading">Τα προϊόντα μας</h3>
+              <span class="home-collections__head-rule" aria-hidden="true"></span>
+            </div>
+            <ul class="home-collections__cats" aria-labelledby="home-collections-heading">
+              <li class="home-reveal home-reveal--cat home-reveal--d1">
+                <a class="home-collections__cat" href="collection.html#cat1">
+                  <figure class="home-collections__cat-media">
+                    <img
+                      src="product%20photo/art%20class%20murano%20candle/product%20photo%20home%20page%20.png"
+                      alt=""
+                      width="320"
+                      height="320"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </figure>
+                  <span class="home-collections__cat-label" data-i18n="collection_cat1">Art Class Murano Candle</span>
+                </a>
+              </li>
+              <li class="home-reveal home-reveal--cat home-reveal--d2">
+                <a class="home-collections__cat" href="collection.html#cat2">
+                  <figure class="home-collections__cat-media">
+                    <img
+                      src="product%20photo/driftwood%20beeswax%20flame/product%20photo%20home%20page%20.png"
+                      alt=""
+                      width="320"
+                      height="320"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </figure>
+                  <span class="home-collections__cat-label" data-i18n="collection_cat2">Driftwood Beeswax Flame</span>
+                </a>
+              </li>
+              <li class="home-reveal home-reveal--cat home-reveal--d3">
+                <a class="home-collections__cat" href="collection.html#cat3">
+                  <figure class="home-collections__cat-media">
+                    <img
+                      src="product%20photo/liquid%20eternal/product%203.png"
+                      alt=""
+                      width="320"
+                      height="320"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </figure>
+                  <span class="home-collections__cat-label" data-i18n="collection_cat3">Liquid Eternal</span>
+                </a>
+              </li>
+              <li class="home-reveal home-reveal--cat home-reveal--d4">
+                <a class="home-collections__cat" href="collection.html#cat4">
+                  <figure class="home-collections__cat-media">
+                    <img
+                      src="product%20photo/unique%20art%20vessel/product%204.png"
+                      alt=""
+                      width="320"
+                      height="320"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </figure>
+                  <span class="home-collections__cat-label" data-i18n="collection_cat4">Unique Art Objects</span>
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="home-moment" aria-labelledby="home-moment-heading">
+        <div class="home-moment__inner">
+          <aside class="home-moment__aside home-moment__aside--left">
+            <span class="home-moment__ornament home-reveal home-reveal--d1" aria-hidden="true"></span>
+            <p class="home-moment__eyebrow home-reveal home-reveal--d1" data-i18n="home_moment_eyebrow">Προϊόντα</p>
+            <ul class="home-moment__cats" id="home-moment-heading" aria-label="Κατηγορίες προϊόντων">
+              <li class="home-reveal home-reveal--d1">
+                <a class="home-moment__cat" href="collection.html#cat1"><span data-i18n="collection_cat1">Art Class Murano Candle</span></a>
+              </li>
+              <li class="home-reveal home-reveal--d2">
+                <a class="home-moment__cat" href="collection.html#cat2"><span data-i18n="collection_cat2">Driftwood Beeswax Flame</span></a>
+              </li>
+              <li class="home-reveal home-reveal--d3">
+                <a class="home-moment__cat" href="collection.html#cat3"><span data-i18n="collection_cat3">Liquid Eternal</span></a>
+              </li>
+              <li class="home-reveal home-reveal--d4">
+                <a class="home-moment__cat" href="collection.html#cat4"><span data-i18n="collection_cat4">Unique Art Objects</span></a>
+              </li>
+            </ul>
+            <span class="home-moment__vline home-reveal home-reveal--d2" aria-hidden="true"></span>
+          </aside>
+
+          <figure class="home-moment__frame home-reveal home-reveal--moment">
+            <span class="home-moment__glow" aria-hidden="true"></span>
+            <div class="home-moment__media">
+              <img
+                class="home-moment__img"
+                src="home%20page%20photo/home%20page%20photo%20.png"
+                alt="Nostalgia Collection — χειροποίητα κεριά"
+                width="718"
+                height="972"
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
+          </figure>
+
+          <aside class="home-moment__aside home-moment__aside--right home-reveal home-reveal--d2">
+            <blockquote class="home-moment__quote" data-i18n="home_moment_quote">
+              Νοσταλγείς όσα δεν πρόλαβες να πεις.
+            </blockquote>
+            <p class="home-moment__sig" data-i18n="home_moment_sig">— Μαρία Γεροστάθη</p>
+            <a class="home-moment__cta" href="about.html" data-i18n="home_moment_cta">Η ιστορία μας</a>
+            <span class="home-moment__ornament home-moment__ornament--end" aria-hidden="true"></span>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="site-footer__layout">
+        <div class="site-footer__aside">
+          <a
+            class="site-footer__instagram"
+            href="https://www.instagram.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-i18n-aria="footer_instagram_aria"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+            </svg>
+          </a>
+        </div>
+        <div class="site-footer__center">
+          <a class="site-footer__logo" href="index.html" data-i18n-aria="logo_aria">
+            <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="180" height="52" alt="Nostalgia Collection" />
+            <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="180" height="52" alt="Nostalgia Collection" />
+          </a>
+          <p class="site-footer__tagline" data-i18n="footer_tagline">
+            Κάθε προϊόν παρασκευάζεται με προσοχή και φυσικά υλικά
+          </p>
+          <ul class="site-footer__lines">
+            <li data-i18n="footer_address">Θεσσαλονίκη · Τ.Κ. 54351</li>
+            <li>
+              <span data-i18n="footer_phone_label">Τηλ:</span>
+              <a href="tel:+306939411774">+30 693 941 1774</a>
+            </li>
+            <li><a href="mailto:mgerostathi@gmail.com">mgerostathi@gmail.com</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="site-footer__bar">
+        <p class="site-footer__copyright" data-i18n="footer_copyright">© 2026 Nostalgia. Με επιφύλαξη παντός δικαιώματος.</p>
+        <p class="site-footer__hosting">
+          <span data-i18n="footer_hosting">Hosting by</span>
+          <a href="https://www.hostinger.com/" target="_blank" rel="noopener noreferrer">Hostinger</a>
+        </p>
+      </div>
+    </footer>
+    <button class="back-to-top" type="button" aria-label="Back to top">
+      <span aria-hidden="true">↑</span>
+    </button>
+    <aside
+      class="eshop-toast"
+      id="eshop-toast"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      <p class="eshop-toast__text" data-i18n="eshop_coming_soon">Σύντομα έρχεται και e-shop για αγορές μέσα από το site.</p>
+    </aside>
+    <aside
+      class="eshop-toast eshop-toast--contact"
+      id="contact-toast"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      <button
+        class="eshop-toast__close"
+        id="contact-toast-close"
+        type="button"
+        data-i18n-aria="toast_close_aria"
+        aria-label="Κλείσιμο μηνύματος"
+      >
+        <span aria-hidden="true">×</span>
+      </button>
+      <p class="eshop-toast__text" data-i18n="contact_order_message">Για οποιαδήποτε απορία ή παραγγελία, επικοινωνήστε μαζί μας στο +30 693 941 1774.</p>
+    </aside>
+  </div>
+  <script src="js/i18n.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/nav-mega.js"></script>
+  <script src="js/home-reveal.js"></script>
+  <script src="js/header-scroll.js"></script>
+  <script src="js/home-toast.js"></script>
+</body>
+</html>

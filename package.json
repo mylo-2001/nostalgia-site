@@ -1,0 +1,8 @@
+{
+  "name": "nostalgia-site",
+  "private": true,
+  "scripts": {
+    "start": "npx --yes serve . -l 5173 --no-request-logging",
+    "preview": "npm run start"
+  }
+}

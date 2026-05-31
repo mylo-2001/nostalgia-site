@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="logo/logo.png" type="image/png" />
+  <title>Nostalgia Collection · Ολοκλήρωση παραγγελίας</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Montserrat:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/base.css?v=logo1" />
+  <link rel="stylesheet" href="css/shop.css" />
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("nostalgia-theme");
+        if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+        else if (window.matchMedia("(prefers-color-scheme: dark)").matches) document.documentElement.setAttribute("data-theme", "dark");
+        else document.documentElement.setAttribute("data-theme", "light");
+      } catch (e) {}
+      try {
+        var l = localStorage.getItem("nostalgia-lang");
+        if (l === "en" || l === "el") document.documentElement.lang = l;
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body data-page="checkout">
+  <div class="page-wrap">
+    <header class="site-header">
+      <nav class="site-header__bar" data-i18n-aria="nav_aria">
+        <div class="mobile-nav-panel" id="mobile-nav-panel">
+        <div class="site-nav site-nav--left">
+          <a href="index.html" data-i18n="nav_home">Αρχική</a>
+          <a href="collection.html" data-i18n="nav_collection">Συλλογή</a>
+        </div>
+        <a class="site-header__logo site-header__logo--pulse" href="index.html" data-i18n-aria="logo_aria">
+          <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
+          <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
+        </a>
+        <div class="site-nav site-nav--right">
+          <a href="about.html" data-i18n="nav_about">Σχετικά</a>
+          <a href="contact.html" data-i18n="nav_contact">Επικοινωνία</a>
+          <button type="button" class="lang-toggle" id="lang-toggle" aria-live="polite">English</button>
+          <button type="button" class="theme-toggle" id="theme-toggle" aria-live="polite"></button>
+        </div>
+        </div>
+        <a class="site-header__logo site-header__logo--topbar" href="index.html" data-i18n-aria="logo_aria">
+          <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
+          <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
+        </a>
+        <button class="mobile-nav-toggle" type="button" aria-controls="mobile-nav-panel" aria-expanded="false" aria-label="Open navigation"><span></span><span></span><span></span></button>
+      </nav>
+    </header>
+
+    <main>
+      <section class="checkout-page">
+        <a class="checkout-back" id="checkout-back" href="cart.html" data-i18n="checkout_back">← Επιστροφή</a>
+
+        <div class="checkout-page__layout">
+          <div class="checkout-main">
+            <!-- Βήμα 1: Διεύθυνση + απόδειξη/τιμολόγιο -->
+            <div class="checkout-step" id="checkout-step-shipping">
+              <h2 class="checkout-step__title" data-i18n="checkout_shipping_title">Πού θέλεις να αποσταλεί η παραγγελία;</h2>
+
+              <form class="checkout-form" id="checkout-shipping-form" novalidate>
+                <div class="checkout-form__row">
+                  <div class="checkout-form__group">
+                    <label for="checkout-firstname" data-i18n="checkout_firstname_label">Όνομα</label>
+                    <input type="text" id="checkout-firstname" name="firstname" required autocomplete="given-name" />
+                  </div>
+                  <div class="checkout-form__group">
+                    <label for="checkout-lastname" data-i18n="checkout_lastname_label">Επώνυμο</label>
+                    <input type="text" id="checkout-lastname" name="lastname" required autocomplete="family-name" />
+                  </div>
+                </div>
+                <div class="checkout-form__group">
+                  <label for="checkout-email" data-i18n="checkout_email_label">Email</label>
+                  <input type="email" id="checkout-email" name="email" required autocomplete="email" />
+                </div>
+                <div class="checkout-form__row">
+                  <div class="checkout-form__group">
+                    <label for="checkout-phone" data-i18n="checkout_phone_label">Τηλέφωνο</label>
+                    <input type="tel" id="checkout-phone" name="phone" autocomplete="tel-national" placeholder="2310 000000" />
+                  </div>
+                  <div class="checkout-form__group">
+                    <label for="checkout-mobile" data-i18n="checkout_mobile_label">Κινητό</label>
+                    <input type="tel" id="checkout-mobile" name="mobile" required autocomplete="tel" placeholder="69xxxxxxxx" />
+                  </div>
+                </div>
+                <div class="checkout-form__row checkout-form__row--postal">
+                  <div class="checkout-form__group checkout-form__group--postal">
+                    <label for="checkout-postal" data-i18n="checkout_postal_label">Τ.Κ.</label>
+                    <input type="text" id="checkout-postal" name="postal" required autocomplete="postal-code" inputmode="numeric" maxlength="5" />
+                  </div>
+                  <div class="checkout-form__group checkout-form__group--country">
+                    <label for="checkout-country" data-i18n="checkout_country_label">Χώρα</label>
+                    <input type="text" id="checkout-country" name="country" value="Ελλάδα (GR)" readonly />
+                  </div>
+                </div>
+                <div class="checkout-form__row checkout-form__row--street">
+                  <div class="checkout-form__group checkout-form__group--street">
+                    <label for="checkout-street" data-i18n="checkout_street_label">Οδός</label>
+                    <input type="text" id="checkout-street" name="street" required autocomplete="address-line1" />
+                  </div>
+                  <div class="checkout-form__group checkout-form__group--number">
+                    <label for="checkout-street-number" data-i18n="checkout_street_number_label">Αριθμός οδού</label>
+                    <input type="text" id="checkout-street-number" name="streetNumber" required autocomplete="off" />
+                  </div>
+                </div>
+                <div class="checkout-form__row">
+                  <div class="checkout-form__group">
+                    <label for="checkout-city" data-i18n="checkout_city_label">Πόλη</label>
+                    <input type="text" id="checkout-city" name="city" required autocomplete="address-level2" />
+                  </div>
+                  <div class="checkout-form__group">
+                    <label for="checkout-prefecture" data-i18n="checkout_prefecture_label">Νομός</label>
+                    <select id="checkout-prefecture" name="prefecture" required></select>
+                  </div>
+                </div>
+                <div class="checkout-form__row">
+                  <div class="checkout-form__group">
+                    <label for="checkout-floor" data-i18n="checkout_floor_label">Όροφος</label>
+                    <select id="checkout-floor" name="floor" required></select>
+                  </div>
+                  <div class="checkout-form__group">
+                    <label for="checkout-location-type" data-i18n="checkout_location_type_label">Τύπος τοποθεσίας</label>
+                    <select id="checkout-location-type" name="locationType" required></select>
+                  </div>
+                </div>
+                <div class="checkout-form__group">
+                  <label for="checkout-notes" data-i18n="checkout_notes_label">Σημειώσεις παράδοσης (προαιρετικά)</label>
+                  <textarea id="checkout-notes" name="notes" rows="2"></textarea>
+                </div>
+
+                <h2 class="checkout-step__title checkout-step__title--spaced" data-i18n="checkout_doc_title">Χρειάζεσαι απόδειξη ή τιμολόγιο;</h2>
+
+                <div class="checkout-options" role="radiogroup" aria-labelledby="checkout-doc-label">
+                  <span class="visually-hidden" id="checkout-doc-label" data-i18n="checkout_doc_title">Χρειάζεσαι απόδειξη ή τιμολόγιο;</span>
+                  <label class="checkout-option">
+                    <input type="radio" name="doc_type" value="receipt" checked />
+                    <span class="checkout-option__box">
+                      <span class="checkout-option__title" data-i18n="checkout_doc_receipt">Απόδειξη</span>
+                    </span>
+                  </label>
+                  <label class="checkout-option">
+                    <input type="radio" name="doc_type" value="invoice" />
+                    <span class="checkout-option__box">
+                      <span class="checkout-option__title" data-i18n="checkout_doc_invoice">Τιμολόγιο</span>
+                    </span>
+                  </label>
+                </div>
+
+                <div class="checkout-invoice" id="checkout-invoice-fields" hidden>
+                  <div class="checkout-form__group">
+                    <label for="checkout-company" data-i18n="checkout_company_label">Επωνυμία επιχείρησης</label>
+                    <input type="text" id="checkout-company" name="company" autocomplete="organization" />
+                  </div>
+                  <div class="checkout-form__row">
+                    <div class="checkout-form__group">
+                      <label for="checkout-afm" data-i18n="checkout_afm_label">Α.Φ.Μ.</label>
+                      <input type="text" id="checkout-afm" name="afm" inputmode="numeric" />
+                    </div>
+                    <div class="checkout-form__group">
+                      <label for="checkout-doy" data-i18n="checkout_doy_label">Δ.Ο.Υ.</label>
+                      <input type="text" id="checkout-doy" name="doy" />
+                    </div>
+                  </div>
+                  <div class="checkout-form__group">
+                    <label for="checkout-activity" data-i18n="checkout_activity_label">Επάγγελμα</label>
+                    <input type="text" id="checkout-activity" name="activity" />
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <!-- Βήμα 2: Τρόπος πληρωμής -->
+            <div class="checkout-step" id="checkout-step-payment" hidden>
+              <button type="button" class="checkout-step-back" id="checkout-step-back" data-i18n="checkout_step_back">← Επιστροφή στα στοιχεία</button>
+              <h2 class="checkout-step__title" data-i18n="checkout_payment_title">Επίλεξε τον τρόπο πληρωμής</h2>
+
+              <div class="checkout-options checkout-options--payment" role="radiogroup" aria-labelledby="checkout-pay-label">
+                <span class="visually-hidden" id="checkout-pay-label" data-i18n="checkout_payment_title">Επίλεξε τον τρόπο πληρωμής</span>
+                <label class="checkout-option checkout-option--payment">
+                  <input type="radio" name="pay_method" value="stripe" checked />
+                  <span class="checkout-option__box">
+                    <span class="checkout-option__title" data-i18n="checkout_pay_stripe">Κάρτα (Stripe)</span>
+                    <span class="checkout-option__desc" data-i18n="checkout_pay_stripe_desc">Ασφαλής online πληρωμή με πιστωτική ή χρεωστική κάρτα.</span>
+                  </span>
+                </label>
+                <label class="checkout-option checkout-option--payment">
+                  <input type="radio" name="pay_method" value="cod" />
+                  <span class="checkout-option__box">
+                    <span class="checkout-option__title" data-i18n="checkout_pay_cod">Αντικαταβολή</span>
+                    <span class="checkout-option__desc" data-i18n="checkout_pay_cod_desc">Πληρωμή στον courier κατά την παράδοση.</span>
+                  </span>
+                </label>
+              </div>
+
+              <p class="checkout-stripe-note" id="checkout-stripe-note" data-i18n="checkout_stripe_note">
+                Η πληρωμή με κάρτα θα ολοκληρωθεί μέσω Stripe. Θα επικοινωνήσουμε μαζί σου για επιβεβαίωση της παραγγελίας.
+              </p>
+            </div>
+          </div>
+
+          <aside class="checkout-sidebar" id="checkout-sidebar" aria-label="Σύνοψη παραγγελίας">
+            <div id="checkout-summary"></div>
+            <button type="button" class="btn-shop btn-shop--primary checkout-sidebar__cta" id="checkout-cta" data-i18n="checkout_to_payment">Στοιχεία πληρωμής</button>
+            <p class="checkout-sidebar__vat" data-i18n="checkout_order_note">Θα επικοινωνήσουμε μαζί σου για επιβεβαίωση και τιμολόγηση.</p>
+          </aside>
+        </div>
+
+        <div class="order-success" id="order-success" hidden aria-live="polite">
+          <div class="order-success__ambience" aria-hidden="true">
+            <span class="order-success__ember"></span>
+            <span class="order-success__ember"></span>
+            <span class="order-success__ember"></span>
+            <span class="order-success__shimmer"></span>
+          </div>
+
+          <div class="order-success__card">
+            <div class="order-success__hero">
+              <div class="order-success__icon-stage">
+                <svg class="order-success__ring" viewBox="0 0 120 120" aria-hidden="true">
+                  <circle cx="60" cy="60" r="52" />
+                </svg>
+                <div class="order-success__pay-icon" id="order-success-pay-icon" aria-hidden="true"></div>
+                <svg class="order-success__check" viewBox="0 0 52 52" aria-hidden="true">
+                  <circle class="order-success__check-circle" cx="26" cy="26" r="24" />
+                  <path class="order-success__check-mark" d="M14 27l7 7 17-17" />
+                </svg>
+              </div>
+
+              <p class="order-success__eyebrow" data-i18n="checkout_success_eyebrow">Επιτυχής παραγγελία</p>
+              <h2 class="order-success__title" data-i18n="checkout_success_title">Η παραγγελία σου καταχωρήθηκε</h2>
+              <p class="order-success__lead" data-i18n="checkout_success">Θα επικοινωνήσουμε μαζί σου σύντομα για επιβεβαίωση.</p>
+              <p class="order-success__payment" id="order-success-payment"></p>
+            </div>
+
+            <div class="order-success__products-wrap">
+              <p class="order-success__products-label" data-i18n="checkout_success_products">Τα προϊόντα σου</p>
+              <ul class="order-success__products" id="order-success-products"></ul>
+            </div>
+
+            <p class="order-success__email-note" data-i18n="checkout_success_email_note">Θα ανοίξει το email σας για αποστολή της παραγγελίας.</p>
+
+            <div class="order-success__actions">
+              <a class="btn-shop btn-shop--primary" href="collection.html" data-i18n="cart_continue">Συνέχεια αγορών</a>
+              <a class="btn-shop btn-shop--ghost" href="index.html" data-i18n="nav_home">Αρχική</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="site-footer__layout">
+        <div class="site-footer__center">
+          <a class="site-footer__logo" href="index.html" data-i18n-aria="logo_aria">
+            <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="180" height="52" alt="Nostalgia Collection" />
+          </a>
+        </div>
+      </div>
+      <div class="site-footer__bar">
+        <p class="site-footer__copyright" data-i18n="footer_copyright">© 2026 Nostalgia. Με επιφύλαξη παντός δικαιώματος.</p>
+      </div>
+    </footer>
+  </div>
+  <script src="js/i18n.js"></script>
+  <script src="js/products.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/greek-prefectures.js"></script>
+  <script src="js/address-options.js"></script>
+  <script src="js/checkout.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/header-scroll.js"></script>
+</body>
+</html>

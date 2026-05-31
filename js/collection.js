@@ -76,24 +76,28 @@
   function renderProducts(catId) {
     if (!productsGridEl) return;
     productsGridEl.innerHTML = "";
-    var images = CAT_PRODUCTS[catId] || [];
+    var images = (window.NostalgiaProducts && window.NostalgiaProducts.CAT_IMAGES[catId]) || [];
     for (var i = 1; i <= images.length; i++) {
-      var titleKey = buildProductKey(catId, i, "title");
-      var rawTitle = t(titleKey);
-      var titleText = (rawTitle && rawTitle !== titleKey ? rawTitle : "").trim();
+      var productId = catId + "-" + i;
+      var titleText = window.NostalgiaProducts
+        ? window.NostalgiaProducts.getTitle(catId, i)
+        : t("collection_" + catId) + " · " + i;
+      var productUrl = window.NostalgiaProducts
+        ? window.NostalgiaProducts.getProductUrl(productId)
+        : "product.html?id=" + encodeURIComponent(productId);
 
       var article = document.createElement("article");
       article.className = "collection-card collection-card--product";
       article.setAttribute("data-category", catId);
+      article.setAttribute("data-product-id", productId);
       article.setAttribute("role", "listitem");
-      article.setAttribute(
-        "aria-label",
-        titleText || t("collection_" + catId) + " · " + i
-      );
+      article.setAttribute("aria-label", titleText);
 
-      var visual = document.createElement("div");
-      visual.className = "collection-card__visual";
+      var visual = document.createElement("a");
+      visual.className = "collection-card__visual collection-card__visual--link";
+      visual.href = productUrl;
       visual.setAttribute("aria-hidden", "true");
+      visual.tabIndex = -1;
 
       var img = document.createElement("img");
       img.src = images[i - 1];
@@ -105,26 +109,42 @@
       var copy = document.createElement("div");
       copy.className = "collection-card__copy collection-card__copy--product";
 
+      var titleLink = document.createElement("a");
+      titleLink.className = "collection-card__title collection-card__title--link";
+      titleLink.href = productUrl;
+      titleLink.textContent = titleText;
+      copy.appendChild(titleLink);
+
       var footer = document.createElement("div");
-      footer.className = "collection-card__footer";
+      footer.className = "collection-card__footer collection-card__footer--shop";
 
-      var btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "btn-ghost btn-ghost--select";
-      btn.textContent = t("collection_select");
+      var viewBtn = document.createElement("a");
+      viewBtn.className = "btn-ghost btn-ghost--select";
+      viewBtn.href = productUrl;
+      viewBtn.textContent = t("product_view");
 
-      footer.appendChild(btn);
-      if (titleText) {
-        var h2 = document.createElement("h2");
-        h2.className = "collection-card__title";
-        h2.textContent = titleText;
-        copy.appendChild(h2);
-      }
+      var addBtn = document.createElement("button");
+      addBtn.type = "button";
+      addBtn.className = "btn-shop btn-shop--primary collection-card__add";
+      addBtn.setAttribute("data-add-cart", productId);
+      addBtn.textContent = t("product_add_cart");
+
+      footer.appendChild(viewBtn);
+      footer.appendChild(addBtn);
       copy.appendChild(footer);
       article.appendChild(visual);
       article.appendChild(copy);
       productsGridEl.appendChild(article);
     }
+
+    productsGridEl.querySelectorAll("[data-add-cart]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-add-cart");
+        if (window.NostalgiaCart) {
+          window.NostalgiaCart.addAndNotify(id, 1);
+        }
+      });
+    });
   }
 
   function showProducts(catId) {

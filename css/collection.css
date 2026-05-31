@@ -300,6 +300,47 @@ body.collection-products-open .page-intro--collection {
   padding-top: 0;
 }
 
+.collection-card__title--link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  transition: color var(--transition);
+}
+
+.collection-card__title--link:hover {
+  color: var(--accent);
+}
+
+.collection-card__visual--link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.collection-card__price {
+  margin: 0 0 0.85rem;
+  font-family: var(--font-nav);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.collection-card__footer--shop {
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.collection-card__footer--shop .btn-shop {
+  width: 100%;
+  min-height: 2.45rem;
+  font-size: 0.62rem;
+}
+
+.collection-card__footer--shop .btn-ghost {
+  width: 100%;
+}
+
 .collection-card .btn-ghost {
   margin-top: 0;
   align-self: center;

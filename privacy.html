@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="logo/logo.png" type="image/png" />
+  <title>Nostalgia Collection · Προστασία Δεδομένων</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Montserrat:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/base.css?v=logo1" />
+  <link rel="stylesheet" href="css/side-nav.css?v=2" />
+  <link rel="stylesheet" href="css/legal.css" />
+  <link rel="stylesheet" href="css/shop.css" />
+  <link rel="stylesheet" href="css/account.css" />
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("nostalgia-theme");
+        if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+        else if (window.matchMedia("(prefers-color-scheme: dark)").matches) document.documentElement.setAttribute("data-theme", "dark");
+        else document.documentElement.setAttribute("data-theme", "light");
+      } catch (e) {}
+      try {
+        var l = localStorage.getItem("nostalgia-lang");
+        if (l === "en" || l === "el") document.documentElement.lang = l;
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body data-page="privacy">
+  <div class="page-wrap">
+    <header class="site-header">
+      <nav class="site-header__bar" data-i18n-aria="nav_aria">
+        <div class="mobile-nav-panel" id="mobile-nav-panel">
+        <div class="site-nav site-nav--left">
+          <a href="index.html" data-i18n="nav_home">Αρχική</a>
+          <a href="collection.html" data-i18n="nav_collection">Συλλογή</a>
+        </div>
+        <a class="site-header__logo site-header__logo--pulse" href="index.html" data-i18n-aria="logo_aria">
+          <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
+          <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
+        </a>
+        <div class="site-nav site-nav--right">
+          <a href="about.html" data-i18n="nav_about">Σχετικά</a>
+          <a href="contact.html" data-i18n="nav_contact">Επικοινωνία</a>
+          <button type="button" class="lang-toggle" id="lang-toggle" aria-live="polite">English</button>
+          <button type="button" class="theme-toggle" id="theme-toggle" aria-live="polite"></button>
+        </div>
+        </div>
+        <a class="site-header__logo site-header__logo--topbar" href="index.html" data-i18n-aria="logo_aria">
+          <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
+          <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
+        </a>
+        <button class="mobile-nav-toggle" type="button" aria-controls="mobile-nav-panel" aria-expanded="false" aria-label="Open navigation"><span></span><span></span><span></span></button>
+      </nav>
+    </header>
+
+    <main>
+      <section class="legal-page">
+        <nav class="legal-breadcrumb" aria-label="Breadcrumb">
+          <a href="index.html" data-i18n="nav_home">Αρχική</a>
+          <span class="legal-breadcrumb__sep" aria-hidden="true">·</span>
+          <span data-i18n="privacy_title">Προστασία Δεδομένων</span>
+        </nav>
+
+        <header class="page-intro page-intro--legal">
+          <h1 data-i18n="privacy_title">Προστασία Δεδομένων</h1>
+          <div class="section-rule" aria-hidden="true"></div>
+        </header>
+
+        <article class="legal-content" id="privacy-content"></article>
+
+        <p class="legal-cookie-link">
+          <button type="button" class="legal-cookie-link__btn" id="privacy-cookie-settings" data-i18n="cookie_manage">Ρυθμίσεις cookies</button>
+        </p>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="site-footer__layout">
+        <div class="site-footer__center">
+          <a class="site-footer__logo" href="index.html" data-i18n-aria="logo_aria">
+            <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="180" height="52" alt="Nostalgia Collection" />
+          </a>
+        </div>
+      </div>
+      <div class="site-footer__bar">
+        <nav class="site-footer__legal" data-i18n-aria="footer_legal_aria">
+          <a href="privacy.html" data-i18n="footer_privacy">Προστασία Δεδομένων</a>
+        </nav>
+        <p class="site-footer__copyright" data-i18n="footer_copyright">© 2026 Nostalgia. Με επιφύλαξη παντός δικαιώματος.</p>
+      </div>
+    </footer>
+  </div>
+  <script src="js/i18n.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/privacy-content.js"></script>
+  <script src="js/privacy.js"></script>
+  <script src="js/cookies.js"></script>
+  <script src="js/products.js"></script>
+  <script src="js/side-nav.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/account.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/header-scroll.js"></script>
+  <script>
+    document.getElementById("privacy-cookie-settings").addEventListener("click", function () {
+      if (window.NostalgiaCookies) window.NostalgiaCookies.openSettings();
+    });
+  </script>
+</body>
+</html>

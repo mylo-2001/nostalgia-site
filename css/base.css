@@ -190,6 +190,7 @@ img {
   top: 0;
   z-index: 50;
   overflow: visible;
+  isolation: isolate;
   padding: 0.65rem clamp(1rem, 4vw, 2.5rem);
   background: var(--header-bg);
   border-bottom: 1px solid var(--header-border);
@@ -496,6 +497,21 @@ img {
   align-items: flex-end;
   gap: 0.35rem;
   text-align: right;
+}
+
+.site-footer__legal a {
+  font-family: var(--font-nav);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--ink-muted);
+  transition: color var(--transition);
+}
+
+.site-footer__legal a:hover {
+  color: var(--accent);
 }
 
 .site-footer__copyright {

@@ -48,10 +48,29 @@
     ]
   };
 
+  var CAT_HERO = {
+    cat1: "product%20photo/art%20class%20murano%20candle/product%20photo%20home%20page%20.png",
+    cat2: "product%20photo/driftwood%20beeswax%20flame/product%20photo%20home%20page%20.png",
+    cat3: "product%20photo/liquid%20eternal/product%203.png",
+    cat4: "product%20photo/unique%20art%20vessel/product%204.png",
+  };
+
+  var CAT_HERO_META = {
+    cat1: { fit: "cover", position: "center 38%" },
+    cat2: { fit: "cover", position: "center center" },
+    cat3: { fit: "cover", position: "center 45%" },
+    cat4: { fit: "contain", position: "center center" },
+  };
+
   var categoriesEl;
   var productsEl;
   var productsGridEl;
   var productsTitleEl;
+  var productsCountEl;
+  var breadcrumbCurrentEl;
+  var heroImgEl;
+  var heroWrapEl;
+  var heroZoomEl;
   var backBtn;
 
   function $(sel) {
@@ -73,10 +92,60 @@
     return key;
   }
 
+  function applyHeroMeta(catId) {
+    var meta = CAT_HERO_META[catId] || { fit: "cover", position: "center center" };
+    if (heroWrapEl) {
+      heroWrapEl.classList.toggle("collection-catalog__hero--contain", meta.fit === "contain");
+    }
+    if (heroImgEl) {
+      heroImgEl.style.objectPosition = meta.position;
+    }
+  }
+
+  function restartHeroAnimation() {
+    if (!heroZoomEl) return;
+    heroZoomEl.classList.remove("is-animating");
+    void heroZoomEl.offsetWidth;
+    heroZoomEl.classList.add("is-animating");
+  }
+
+  function updateCategoryHero(catId) {
+    if (!heroImgEl || !CAT_HERO[catId]) return;
+    var src = CAT_HERO[catId];
+    var label = t("collection_" + catId);
+    applyHeroMeta(catId);
+
+    function reveal() {
+      heroImgEl.src = src;
+      heroImgEl.alt = label;
+      if (heroWrapEl) {
+        heroWrapEl.setAttribute("data-hero-cat", catId);
+      }
+      restartHeroAnimation();
+    }
+
+    if (heroImgEl.getAttribute("src") === src) {
+      heroImgEl.alt = label;
+      restartHeroAnimation();
+      return;
+    }
+
+    var preload = new Image();
+    preload.onload = reveal;
+    preload.onerror = reveal;
+    preload.src = src;
+    if (preload.complete) reveal();
+  }
+
   function renderProducts(catId) {
     if (!productsGridEl) return;
     productsGridEl.innerHTML = "";
     var images = (window.NostalgiaProducts && window.NostalgiaProducts.CAT_IMAGES[catId]) || [];
+
+    if (productsCountEl) {
+      productsCountEl.textContent = t("collection_items_count").replace("{n}", String(images.length));
+    }
+
     for (var i = 1; i <= images.length; i++) {
       var productId = catId + "-" + i;
       var titleText = window.NostalgiaProducts
@@ -87,17 +156,18 @@
         : "product.html?id=" + encodeURIComponent(productId);
 
       var article = document.createElement("article");
-      article.className = "collection-card collection-card--product";
+      article.className = "collection-product";
       article.setAttribute("data-category", catId);
       article.setAttribute("data-product-id", productId);
       article.setAttribute("role", "listitem");
-      article.setAttribute("aria-label", titleText);
 
-      var visual = document.createElement("a");
-      visual.className = "collection-card__visual collection-card__visual--link";
-      visual.href = productUrl;
-      visual.setAttribute("aria-hidden", "true");
-      visual.tabIndex = -1;
+      var link = document.createElement("a");
+      link.className = "collection-product__link";
+      link.href = productUrl;
+      link.setAttribute("aria-label", titleText);
+
+      var visual = document.createElement("div");
+      visual.className = "collection-product__visual";
 
       var img = document.createElement("img");
       img.src = images[i - 1];
@@ -106,45 +176,19 @@
       img.decoding = "async";
       visual.appendChild(img);
 
-      var copy = document.createElement("div");
-      copy.className = "collection-card__copy collection-card__copy--product";
+      var meta = document.createElement("div");
+      meta.className = "collection-product__meta";
 
-      var titleLink = document.createElement("a");
-      titleLink.className = "collection-card__title collection-card__title--link";
-      titleLink.href = productUrl;
-      titleLink.textContent = titleText;
-      copy.appendChild(titleLink);
+      var name = document.createElement("h3");
+      name.className = "collection-product__name";
+      name.textContent = titleText;
 
-      var footer = document.createElement("div");
-      footer.className = "collection-card__footer collection-card__footer--shop";
-
-      var viewBtn = document.createElement("a");
-      viewBtn.className = "btn-ghost btn-ghost--select";
-      viewBtn.href = productUrl;
-      viewBtn.textContent = t("product_view");
-
-      var addBtn = document.createElement("button");
-      addBtn.type = "button";
-      addBtn.className = "btn-shop btn-shop--primary collection-card__add";
-      addBtn.setAttribute("data-add-cart", productId);
-      addBtn.textContent = t("product_add_cart");
-
-      footer.appendChild(viewBtn);
-      footer.appendChild(addBtn);
-      copy.appendChild(footer);
-      article.appendChild(visual);
-      article.appendChild(copy);
+      meta.appendChild(name);
+      link.appendChild(visual);
+      link.appendChild(meta);
+      article.appendChild(link);
       productsGridEl.appendChild(article);
     }
-
-    productsGridEl.querySelectorAll("[data-add-cart]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var id = btn.getAttribute("data-add-cart");
-        if (window.NostalgiaCart) {
-          window.NostalgiaCart.addAndNotify(id, 1);
-        }
-      });
-    });
   }
 
   function showProducts(catId) {
@@ -161,6 +205,10 @@
       productsTitleEl.textContent = t("collection_" + catId);
       productsTitleEl.setAttribute("data-active-cat", catId);
     }
+    if (breadcrumbCurrentEl) {
+      breadcrumbCurrentEl.textContent = t("collection_" + catId);
+    }
+    updateCategoryHero(catId);
     renderProducts(catId);
     try {
       if (history.replaceState) {
@@ -209,6 +257,11 @@
     productsEl = $("#collection-products");
     productsGridEl = $("#collection-products-grid");
     productsTitleEl = $("#collection-products-title");
+    productsCountEl = $("#collection-products-count");
+    breadcrumbCurrentEl = $("#collection-breadcrumb-current");
+    heroImgEl = $("#collection-catalog-hero-img");
+    heroWrapEl = $("#collection-catalog-hero");
+    heroZoomEl = $("#collection-catalog-hero-zoom");
     backBtn = $("#collection-back");
 
     getCategoryButtons().forEach(function (btn) {
@@ -231,6 +284,8 @@
       var active = productsTitleEl && productsTitleEl.getAttribute("data-active-cat");
       if (active && productsEl && !productsEl.hidden) {
         productsTitleEl.textContent = t("collection_" + active);
+        if (breadcrumbCurrentEl) breadcrumbCurrentEl.textContent = t("collection_" + active);
+        updateCategoryHero(active);
         renderProducts(active);
       }
     };

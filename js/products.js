@@ -100,6 +100,14 @@
 
   refreshTitles();
 
+  function getCountByCategory(catId) {
+    return (CAT_IMAGES[catId] || []).length;
+  }
+
+  function getTotalCount() {
+    return catalog.length;
+  }
+
   window.NostalgiaProducts = {
     CAT_IDS: CAT_IDS,
     CAT_IMAGES: CAT_IMAGES,
@@ -111,6 +119,8 @@
       refreshTitles();
       return byId[id] || null;
     },
+    getCountByCategory: getCountByCategory,
+    getTotalCount: getTotalCount,
     getTitle: getTitle,
     getProductUrl: function (id) {
       return "product.html?id=" + encodeURIComponent(id);

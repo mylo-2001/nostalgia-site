@@ -46,6 +46,7 @@
   }
 
   function initMobileNav() {
+    if (document.getElementById("side-nav-trigger")) return;
     var header = document.querySelector(".site-header");
     var toggle = document.querySelector(".mobile-nav-toggle");
     var panel = document.getElementById("mobile-nav-panel");

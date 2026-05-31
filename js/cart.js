@@ -177,6 +177,24 @@
     document.body.classList.remove("cart-modal-open");
   }
 
+  function ensureHeaderCorner() {
+    var header = document.querySelector(".site-header");
+    var bar = document.querySelector(".site-header__bar");
+    var mount = bar || header;
+    if (!mount) return null;
+
+    var corner = document.getElementById("site-header-corner");
+    if (!corner) {
+      corner = document.createElement("div");
+      corner.className = "site-header__corner";
+      corner.id = "site-header-corner";
+      mount.appendChild(corner);
+    } else if (corner.parentNode !== mount) {
+      mount.appendChild(corner);
+    }
+    return corner;
+  }
+
   function injectHeaderCart() {
     var header = document.querySelector(".site-header");
     var navRight = document.querySelector(".site-nav--right");
@@ -186,7 +204,7 @@
     if (!link) {
       link = document.createElement("a");
       link.href = "cart.html";
-      link.className = "cart-link cart-link--corner";
+      link.className = "cart-link";
       link.id = "cart-link";
       link.setAttribute("data-i18n-aria", "cart_aria");
       link.innerHTML =
@@ -195,8 +213,6 @@
         '<path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>' +
         "</svg>" +
         '<span class="cart-link__badge" id="cart-badge" hidden>0</span>';
-    } else {
-      link.classList.add("cart-link--corner");
     }
 
     var toolsWrap = navRight && navRight.querySelector(".site-nav__tools");
@@ -211,8 +227,10 @@
       toolsWrap.remove();
     }
 
-    if (link.parentNode !== header) {
-      header.appendChild(link);
+    link.classList.remove("cart-link--corner");
+    var corner = ensureHeaderCorner();
+    if (corner && link.parentNode !== corner) {
+      corner.appendChild(link);
     }
 
     updateBadge();
@@ -277,6 +295,8 @@
     showAddedModal: openModal,
     closeModal: closeModal,
     bindQtyControls: bindQtyControls,
+    ensureHeaderCorner: ensureHeaderCorner,
+    refreshHeaderCart: injectHeaderCart,
     addAndNotify: function (productId, qty) {
       addItem(productId, qty);
       openModal(productId);

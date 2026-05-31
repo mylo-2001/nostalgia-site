@@ -10,8 +10,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Montserrat:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/base.css?v=logo1" />
+  <link rel="stylesheet" href="css/side-nav.css?v=2" />
   <link rel="stylesheet" href="css/collection.css" />
+  <link rel="stylesheet" href="css/legal.css" />
   <link rel="stylesheet" href="css/shop.css" />
+  <link rel="stylesheet" href="css/account.css" />
   <script>
     (function () {
       try {
@@ -299,13 +302,40 @@
           </section>
         </div>
 
-        <div id="collection-products" class="collection-panel collection-panel--products" hidden aria-hidden="true">
-          <div class="collection-products-brandbar" data-i18n="collection_brand_strip">Nostalgia Candles</div>
-          <div class="collection-toolbar">
-            <button type="button" id="collection-back" class="collection-back btn-ghost btn-ghost--back" data-i18n="collection_back">Πίσω στις κατηγορίες</button>
-            <h2 id="collection-products-title" class="collection-products-title"></h2>
+        <div id="collection-products" class="collection-panel collection-panel--products collection-catalog" hidden aria-hidden="true">
+          <figure class="collection-catalog__hero" id="collection-catalog-hero">
+            <div class="collection-catalog__hero-zoom" id="collection-catalog-hero-zoom">
+              <img
+                class="collection-catalog__hero-img"
+                id="collection-catalog-hero-img"
+                src=""
+                alt=""
+                width="1600"
+                height="640"
+                decoding="async"
+                fetchpriority="high"
+              />
+            </div>
+            <div class="collection-catalog__hero-overlay" aria-hidden="true"></div>
+          </figure>
+          <div class="collection-catalog__inner">
+            <nav class="collection-breadcrumb" aria-label="Breadcrumb">
+              <a href="index.html" data-i18n="nav_home">Αρχική</a>
+              <span class="collection-breadcrumb__sep" aria-hidden="true">›</span>
+              <a href="collection.html" data-i18n="nav_collection">Συλλογή</a>
+              <span class="collection-breadcrumb__sep" aria-hidden="true">›</span>
+              <span class="collection-breadcrumb__current" id="collection-breadcrumb-current"></span>
+            </nav>
+            <header class="collection-catalog__head">
+              <h2 id="collection-products-title" class="collection-catalog__title"></h2>
+              <p class="collection-catalog__lead" data-i18n="collection_catalog_lead">Χειροποίητα κεριά τέχνης — μια εμπειρία φωτός και μνήμης.</p>
+            </header>
+            <div class="collection-catalog__bar">
+              <button type="button" id="collection-back" class="collection-catalog__back" data-i18n="collection_back">Πίσω στις κατηγορίες</button>
+              <p class="collection-catalog__count" id="collection-products-count" aria-live="polite"></p>
+            </div>
+            <div id="collection-products-grid" class="collection-catalog__grid" role="list"></div>
           </div>
-          <div id="collection-products-grid" class="collection-grid collection-grid--products" role="list"></div>
         </div>
       </section>
     </main>
@@ -346,6 +376,9 @@
         </div>
       </div>
       <div class="site-footer__bar">
+        <nav class="site-footer__legal" data-i18n-aria="footer_legal_aria">
+          <a href="privacy.html" data-i18n="footer_privacy">Προστασία Δεδομένων</a>
+        </nav>
         <p class="site-footer__copyright" data-i18n="footer_copyright">© 2026 Nostalgia. Με επιφύλαξη παντός δικαιώματος.</p>
         <p class="site-footer__hosting">
           <span data-i18n="footer_hosting">Hosting by</span>
@@ -358,9 +391,12 @@
     </button>
   </div>
   <script src="js/i18n.js"></script>
+  <script src="js/cookies.js"></script>
   <script src="js/products.js"></script>
+  <script src="js/side-nav.js"></script>
   <script src="js/cart.js"></script>
   <script src="js/collection.js"></script>
+  <script src="js/account.js"></script>
   <script src="js/theme.js"></script>
   <script src="js/nav-mega.js"></script>
   <script src="js/header-scroll.js"></script>

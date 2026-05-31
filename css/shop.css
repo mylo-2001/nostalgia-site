@@ -65,7 +65,73 @@
   border-color: rgba(127, 92, 44, 0.28);
 }
 
-/* Καλάθι — τερμα δεξιά γωνία header, ξεχωριστά από nav */
+/* Account + cart — τερμα δεξιά γωνία header */
+.site-header__bar {
+  position: relative;
+}
+
+.site-header__corner {
+  position: absolute;
+  top: 50%;
+  right: clamp(0.55rem, 1.6vw, 1.1rem);
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  transform: translateY(-50%);
+  pointer-events: auto;
+}
+
+.site-header__corner .cart-link,
+.site-header__corner .header-account-btn {
+  flex-shrink: 0;
+}
+
+.site-header__corner .cart-link--corner {
+  position: static;
+  top: auto;
+  right: auto;
+  transform: none;
+  margin: 0;
+}
+
+.site-header__corner .cart-link--corner:hover {
+  transform: translateY(-1px);
+}
+
+.site-header__corner .cart-link:hover,
+.site-header__corner .header-account-btn:hover {
+  transform: translateY(-1px);
+}
+
+body.has-side-nav .site-header__tools {
+  margin-right: 6.35rem;
+}
+
+@media (min-width: 901px) {
+  .site-header {
+    position: sticky;
+  }
+}
+
+@media (max-width: 900px) {
+  body.has-side-nav .site-header__corner {
+    position: static;
+    top: auto;
+    right: auto;
+    transform: none;
+    margin-left: auto;
+    flex: 0 0 auto;
+    align-self: center;
+    z-index: 90;
+  }
+
+  body.has-side-nav .site-header__tools {
+    margin-right: 0;
+  }
+}
+
+/* Legacy single-icon corner fallback */
 .cart-link--corner {
   position: absolute;
   top: 50%;
@@ -82,10 +148,6 @@
 @media (min-width: 901px) {
   .site-header {
     position: sticky;
-  }
-
-  .site-nav--right {
-    padding-right: 3.35rem;
   }
 }
 

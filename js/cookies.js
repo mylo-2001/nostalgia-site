@@ -143,9 +143,21 @@
     });
   }
 
+  function applyCookieI18nOnly() {
+    if (!window.NostalgiaI18n) return;
+    [bannerEl, settingsEl].forEach(function (root) {
+      if (!root) return;
+      root.querySelectorAll("[data-i18n]").forEach(function (el) {
+        var key = el.getAttribute("data-i18n");
+        if (!key) return;
+        var val = t(key);
+        if (val != null && val !== key) el.textContent = val;
+      });
+    });
+  }
+
   function applyI18n() {
-    if (!window.NostalgiaI18n || !window.NostalgiaI18n.applyLang) return;
-    window.NostalgiaI18n.applyLang(window.NostalgiaI18n.getLang(), { restartStory: false });
+    applyCookieI18nOnly();
   }
 
   function showBanner() {

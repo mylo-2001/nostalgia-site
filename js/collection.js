@@ -81,7 +81,6 @@
   var heroZoomEl;
   var backBtn;
   var productsLeadEl;
-  var filterPriceEl;
   var sortEl;
   var searchEl;
   var activeCategory = null;
@@ -178,7 +177,6 @@
         title: window.NostalgiaProducts
           ? window.NostalgiaProducts.getTitle(catId, i)
           : t("collection_" + catId) + " · " + i,
-        price: getPrice(catId, i),
       });
     }
 
@@ -247,12 +245,7 @@
       name.className = "collection-product__name";
       name.textContent = titleText;
 
-      var price = document.createElement("p");
-      price.className = "collection-product__price";
-      price.textContent = item.price.toFixed(2) + "€";
-
       meta.appendChild(name);
-      meta.appendChild(price);
       link.appendChild(visual);
       link.appendChild(meta);
       article.appendChild(link);
@@ -344,7 +337,6 @@
     heroWrapEl = $("#collection-catalog-hero");
     heroZoomEl = $("#collection-catalog-hero-zoom");
     backBtn = $("#collection-back");
-    filterPriceEl = $("#collection-filter-price");
     sortEl = $("#collection-sort");
     searchEl = $("#collection-search");
 
@@ -359,12 +351,6 @@
     if (backBtn) {
       backBtn.addEventListener("click", function () {
         showCategories();
-      });
-    }
-
-    if (filterPriceEl) {
-      filterPriceEl.addEventListener("change", function () {
-        if (activeCategory) renderProducts(activeCategory);
       });
     }
 
@@ -396,26 +382,10 @@
     onHash();
   }
 
-  function getPrice(catId, index) {
-    var base = { cat1: 48, cat2: 62, cat3: 74, cat4: 89, cat5: 116, cat6: 68, cat7: 54, cat8: 96 };
-    return (base[catId] || 50) + ((index - 1) % 5) * 7;
-  }
-
   function applyFilters(list) {
     var out = list.slice();
-    var priceVal = filterPriceEl ? filterPriceEl.value : "all";
     var sortVal = sortEl ? sortEl.value : "featured";
     var q = searchEl ? searchEl.value.trim().toLowerCase() : "";
-
-    if (priceVal && priceVal !== "all") {
-      out = out.filter(function (item) {
-        if (priceVal === "120+") return item.price >= 120;
-        var parts = priceVal.split("-");
-        var min = parseFloat(parts[0]) || 0;
-        var max = parseFloat(parts[1]) || Infinity;
-        return item.price >= min && item.price < max;
-      });
-    }
 
     if (q) {
       out = out.filter(function (item) {
@@ -423,11 +393,7 @@
       });
     }
 
-    if (sortVal === "price-asc") {
-      out.sort(function (a, b) { return a.price - b.price; });
-    } else if (sortVal === "price-desc") {
-      out.sort(function (a, b) { return b.price - a.price; });
-    } else if (sortVal === "name-asc") {
+    if (sortVal === "name-asc") {
       out.sort(function (a, b) { return a.title.localeCompare(b.title); });
     } else {
       out.sort(function (a, b) { return a.index - b.index; });

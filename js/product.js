@@ -58,7 +58,6 @@
       '    <h1 class="product-info__title">' +
       product.title +
       "</h1>" +
-      '    <p class="product-info__price">' + formatPrice(product) + "</p>" +
       '    <p class="product-info__shipping">' +
       '      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>' +
       '      <span data-i18n="cart_shipping_free">' +
@@ -121,14 +120,6 @@
     }
 
     bindReviews(product);
-  }
-
-  function formatPrice(product) {
-    var m = String(product.id || "").match(/^cat(\d+)-(\d+)$/);
-    var catNo = m ? parseInt(m[1], 10) : 1;
-    var idx = m ? parseInt(m[2], 10) : 1;
-    var base = { 1: 48, 2: 62, 3: 74, 4: 89, 5: 116, 6: 68, 7: 54, 8: 96 };
-    return (((base[catNo] || 50) + ((idx - 1) % 5) * 7).toFixed(2) + "€");
   }
 
   function getWishlist() {

@@ -685,14 +685,6 @@ body.cart-modal-open {
   color: var(--ink);
 }
 
-.product-info__price {
-  margin: 0 0 0.35rem;
-  font-family: var(--font-nav);
-  font-size: clamp(1.25rem, 2vw, 1.55rem);
-  font-weight: 600;
-  color: var(--accent);
-}
-
 .product-info__shipping {
   display: flex;
   align-items: center;

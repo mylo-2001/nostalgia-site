@@ -354,15 +354,6 @@ body.collection-products-open .page-intro--collection {
   color: inherit;
 }
 
-.collection-card__price {
-  margin: 0 0 0.85rem;
-  font-family: var(--font-nav);
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--accent);
-  letter-spacing: 0.04em;
-}
-
 .collection-card__footer--shop {
   flex-direction: column;
   gap: 0.55rem;
@@ -1113,14 +1104,6 @@ body.collection-products-open .site-footer {
   text-transform: uppercase;
   color: rgba(245, 240, 232, 0.9);
   transition: color 0.25s ease;
-}
-
-.collection-product__price {
-  margin: 0.35rem 0 0;
-  font-family: var(--font-nav);
-  font-size: 0.62rem;
-  letter-spacing: 0.08em;
-  color: rgba(245, 240, 232, 0.72);
 }
 
 .collection-product:hover .collection-product__name {

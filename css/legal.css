@@ -422,3 +422,165 @@ body.cookie-settings-open {
     animation: none;
   }
 }
+
+/* ——— FAQ page (Trudon-like structure) ——— */
+.faq-content {
+  margin-top: 1.5rem;
+}
+
+.faq-toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.9rem;
+  margin-bottom: 1.45rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--rule-hairline);
+}
+
+.faq-toc a {
+  font-family: var(--font-nav);
+  font-size: 0.56rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  transition: color var(--transition);
+}
+
+.faq-toc a:hover {
+  color: var(--accent);
+}
+
+.faq-group {
+  margin-top: 1.35rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--rule-hairline);
+  scroll-margin-top: 5.8rem;
+}
+
+.faq-group h2 {
+  margin: 0 0 0.85rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.02rem, 2.3vw, 1.22rem);
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+.faq-item {
+  border: 1px solid var(--rule-hairline);
+  background: color-mix(in srgb, var(--surface-paper) 94%, transparent);
+  margin-bottom: 0.55rem;
+}
+
+.faq-item summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.7rem 0.8rem;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.4;
+  color: var(--ink);
+  position: relative;
+  padding-right: 2rem;
+}
+
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-item summary::after {
+  content: "+";
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--accent);
+  font-family: var(--font-nav);
+  font-size: 0.9rem;
+}
+
+.faq-item[open] summary::after {
+  content: "−";
+}
+
+.faq-item p {
+  margin: 0;
+  padding: 0 0.8rem 0.8rem;
+  color: var(--ink-muted);
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.legal-trust-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin-top: 2rem;
+}
+
+.legal-trust-card {
+  border: 1px solid var(--rule-hairline);
+  background: color-mix(in srgb, var(--surface-paper) 94%, transparent);
+  padding: 0.85rem 0.9rem;
+}
+
+.legal-trust-card h3 {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-nav);
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.legal-trust-card p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.legal-subtitle {
+  margin: 0 0 0.65rem;
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 2.1vw, 1.16rem);
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.legal-table-wrap {
+  margin: 0.7rem 0 1rem;
+  border: 1px solid var(--rule-hairline);
+  overflow-x: auto;
+}
+
+.legal-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 24rem;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+}
+
+.legal-table th,
+.legal-table td {
+  padding: 0.55rem 0.65rem;
+  border-bottom: 1px solid var(--rule-hairline);
+  text-align: left;
+}
+
+.legal-table th {
+  font-family: var(--font-nav);
+  font-size: 0.55rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.legal-table tr:last-child td {
+  border-bottom: none;
+}
+
+@media (max-width: 760px) {
+  .legal-trust-grid {
+    grid-template-columns: 1fr;
+  }
+}

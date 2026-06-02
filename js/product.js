@@ -1,4 +1,7 @@
 (function () {
+  var WISHLIST_KEY = "nostalgia-wishlist";
+  var REVIEWS_KEY = "nostalgia-reviews";
+
   function t(key) {
     if (window.NostalgiaI18n && typeof window.NostalgiaI18n.t === "function") {
       return window.NostalgiaI18n.t(key);
@@ -55,6 +58,7 @@
       '    <h1 class="product-info__title">' +
       product.title +
       "</h1>" +
+      '    <p class="product-info__price">' + formatPrice(product) + "</p>" +
       '    <p class="product-info__shipping">' +
       '      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>' +
       '      <span data-i18n="cart_shipping_free">' +
@@ -80,9 +84,14 @@
       '      <button type="button" class="btn-shop btn-shop--buy" id="product-buy-now" data-i18n="product_buy_now">' +
       t("product_buy_now") +
       "</button>" +
+      '      <button type="button" class="btn-shop btn-shop--ghost" id="product-toggle-wishlist">' +
+      getWishlistLabel(product.id) +
+      "</button>" +
       "    </div>" +
       "  </div>" +
-      "</div>";
+      "</div>" +
+      renderReviewsHTML(product) +
+      renderRelatedHTML(product);
 
     var qtyInput = document.getElementById("product-qty");
     document.getElementById("product-qty-minus").addEventListener("click", function () {
@@ -102,6 +111,152 @@
       window.NostalgiaCart.addItem(product.id, qty);
       window.location.href = "checkout.html";
     });
+
+    var wishlistBtn = document.getElementById("product-toggle-wishlist");
+    if (wishlistBtn) {
+      wishlistBtn.addEventListener("click", function () {
+        toggleWishlist(product.id);
+        wishlistBtn.textContent = getWishlistLabel(product.id);
+      });
+    }
+
+    bindReviews(product);
+  }
+
+  function formatPrice(product) {
+    var m = String(product.id || "").match(/^cat(\d+)-(\d+)$/);
+    var catNo = m ? parseInt(m[1], 10) : 1;
+    var idx = m ? parseInt(m[2], 10) : 1;
+    var base = { 1: 48, 2: 62, 3: 74, 4: 89, 5: 116, 6: 68, 7: 54, 8: 96 };
+    return (((base[catNo] || 50) + ((idx - 1) % 5) * 7).toFixed(2) + "€");
+  }
+
+  function getWishlist() {
+    try {
+      return JSON.parse(localStorage.getItem(WISHLIST_KEY) || "[]");
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveWishlist(list) {
+    try {
+      localStorage.setItem(WISHLIST_KEY, JSON.stringify(list));
+    } catch (e) {}
+  }
+
+  function isWishlisted(id) {
+    return getWishlist().indexOf(id) !== -1;
+  }
+
+  function toggleWishlist(id) {
+    var list = getWishlist();
+    var idx = list.indexOf(id);
+    if (idx === -1) list.push(id);
+    else list.splice(idx, 1);
+    saveWishlist(list);
+  }
+
+  function getWishlistLabel(id) {
+    return isWishlisted(id) ? "♥ " + t("wishlist_remove") : "♡ " + t("wishlist_add");
+  }
+
+  function getReviews(productId) {
+    try {
+      var all = JSON.parse(localStorage.getItem(REVIEWS_KEY) || "{}");
+      return Array.isArray(all[productId]) ? all[productId] : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveReview(productId, review) {
+    try {
+      var all = JSON.parse(localStorage.getItem(REVIEWS_KEY) || "{}");
+      if (!Array.isArray(all[productId])) all[productId] = [];
+      all[productId].unshift(review);
+      localStorage.setItem(REVIEWS_KEY, JSON.stringify(all));
+    } catch (e) {}
+  }
+
+  function escapeHtml(str) {
+    return String(str || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function renderReviewsHTML(product) {
+    var reviews = getReviews(product.id);
+    var avg = reviews.length
+      ? (reviews.reduce(function (s, r) { return s + r.rating; }, 0) / reviews.length).toFixed(1)
+      : "0.0";
+    var list = reviews
+      .slice(0, 6)
+      .map(function (r) {
+        return (
+          '<li><strong>' + escapeHtml(r.name) + "</strong>" +
+          '<span class="product-reviews__stars">' + "★".repeat(r.rating) + "</span>" +
+          "<p>" + escapeHtml(r.text) + "</p></li>"
+        );
+      })
+      .join("");
+    return (
+      '<section class="product-reviews">' +
+      '  <h2>' + t("reviews_title") + '</h2>' +
+      '  <p class="product-reviews__summary">' + t("reviews_avg") + ": " + avg + " · " + reviews.length + " " + t("reviews_count") + "</p>" +
+      '  <form class="product-reviews__form" id="product-review-form">' +
+      '    <input id="review-name" type="text" placeholder="' + t("reviews_name") + '" required />' +
+      '    <select id="review-rating"><option value="5">5 ★</option><option value="4">4 ★</option><option value="3">3 ★</option><option value="2">2 ★</option><option value="1">1 ★</option></select>' +
+      '    <textarea id="review-text" placeholder="' + t("reviews_placeholder") + '" required></textarea>' +
+      '    <button type="submit" class="btn-shop btn-shop--primary">' + t("reviews_submit") + "</button>" +
+      "  </form>" +
+      '  <ul class="product-reviews__list">' + list + "</ul>" +
+      "</section>"
+    );
+  }
+
+  function bindReviews(product) {
+    var form = document.getElementById("product-review-form");
+    if (!form) return;
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var nameEl = document.getElementById("review-name");
+      var ratingEl = document.getElementById("review-rating");
+      var textEl = document.getElementById("review-text");
+      saveReview(product.id, {
+        name: (nameEl.value || "").trim() || "Guest",
+        rating: Math.max(1, Math.min(5, parseInt(ratingEl.value, 10) || 5)),
+        text: (textEl.value || "").trim(),
+      });
+      renderProduct(product);
+    });
+  }
+
+  function renderRelatedHTML(product) {
+    var all = window.NostalgiaProducts && typeof window.NostalgiaProducts.getAll === "function"
+      ? window.NostalgiaProducts.getAll()
+      : [];
+    var related = all.filter(function (p) { return p.catId !== product.catId; }).sort(function () { return Math.random() - 0.5; }).slice(0, 4);
+    if (!related.length) return "";
+    var cards = related.map(function (item) {
+      return (
+        '<article class="related-card">' +
+        '  <a href="product.html?id=' + encodeURIComponent(item.id) + '">' +
+        '    <img src="' + item.image + '" alt="' + escapeHtml(item.title) + '" loading="lazy" decoding="async" />' +
+        '    <h3>' + escapeHtml(item.title) + '</h3>' +
+        "  </a>" +
+        "</article>"
+      );
+    }).join("");
+    return (
+      '<section class="related-products">' +
+      '  <h2>' + t("related_title") + "</h2>" +
+      '  <div class="related-products__grid">' + cards + "</div>" +
+      "</section>"
+    );
   }
 
   function init() {

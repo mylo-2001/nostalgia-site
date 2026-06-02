@@ -1,0 +1,379 @@
+(function () {
+  var initialized = false;
+
+  function t(key) {
+    if (window.NostalgiaI18n && typeof window.NostalgiaI18n.t === "function") {
+      return window.NostalgiaI18n.t(key);
+    }
+    return key;
+  }
+
+  function ensureAnnouncement() {
+    var existing = document.getElementById("site-announcement");
+    if (existing) existing.remove();
+  }
+
+  function footerTemplate() {
+    return (
+      '<div class="site-footer__layout site-footer__layout--rich">' +
+      '  <div class="site-footer__center site-footer__center--brand">' +
+      '    <a class="site-footer__logo" href="index.html" data-i18n-aria="logo_aria">' +
+      '      <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="180" height="52" alt="Nostalgia Collection" />' +
+      '      <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="180" height="52" alt="Nostalgia Collection" />' +
+      "    </a>" +
+      '    <p class="site-footer__tagline" data-i18n="footer_tagline">' + t("footer_tagline") + "</p>" +
+      '    <ul class="site-footer__lines">' +
+      '      <li data-i18n="footer_address">' + t("footer_address") + "</li>" +
+      "      <li><span data-i18n=\"footer_phone_label\">" + t("footer_phone_label") + '</span> <a href="tel:+306939411774">+30 693 941 1774</a></li>' +
+      '      <li><a href="mailto:mgerostathi@gmail.com">mgerostathi@gmail.com</a></li>' +
+      "    </ul>" +
+      "  </div>" +
+      '  <div class="site-footer__links">' +
+      '    <section class="site-footer__col">' +
+      '      <h4 data-i18n="footer_orders_title">' + t("footer_orders_title") + "</h4>" +
+      '      <ul class="site-footer__list">' +
+      "        <li><a href=\"account.html?mode=login\" data-i18n=\"account_my_account\">" + t("account_my_account") + "</a></li>" +
+      '        <li><a href="shipping-returns.html" data-i18n="footer_shipping_returns">' + t("footer_shipping_returns") + "</a></li>" +
+      '        <li><a href="payments.html" data-i18n="footer_payments">' + t("footer_payments") + "</a></li>" +
+      '        <li><a href="faq.html" data-i18n="footer_faq">' + t("footer_faq") + "</a></li>" +
+      "      </ul>" +
+      "    </section>" +
+      '    <section class="site-footer__col">' +
+      '      <h4 data-i18n="footer_services_title">' + t("footer_services_title") + "</h4>" +
+      '      <ul class="site-footer__list">' +
+      '        <li><a href="about.html" data-i18n="nav_about">' + t("nav_about") + "</a></li>" +
+      '        <li><a href="contact.html" data-i18n="nav_contact">' + t("nav_contact") + "</a></li>" +
+      "      </ul>" +
+      "    </section>" +
+      '    <section class="site-footer__col">' +
+      '      <h4 data-i18n="footer_information_title">' + t("footer_information_title") + "</h4>" +
+      '      <ul class="site-footer__list">' +
+      '        <li><a href="journal.html" data-i18n="footer_journal">' + t("footer_journal") + "</a></li>" +
+      '        <li><a href="terms.html" data-i18n="footer_terms">' + t("footer_terms") + "</a></li>" +
+      '        <li><a href="privacy.html" data-i18n="footer_privacy">' + t("footer_privacy") + "</a></li>" +
+      "      </ul>" +
+      "    </section>" +
+      "  </div>" +
+      "</div>" +
+      '<div class="site-footer__bar">' +
+      '  <nav class="site-footer__legal site-footer__legal--bottom">' +
+      '    <a href="terms.html" data-i18n="footer_terms">Terms</a>' +
+      '    <a href="privacy.html" data-i18n="footer_privacy">Privacy</a>' +
+      "  </nav>" +
+      '  <p class="site-footer__copyright" data-i18n="footer_copyright">' + t("footer_copyright") + "</p>" +
+      '  <div class="site-footer__socials site-footer__socials--bottom">' +
+      '    <a class="site-footer__social-link" href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" aria-label="Facebook">' +
+      '      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13.5 8.5V6.8c0-.6.4-.8.8-.8h1.8V3h-2.5c-2.8 0-3.4 2-3.4 3.3v2.2H8v3h2.2V21h3.3v-6.5h2.2l.4-3h-2.6z"/></svg>' +
+      "    </a>" +
+      '    <a class="site-footer__social-link" href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">' +
+      '      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5" ry="5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor"/></svg>' +
+      "    </a>" +
+      '    <a class="site-footer__social-link" href="https://www.linkedin.com/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">' +
+      '      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.2 8.7A1.9 1.9 0 1 1 6.2 5a1.9 1.9 0 0 1 0 3.7zM4.6 9.9h3.2V20H4.6zM9.8 9.9h3v1.4h.1c.4-.8 1.5-1.7 3.1-1.7 3.3 0 3.9 2.2 3.9 5V20h-3.2v-4.7c0-1.1 0-2.5-1.6-2.5s-1.8 1.2-1.8 2.4V20H9.8z"/></svg>' +
+      "    </a>" +
+      '    <a class="site-footer__social-link" href="https://www.tiktok.com/" target="_blank" rel="noopener noreferrer" aria-label="TikTok">' +
+      '      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M14.8 4c.5 1.4 1.5 2.5 2.9 3.1.8.3 1.6.5 2.3.5v2.8c-1 0-2-.2-2.9-.6v5.6c0 2.7-2.2 4.9-4.9 4.9a4.9 4.9 0 0 1 0-9.8c.3 0 .6 0 .9.1v2.9a2 2 0 0 0-.9-.2 2.1 2.1 0 1 0 2.1 2.1V4h2.5z"/></svg>' +
+      "    </a>" +
+      '    <a class="site-footer__social-link" href="https://www.pinterest.com/" target="_blank" rel="noopener noreferrer" aria-label="Pinterest">' +
+      '      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3a9 9 0 0 0-3.3 17.4l1.2-4.4c-.3-.7-.6-1.7-.6-2.8 0-2.3 1.3-4 3.1-4 1.5 0 2.2 1.1 2.2 2.5 0 1.5-1 3.8-1.5 5.9-.4 1.7.9 3.1 2.6 3.1 3.2 0 5.3-4.1 5.3-8.9A8.3 8.3 0 0 0 12 3zm0 0"/></svg>' +
+      "    </a>" +
+      "  </div>" +
+      "</div>"
+    );
+  }
+
+  function enhanceFooter() {
+    var footer = document.querySelector(".site-footer");
+    if (!footer) return;
+    footer.innerHTML = footerTemplate();
+  }
+
+  function ensureFooterStyles() {
+    if (document.getElementById("site-chrome-footer-style")) return;
+    var style = document.createElement("style");
+    style.id = "site-chrome-footer-style";
+    style.textContent = `
+      .site-footer {
+        padding-top: 2.8rem;
+      }
+      .site-footer__layout--rich {
+        display: grid;
+        grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+        align-items: start;
+        gap: 1.6rem 2.6rem;
+      }
+      .site-footer__center--brand {
+        grid-column: 1;
+        max-width: 22rem;
+        text-align: left;
+      }
+      .site-footer__center--brand .site-footer__logo {
+        justify-content: flex-start;
+        margin: 0 0 0.95rem;
+      }
+      .site-footer__center--brand .site-footer__tagline,
+      .site-footer__center--brand .site-footer__lines {
+        text-align: left;
+        margin-left: 0;
+        margin-right: 0;
+      }
+      .site-footer__center--brand .site-footer__tagline {
+        font-family: var(--font-body);
+        font-size: 0.95rem;
+        line-height: 1.55;
+      }
+      .site-footer__center--brand .site-footer__lines {
+        font-family: var(--font-nav);
+        font-size: 0.65rem;
+        letter-spacing: 0.03em;
+        line-height: 1.7;
+      }
+      .site-footer__links {
+        grid-column: 2;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(155px, 1fr));
+        gap: 1.2rem 1.8rem;
+      }
+      .site-footer__col h4 {
+        margin: 0 0 0.75rem;
+        font-family: var(--font-display);
+        font-size: 1.03rem;
+        font-weight: 500;
+        letter-spacing: 0.01em;
+        text-transform: none;
+        color: rgba(245, 240, 232, 0.95);
+      }
+      .site-footer__list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 0.52rem;
+      }
+      .site-footer__list a {
+        position: relative;
+        display: inline-block;
+        width: fit-content;
+        font-family: var(--font-body);
+        font-size: 1.02rem;
+        line-height: 1.35;
+        color: rgba(240, 232, 218, 0.88);
+        text-decoration: none;
+        transition: color 0.28s ease, transform 0.28s ease;
+      }
+      .site-footer__list a::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -0.1rem;
+        height: 1px;
+        background: var(--accent);
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .site-footer__list a:hover {
+        color: var(--accent);
+        transform: translateX(3px);
+      }
+      .site-footer__list a:hover::after {
+        transform: scaleX(1);
+      }
+      .site-footer__bar {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 0.75rem 1rem;
+      }
+      .site-footer__legal--bottom {
+        display: inline-flex;
+        gap: 0.85rem;
+        justify-self: start;
+      }
+      .site-footer__legal--bottom a {
+        font-family: var(--font-nav);
+        font-size: 0.53rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+      .site-footer__socials--bottom {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.65rem;
+        justify-self: end;
+      }
+      .site-footer__social-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1rem;
+        height: 1rem;
+        color: rgba(240, 232, 218, 0.88);
+        text-decoration: none;
+        transition: color 0.25s ease, transform 0.25s ease, filter 0.25s ease;
+      }
+      .site-footer__social-link svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      .site-footer__social-link:hover {
+        color: var(--accent);
+        transform: translateY(-2px) scale(1.08);
+        filter: drop-shadow(0 0 4px rgba(197, 160, 96, 0.35));
+      }
+      .site-footer__copyright {
+        font-family: var(--font-nav);
+        font-size: 0.56rem;
+        letter-spacing: 0.08em;
+      }
+      @media (max-width: 860px) {
+        .site-footer__layout--rich {
+          grid-template-columns: 1fr;
+          gap: 1.1rem;
+        }
+        .site-footer__links {
+          grid-column: 1;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .site-footer__bar {
+          grid-template-columns: 1fr;
+          justify-items: center;
+          text-align: center;
+        }
+        .site-footer__legal--bottom,
+        .site-footer__socials--bottom {
+          justify-self: center;
+        }
+      }
+      @media (max-width: 560px) {
+        .site-footer__links {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .site-footer__list a,
+        .site-footer__list a::after,
+        .site-footer__social-link {
+          transition: none;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function buildSearchIndex() {
+    var items = [];
+    if (window.NostalgiaProducts && typeof window.NostalgiaProducts.getAll === "function") {
+      items = window.NostalgiaProducts.getAll().map(function (p) {
+        return {
+          title: p.title,
+          subtitle: p.categoryName,
+          href: "product.html?id=" + encodeURIComponent(p.id),
+        };
+      });
+    }
+    return items;
+  }
+
+  function ensureSearch() {
+    if (document.getElementById("site-search-modal")) return;
+    var navRight = document.querySelector(".site-nav--right");
+    if (navRight && !navRight.querySelector(".site-search-trigger")) {
+      var trigger = document.createElement("button");
+      trigger.type = "button";
+      trigger.className = "site-search-trigger";
+      trigger.textContent = t("search_label");
+      navRight.insertBefore(trigger, navRight.firstChild);
+    }
+
+    var modal = document.createElement("aside");
+    modal.id = "site-search-modal";
+    modal.className = "site-search-modal";
+    modal.hidden = true;
+    modal.innerHTML =
+      '<div class="site-search-modal__backdrop"></div>' +
+      '<div class="site-search-modal__panel" role="dialog" aria-modal="true" aria-label="' + t("search_label") + '">' +
+      '  <div class="site-search-modal__head">' +
+      '    <p class="site-search-modal__title" data-i18n="search_label">' + t("search_label") + "</p>" +
+      '    <button type="button" class="site-search-modal__close" aria-label="' + t("toast_close_aria") + '">×</button>' +
+      "  </div>" +
+      '  <input class="site-search-modal__input" type="search" placeholder="' + t("search_placeholder") + '" />' +
+      '  <ul class="site-search-modal__results"></ul>' +
+      "  </div>";
+    document.body.appendChild(modal);
+
+    var input = modal.querySelector(".site-search-modal__input");
+    var results = modal.querySelector(".site-search-modal__results");
+    var close = modal.querySelector(".site-search-modal__close");
+    var backdrop = modal.querySelector(".site-search-modal__backdrop");
+    var triggers = document.querySelectorAll(".site-search-trigger");
+    var index = buildSearchIndex();
+
+    function open() {
+      modal.hidden = false;
+      modal.classList.add("is-open");
+      input.value = "";
+      renderResults(index);
+      input.focus();
+    }
+
+    function closeModal() {
+      modal.classList.remove("is-open");
+      modal.hidden = true;
+    }
+
+    function renderResults(list) {
+      results.innerHTML = "";
+      if (!list.length) {
+        results.innerHTML = '<li class="site-search-modal__empty">' + t("search_no_results") + "</li>";
+        return;
+      }
+      list.slice(0, 12).forEach(function (item) {
+        var li = document.createElement("li");
+        li.innerHTML =
+          '<a href="' + item.href + '">' +
+          '<span class="site-search-modal__result-title">' + item.title + "</span>" +
+          '<span class="site-search-modal__result-sub">' + item.subtitle + "</span>" +
+          "</a>";
+        results.appendChild(li);
+      });
+    }
+
+    input.addEventListener("input", function () {
+      var q = input.value.trim().toLowerCase();
+      if (!q) {
+        renderResults(index);
+        return;
+      }
+      var filtered = index.filter(function (item) {
+        return (item.title + " " + item.subtitle).toLowerCase().indexOf(q) !== -1;
+      });
+      renderResults(filtered);
+    });
+
+    triggers.forEach(function (btn) {
+      btn.addEventListener("click", open);
+    });
+    close.addEventListener("click", closeModal);
+    backdrop.addEventListener("click", closeModal);
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !modal.hidden) closeModal();
+    });
+  }
+
+  function init() {
+    if (initialized) return;
+    initialized = true;
+    ensureAnnouncement();
+    ensureFooterStyles();
+    enhanceFooter();
+    ensureSearch();
+    if (window.NostalgiaI18n && typeof window.NostalgiaI18n.applyLang === "function") {
+      window.NostalgiaI18n.applyLang(window.NostalgiaI18n.getLang(), { restartStory: false });
+    }
+  }
+
+  window.NostalgiaSiteChrome = { init: init };
+})();

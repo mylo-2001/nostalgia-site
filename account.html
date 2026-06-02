@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="logo/logo.png" type="image/png" />
+  <title>Nostalgia Collection · Ο λογαριασμός μου</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Montserrat:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/base.css?v=logo1" />
+  <link rel="stylesheet" href="css/side-nav.css?v=8" />
+  <link rel="stylesheet" href="css/shop.css" />
+  <link rel="stylesheet" href="css/account.css" />
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("nostalgia-theme");
+        if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+      } catch (e) {}
+      try {
+        var l = localStorage.getItem("nostalgia-lang");
+        if (l === "en" || l === "el") document.documentElement.lang = l;
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body data-page="account">
+  <div class="page-wrap">
+    <header class="site-header">
+      <nav class="site-header__bar" data-i18n-aria="nav_aria">
+        <div class="mobile-nav-panel" id="mobile-nav-panel">
+          <div class="site-nav site-nav--left">
+            <a href="index.html" data-i18n="nav_home">Αρχική</a>
+            <a href="collection.html" data-i18n="nav_collection">Συλλογή</a>
+          </div>
+          <a class="site-header__logo site-header__logo--pulse" href="index.html" data-i18n-aria="logo_aria">
+            <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
+            <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
+          </a>
+          <div class="site-nav site-nav--right">
+            <a href="about.html" data-i18n="nav_about">Σχετικά</a>
+            <a href="contact.html" data-i18n="nav_contact">Επικοινωνία</a>
+            <button type="button" class="lang-toggle" id="lang-toggle" aria-live="polite">English</button>
+            <button type="button" class="theme-toggle" id="theme-toggle" aria-live="polite"></button>
+          </div>
+        </div>
+        <a class="site-header__logo site-header__logo--topbar" href="index.html" data-i18n-aria="logo_aria">
+          <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
+          <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
+        </a>
+        <button class="mobile-nav-toggle" type="button" aria-controls="mobile-nav-panel" aria-expanded="false" aria-label="Open navigation"><span></span><span></span><span></span></button>
+      </nav>
+    </header>
+    <main class="account-page">
+      <section class="account-page__panel">
+        <div id="account-panel-root"></div>
+      </section>
+      <figure class="account-page__visual" aria-hidden="true">
+        <img src="Contact%20page%20photo/contact%20photo.png" alt="" />
+      </figure>
+    </main>
+    <footer class="site-footer"></footer>
+  </div>
+  <script src="js/i18n.js"></script>
+  <script src="js/cookies.js"></script>
+  <script src="js/products.js"></script>
+  <script src="js/side-nav.js?v=7"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/account.js?v=7"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/header-scroll.js"></script>
+</body>
+</html>

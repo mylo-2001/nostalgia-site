@@ -177,10 +177,17 @@
     document.body.classList.remove("cart-modal-open");
   }
 
-  function ensureHeaderCorner() {
-    var header = document.querySelector(".site-header");
+  function getHeaderActionsMount() {
+    var tools = document.querySelector(".site-header__tools");
     var bar = document.querySelector(".site-header__bar");
-    var mount = bar || header;
+    var header = document.querySelector(".site-header");
+    var isMobile = window.matchMedia && window.matchMedia("(max-width: 900px)").matches;
+    if (isMobile) return bar || header;
+    return tools || bar || header;
+  }
+
+  function ensureHeaderCorner() {
+    var mount = getHeaderActionsMount();
     if (!mount) return null;
 
     var corner = document.getElementById("site-header-corner");
@@ -282,6 +289,14 @@
   function init() {
     injectHeaderCart();
     updateBadge();
+
+    var resizeTimer = null;
+    window.addEventListener("resize", function () {
+      if (resizeTimer) window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(function () {
+        injectHeaderCart();
+      }, 120);
+    });
   }
 
   window.NostalgiaCart = {

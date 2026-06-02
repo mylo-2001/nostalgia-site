@@ -1,5 +1,5 @@
 (function () {
-  var CAT_IDS = ["cat1", "cat2", "cat3", "cat4"];
+  var CAT_IDS = ["cat1", "cat2", "cat3", "cat4", "cat5", "cat6", "cat7", "cat8"];
 
   function muranoImg(n) {
     return "product%20photo/art%20class%20murano%20candle/product%20" + n + ".png";
@@ -53,6 +53,10 @@
     cat2: "product%20photo/driftwood%20beeswax%20flame/product%20photo%20home%20page%20.png",
     cat3: "product%20photo/liquid%20eternal/product%203.png",
     cat4: "product%20photo/unique%20art%20vessel/product%204.png",
+    cat5: "product%20photo/Ni%20Terra/product%20photo.png",
+    cat6: "home%20page%20photo/home%20collection.png",
+    cat7: "home%20page%20photo/home%20collection.png",
+    cat8: "home%20page%20photo/home%20collection.png",
   };
 
   var CAT_HERO_META = {
@@ -60,6 +64,10 @@
     cat2: { fit: "cover", position: "center center" },
     cat3: { fit: "cover", position: "center 45%" },
     cat4: { fit: "contain", position: "center center" },
+    cat5: { fit: "cover", position: "center 45%" },
+    cat6: { fit: "cover", position: "center center" },
+    cat7: { fit: "cover", position: "center center" },
+    cat8: { fit: "cover", position: "center center" },
   };
 
   var categoriesEl;
@@ -72,6 +80,11 @@
   var heroWrapEl;
   var heroZoomEl;
   var backBtn;
+  var productsLeadEl;
+  var filterPriceEl;
+  var sortEl;
+  var searchEl;
+  var activeCategory = null;
 
   function $(sel) {
     return document.querySelector(sel);
@@ -90,6 +103,19 @@
       return window.NostalgiaI18n.t(key);
     }
     return key;
+  }
+
+  function getLeadKey(catId) {
+    if (catId === "cat5") return "collection_lead_cat5";
+    if (catId === "cat6") return "collection_lead_cat6";
+    if (catId === "cat7") return "collection_lead_cat7";
+    if (catId === "cat8") return "collection_lead_cat8";
+    return "collection_catalog_lead";
+  }
+
+  function updateLead(catId) {
+    if (!productsLeadEl) return;
+    productsLeadEl.textContent = t(getLeadKey(catId));
   }
 
   function applyHeroMeta(catId) {
@@ -141,16 +167,54 @@
     if (!productsGridEl) return;
     productsGridEl.innerHTML = "";
     var images = (window.NostalgiaProducts && window.NostalgiaProducts.CAT_IMAGES[catId]) || [];
-
-    if (productsCountEl) {
-      productsCountEl.textContent = t("collection_items_count").replace("{n}", String(images.length));
-    }
+    var products = [];
 
     for (var i = 1; i <= images.length; i++) {
-      var productId = catId + "-" + i;
-      var titleText = window.NostalgiaProducts
-        ? window.NostalgiaProducts.getTitle(catId, i)
-        : t("collection_" + catId) + " · " + i;
+      products.push({
+        id: catId + "-" + i,
+        catId: catId,
+        index: i,
+        image: images[i - 1],
+        title: window.NostalgiaProducts
+          ? window.NostalgiaProducts.getTitle(catId, i)
+          : t("collection_" + catId) + " · " + i,
+        price: getPrice(catId, i),
+      });
+    }
+
+    products = applyFilters(products);
+
+    if (productsCountEl) {
+      productsCountEl.textContent = t("collection_items_count").replace("{n}", String(products.length));
+    }
+
+    if (!products.length) {
+      var empty = document.createElement("section");
+      empty.className = "collection-coming";
+      empty.setAttribute("role", "listitem");
+
+      var eyebrow = document.createElement("p");
+      eyebrow.className = "collection-coming__eyebrow";
+      eyebrow.textContent = t("coming_soon");
+
+      var title = document.createElement("h3");
+      title.className = "collection-coming__title";
+      title.textContent = t("collection_" + catId);
+
+      var lead = document.createElement("p");
+      lead.className = "collection-coming__lead";
+      lead.textContent = t("collection_no_results");
+
+      empty.appendChild(eyebrow);
+      empty.appendChild(title);
+      empty.appendChild(lead);
+      productsGridEl.appendChild(empty);
+      return;
+    }
+
+    products.forEach(function (item) {
+      var productId = item.id;
+      var titleText = item.title;
       var productUrl = window.NostalgiaProducts
         ? window.NostalgiaProducts.getProductUrl(productId)
         : "product.html?id=" + encodeURIComponent(productId);
@@ -170,7 +234,7 @@
       visual.className = "collection-product__visual";
 
       var img = document.createElement("img");
-      img.src = images[i - 1];
+      img.src = item.image;
       img.alt = "";
       img.loading = "lazy";
       img.decoding = "async";
@@ -183,15 +247,21 @@
       name.className = "collection-product__name";
       name.textContent = titleText;
 
+      var price = document.createElement("p");
+      price.className = "collection-product__price";
+      price.textContent = item.price.toFixed(2) + "€";
+
       meta.appendChild(name);
+      meta.appendChild(price);
       link.appendChild(visual);
       link.appendChild(meta);
       article.appendChild(link);
       productsGridEl.appendChild(article);
-    }
+    });
   }
 
   function showProducts(catId) {
+    activeCategory = catId;
     document.body.classList.add("collection-products-open");
     if (categoriesEl) {
       categoriesEl.hidden = true;
@@ -205,6 +275,7 @@
       productsTitleEl.textContent = t("collection_" + catId);
       productsTitleEl.setAttribute("data-active-cat", catId);
     }
+    updateLead(catId);
     if (breadcrumbCurrentEl) {
       breadcrumbCurrentEl.textContent = t("collection_" + catId);
     }
@@ -220,7 +291,8 @@
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function showCategories() {
+  function showCategories(opts) {
+    opts = opts || {};
     document.body.classList.remove("collection-products-open");
     if (categoriesEl) {
       categoriesEl.hidden = false;
@@ -234,19 +306,27 @@
       productsTitleEl.textContent = "";
       productsTitleEl.removeAttribute("data-active-cat");
     }
-    try {
-      if (history.replaceState) {
-        history.replaceState(null, "", location.pathname + location.search);
-      } else {
-        location.hash = "";
-      }
-    } catch (e) {}
+    if (!opts.keepHash) {
+      try {
+        if (history.replaceState) {
+          history.replaceState(null, "", location.pathname + location.search);
+        } else {
+          location.hash = "";
+        }
+      } catch (e) {}
+    }
   }
 
   function onHash() {
     var h = (location.hash || "").replace(/^#/, "");
     if (CAT_IDS.indexOf(h) !== -1) {
       showProducts(h);
+    } else if (h.indexOf("story-cat") === 0) {
+      showCategories({ keepHash: true });
+      var storyTarget = document.getElementById(h);
+      if (storyTarget) {
+        storyTarget.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     } else {
       showCategories();
     }
@@ -258,11 +338,15 @@
     productsGridEl = $("#collection-products-grid");
     productsTitleEl = $("#collection-products-title");
     productsCountEl = $("#collection-products-count");
+    productsLeadEl = document.querySelector(".collection-catalog__lead");
     breadcrumbCurrentEl = $("#collection-breadcrumb-current");
     heroImgEl = $("#collection-catalog-hero-img");
     heroWrapEl = $("#collection-catalog-hero");
     heroZoomEl = $("#collection-catalog-hero-zoom");
     backBtn = $("#collection-back");
+    filterPriceEl = $("#collection-filter-price");
+    sortEl = $("#collection-sort");
+    searchEl = $("#collection-search");
 
     getCategoryButtons().forEach(function (btn) {
       btn.addEventListener("click", function () {
@@ -278,12 +362,31 @@
       });
     }
 
+    if (filterPriceEl) {
+      filterPriceEl.addEventListener("change", function () {
+        if (activeCategory) renderProducts(activeCategory);
+      });
+    }
+
+    if (sortEl) {
+      sortEl.addEventListener("change", function () {
+        if (activeCategory) renderProducts(activeCategory);
+      });
+    }
+
+    if (searchEl) {
+      searchEl.addEventListener("input", function () {
+        if (activeCategory) renderProducts(activeCategory);
+      });
+    }
+
     window.addEventListener("hashchange", onHash);
 
     window.NostalgiaOnLangApplied = function () {
       var active = productsTitleEl && productsTitleEl.getAttribute("data-active-cat");
       if (active && productsEl && !productsEl.hidden) {
         productsTitleEl.textContent = t("collection_" + active);
+        updateLead(active);
         if (breadcrumbCurrentEl) breadcrumbCurrentEl.textContent = t("collection_" + active);
         updateCategoryHero(active);
         renderProducts(active);
@@ -291,6 +394,46 @@
     };
 
     onHash();
+  }
+
+  function getPrice(catId, index) {
+    var base = { cat1: 48, cat2: 62, cat3: 74, cat4: 89, cat5: 116, cat6: 68, cat7: 54, cat8: 96 };
+    return (base[catId] || 50) + ((index - 1) % 5) * 7;
+  }
+
+  function applyFilters(list) {
+    var out = list.slice();
+    var priceVal = filterPriceEl ? filterPriceEl.value : "all";
+    var sortVal = sortEl ? sortEl.value : "featured";
+    var q = searchEl ? searchEl.value.trim().toLowerCase() : "";
+
+    if (priceVal && priceVal !== "all") {
+      out = out.filter(function (item) {
+        if (priceVal === "120+") return item.price >= 120;
+        var parts = priceVal.split("-");
+        var min = parseFloat(parts[0]) || 0;
+        var max = parseFloat(parts[1]) || Infinity;
+        return item.price >= min && item.price < max;
+      });
+    }
+
+    if (q) {
+      out = out.filter(function (item) {
+        return item.title.toLowerCase().indexOf(q) !== -1;
+      });
+    }
+
+    if (sortVal === "price-asc") {
+      out.sort(function (a, b) { return a.price - b.price; });
+    } else if (sortVal === "price-desc") {
+      out.sort(function (a, b) { return b.price - a.price; });
+    } else if (sortVal === "name-asc") {
+      out.sort(function (a, b) { return a.title.localeCompare(b.title); });
+    } else {
+      out.sort(function (a, b) { return a.index - b.index; });
+    }
+
+    return out;
   }
 
   if (document.readyState === "loading") {

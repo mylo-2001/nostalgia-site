@@ -1,5 +1,5 @@
 (function () {
-  var CAT_IDS = ["cat1", "cat2", "cat3", "cat4"];
+  var CAT_IDS = ["cat1", "cat2", "cat3", "cat4", "cat5", "cat6", "cat7", "cat8"];
 
   function muranoImg(n) {
     return "product%20photo/art%20class%20murano%20candle/product%20" + n + ".png";
@@ -12,6 +12,9 @@
   }
   function vesselImg(n) {
     return "product%20photo/unique%20art%20vessel/product%20" + n + ".png";
+  }
+  function terraImg(n) {
+    return "product%20photo/Ni%20Terra/product%20" + n + ".png";
   }
 
   var CAT_IMAGES = {
@@ -46,6 +49,10 @@
       vesselImg(1), vesselImg(2), vesselImg(3), vesselImg(4),
       vesselImg(5), vesselImg(6), vesselImg(7), vesselImg(8),
     ],
+    cat5: [terraImg(1), terraImg(2), terraImg(3), terraImg(4)],
+    cat6: [],
+    cat7: [],
+    cat8: [],
   };
 
   function buildProductKey(catId, index, field) {

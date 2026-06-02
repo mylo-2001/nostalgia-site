@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Montserrat:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/base.css?v=logo1" />
-  <link rel="stylesheet" href="css/side-nav.css?v=2" />
+  <link rel="stylesheet" href="css/side-nav.css?v=8" />
   <link rel="stylesheet" href="css/home.css" />
   <link rel="stylesheet" href="css/legal.css" />
   <link rel="stylesheet" href="css/shop.css" />
@@ -55,10 +55,17 @@
             <div class="nav-mega" id="nav-mega-collection" data-i18n-aria="nav_mega_aria">
               <div class="nav-mega__panel">
                 <ul class="nav-mega__cats">
-                  <li class="nav-mega__cat" style="--mega-i: 0"><a href="collection.html#cat1"><span data-i18n="collection_cat1">Art Class Murano Candle</span></a></li>
-                  <li class="nav-mega__cat" style="--mega-i: 1"><a href="collection.html#cat2"><span data-i18n="collection_cat2">Driftwood Beeswax Flame</span></a></li>
-                  <li class="nav-mega__cat" style="--mega-i: 2"><a href="collection.html#cat3"><span data-i18n="collection_cat3">Liquid Eternal</span></a></li>
-                  <li class="nav-mega__cat" style="--mega-i: 3"><a href="collection.html#cat4"><span data-i18n="collection_cat4">Unique Art Objects</span></a></li>
+                  <li class="nav-mega__cat nav-mega__cat--group" style="--mega-i: 0" data-i18n="side_nav_group_candles">Κεριά</li>
+                  <li class="nav-mega__cat" style="--mega-i: 1"><a href="collection.html#cat1"><span data-i18n="collection_cat1">Art Class Murano Candle</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 2"><a href="collection.html#cat2"><span data-i18n="collection_cat2">Driftwood Beeswax Flame</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 3"><a href="collection.html#cat3"><span data-i18n="collection_cat3">Liquid Eternal</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 4"><a href="collection.html#cat4"><span data-i18n="collection_cat4">Unique Art Objects</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 5"><a href="collection.html#cat5"><span data-i18n="collection_cat5">NI Terra</span></a></li>
+                  <li class="nav-mega__cat nav-mega__cat--divider" style="--mega-i: 6" aria-hidden="true"></li>
+                  <li class="nav-mega__cat nav-mega__cat--group" style="--mega-i: 7" data-i18n="side_nav_group_non_candles">Άλλα προϊόντα</li>
+                  <li class="nav-mega__cat" style="--mega-i: 8"><a href="collection.html#cat6"><span data-i18n="collection_cat6">Perfume</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 9"><a href="collection.html#cat7"><span data-i18n="collection_cat7">Diffusers</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 10"><a href="collection.html#cat8"><span data-i18n="collection_cat8">Gift Sets</span></a></li>
                 </ul>
                 <div class="nav-mega__feature">
                   <figure class="nav-mega__media">
@@ -221,15 +228,17 @@
       <section class="home-collections" aria-labelledby="home-collections-heading">
         <div class="home-collections__inner">
           <article class="home-collections__feature home-reveal">
-            <img
-              class="home-collections__feature-img"
-              src="home%20page%20photo/home%20collection.png"
-              alt=""
-              width="1200"
-              height="800"
-              loading="lazy"
-              decoding="async"
-            />
+            <figure class="home-collections__feature-media">
+              <img
+                class="home-collections__feature-img"
+                src="home%20page%20photo/home%20collection.png"
+                alt=""
+                width="1200"
+                height="800"
+                loading="lazy"
+                decoding="async"
+              />
+            </figure>
             <div class="home-collections__feature-overlay" aria-hidden="true"></div>
             <div class="home-collections__feature-content">
               <h2 class="home-collections__feature-title" data-i18n="home_collection_feature_title">Σφραγισμένες Μνήμες</h2>
@@ -240,72 +249,209 @@
           </article>
 
           <div class="home-collections__list">
-            <div class="home-collections__head home-reveal">
-              <h3 class="home-collections__heading" id="home-collections-heading" data-i18n="home_collections_heading">Τα προϊόντα μας</h3>
-              <span class="home-collections__head-rule" aria-hidden="true"></span>
+            <div class="home-collections__stories home-reveal">
+              <p class="home-collections__stories-lead" data-i18n="home_product_stories_cta">
+                Ανακάλυψε την ιστορία των προϊόντων — επίλεξε κατηγορία για να μεταφερθείς στην αντίστοιχη ιστορία.
+              </p>
+              <ul class="home-collections__stories-links" aria-label="Ιστορίες προϊόντων">
+                <li><a href="collection.html#story-cat1" data-i18n="collection_cat1">Art Class Murano Candle</a></li>
+                <li><a href="collection.html#story-cat2" data-i18n="collection_cat2">Driftwood Beeswax Flame</a></li>
+                <li><a href="collection.html#story-cat3" data-i18n="collection_cat3">Liquid Eternal</a></li>
+                <li><a href="collection.html#story-cat4" data-i18n="collection_cat4">Unique Art Objects</a></li>
+                <li><a href="collection.html#story-cat5" data-i18n="collection_cat5">NI Terra</a></li>
+              </ul>
             </div>
-            <ul class="home-collections__cats" aria-labelledby="home-collections-heading">
-              <li class="home-reveal home-reveal--cat home-reveal--d1">
-                <a class="home-collections__cat" href="collection.html#cat1">
-                  <figure class="home-collections__cat-media">
-                    <img
-                      src="product%20photo/art%20class%20murano%20candle/product%20photo%20home%20page%20.png"
-                      alt=""
-                      width="320"
-                      height="320"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  </figure>
-                  <span class="home-collections__cat-label" data-i18n="collection_cat1">Art Class Murano Candle</span>
-                </a>
-              </li>
-              <li class="home-reveal home-reveal--cat home-reveal--d2">
-                <a class="home-collections__cat" href="collection.html#cat2">
-                  <figure class="home-collections__cat-media">
-                    <img
-                      src="product%20photo/driftwood%20beeswax%20flame/product%20photo%20home%20page%20.png"
-                      alt=""
-                      width="320"
-                      height="320"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  </figure>
-                  <span class="home-collections__cat-label" data-i18n="collection_cat2">Driftwood Beeswax Flame</span>
-                </a>
-              </li>
-              <li class="home-reveal home-reveal--cat home-reveal--d3">
-                <a class="home-collections__cat" href="collection.html#cat3">
-                  <figure class="home-collections__cat-media">
-                    <img
-                      src="product%20photo/liquid%20eternal/product%203.png"
-                      alt=""
-                      width="320"
-                      height="320"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  </figure>
-                  <span class="home-collections__cat-label" data-i18n="collection_cat3">Liquid Eternal</span>
-                </a>
-              </li>
-              <li class="home-reveal home-reveal--cat home-reveal--d4">
-                <a class="home-collections__cat" href="collection.html#cat4">
-                  <figure class="home-collections__cat-media">
-                    <img
-                      src="product%20photo/unique%20art%20vessel/product%204.png"
-                      alt=""
-                      width="320"
-                      height="320"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  </figure>
-                  <span class="home-collections__cat-label" data-i18n="collection_cat4">Unique Art Objects</span>
-                </a>
-              </li>
-            </ul>
+
+            <div class="home-collections__products home-reveal">
+              <div class="home-collections__head">
+                <h3 class="home-collections__heading" id="home-collections-heading" data-i18n="home_collections_heading">Τα προϊόντα μας</h3>
+                <span class="home-collections__head-rule" aria-hidden="true"></span>
+              </div>
+
+              <div class="home-collections__carousel" id="home-collections-carousel">
+                <button
+                  type="button"
+                  class="home-collections__carousel-nav home-collections__carousel-nav--prev"
+                  data-carousel-prev
+                  aria-controls="home-collections-carousel-track"
+                  data-i18n-aria="home_carousel_prev"
+                >
+                  <span aria-hidden="true">‹</span>
+                </button>
+                <div class="home-collections__carousel-viewport">
+                  <ul
+                    class="home-collections__carousel-track"
+                    id="home-collections-carousel-track"
+                    aria-labelledby="home-collections-heading"
+                  >
+                    <li class="home-collections__carousel-slide">
+                      <a class="home-collections__cat" href="collection.html#cat1">
+                        <figure class="home-collections__cat-media">
+                          <img
+                            src="product%20photo/art%20class%20murano%20candle/product%20photo%20home%20page%20.png"
+                            alt=""
+                            width="320"
+                            height="320"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        </figure>
+                        <span class="home-collections__cat-label" data-i18n="collection_cat1">Art Class Murano Candle</span>
+                      </a>
+                    </li>
+                    <li class="home-collections__carousel-slide">
+                      <a class="home-collections__cat" href="collection.html#cat2">
+                        <figure class="home-collections__cat-media">
+                          <img
+                            src="product%20photo/driftwood%20beeswax%20flame/product%20photo%20home%20page%20.png"
+                            alt=""
+                            width="320"
+                            height="320"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        </figure>
+                        <span class="home-collections__cat-label" data-i18n="collection_cat2">Driftwood Beeswax Flame</span>
+                      </a>
+                    </li>
+                    <li class="home-collections__carousel-slide">
+                      <a class="home-collections__cat" href="collection.html#cat3">
+                        <figure class="home-collections__cat-media">
+                          <img
+                            src="product%20photo/liquid%20eternal/product%203.png"
+                            alt=""
+                            width="320"
+                            height="320"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        </figure>
+                        <span class="home-collections__cat-label" data-i18n="collection_cat3">Liquid Eternal</span>
+                      </a>
+                    </li>
+                    <li class="home-collections__carousel-slide">
+                      <a class="home-collections__cat" href="collection.html#cat4">
+                        <figure class="home-collections__cat-media">
+                          <img
+                            src="product%20photo/unique%20art%20vessel/product%204.png"
+                            alt=""
+                            width="320"
+                            height="320"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        </figure>
+                        <span class="home-collections__cat-label" data-i18n="collection_cat4">Unique Art Objects</span>
+                      </a>
+                    </li>
+                    <li class="home-collections__carousel-slide">
+                      <a class="home-collections__cat" href="collection.html#cat5">
+                        <figure class="home-collections__cat-media">
+                          <img
+                            src="product%20photo/Ni%20Terra/product%20photo.png"
+                            alt=""
+                            width="320"
+                            height="320"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        </figure>
+                        <span class="home-collections__cat-label" data-i18n="collection_cat5">NI Terra</span>
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+                <button
+                  type="button"
+                  class="home-collections__carousel-nav home-collections__carousel-nav--next"
+                  data-carousel-next
+                  aria-controls="home-collections-carousel-track"
+                  data-i18n-aria="home_carousel_next"
+                >
+                  <span aria-hidden="true">›</span>
+                </button>
+                <div class="home-collections__carousel-dots" role="tablist" aria-label="Κατηγορίες προϊόντων"></div>
+              </div>
+            </div>
+            <section class="home-collections__new" aria-labelledby="home-collections-new-heading">
+              <div class="home-collections__new-head home-reveal">
+                <h4 class="home-collections__new-title" id="home-collections-new-heading" data-i18n="home_new_collections_heading">Νέες κατηγορίες</h4>
+                <span class="home-collections__new-rule" aria-hidden="true"></span>
+              </div>
+              <ul class="home-collections__new-grid" aria-labelledby="home-collections-new-heading">
+                <li class="home-reveal home-reveal--cat home-reveal--d5">
+                  <a class="home-collections__new-card" href="collection.html#cat5">
+                    <figure class="home-collections__new-media">
+                      <img
+                        src="product%20photo/Ni%20Terra/product%20photo.png"
+                        alt=""
+                        width="480"
+                        height="320"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </figure>
+                    <div class="home-collections__new-copy">
+                      <span class="home-collections__new-label" data-i18n="collection_cat5">NI Terra</span>
+                    </div>
+                  </a>
+                </li>
+                <li class="home-reveal home-reveal--cat home-reveal--d6">
+                  <a class="home-collections__new-card" href="collection.html#cat6">
+                    <figure class="home-collections__new-media">
+                      <img
+                        src="home%20page%20photo/home%20collection.png"
+                        alt=""
+                        width="480"
+                        height="320"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </figure>
+                    <div class="home-collections__new-copy">
+                      <span class="home-collections__new-label" data-i18n="collection_cat6">Perfume</span>
+                      <span class="home-collections__new-badge" data-i18n="coming_soon">Coming soon</span>
+                    </div>
+                  </a>
+                </li>
+                <li class="home-reveal home-reveal--cat home-reveal--d7">
+                  <a class="home-collections__new-card" href="collection.html#cat7">
+                    <figure class="home-collections__new-media">
+                      <img
+                        src="home%20page%20photo/home%20collection.png"
+                        alt=""
+                        width="480"
+                        height="320"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </figure>
+                    <div class="home-collections__new-copy">
+                      <span class="home-collections__new-label" data-i18n="collection_cat7">Diffusers</span>
+                      <span class="home-collections__new-badge" data-i18n="coming_soon">Coming soon</span>
+                    </div>
+                  </a>
+                </li>
+                <li class="home-reveal home-reveal--cat home-reveal--d8">
+                  <a class="home-collections__new-card" href="collection.html#cat8">
+                    <figure class="home-collections__new-media">
+                      <img
+                        src="home%20page%20photo/home%20collection.png"
+                        alt=""
+                        width="480"
+                        height="320"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </figure>
+                    <div class="home-collections__new-copy">
+                      <span class="home-collections__new-label" data-i18n="collection_cat8">Gift Sets</span>
+                      <span class="home-collections__new-badge" data-i18n="coming_soon">Coming soon</span>
+                    </div>
+                  </a>
+                </li>
+              </ul>
+            </section>
           </div>
         </div>
       </section>
@@ -327,6 +473,27 @@
               </li>
               <li class="home-reveal home-reveal--d4">
                 <a class="home-moment__cat" href="collection.html#cat4"><span data-i18n="collection_cat4">Unique Art Objects</span></a>
+              </li>
+              <li class="home-reveal home-reveal--d5">
+                <a class="home-moment__cat" href="collection.html#cat5"><span data-i18n="collection_cat5">NI Terra</span></a>
+              </li>
+              <li class="home-reveal home-reveal--d6">
+                <a class="home-moment__cat home-moment__cat--soon" href="collection.html#cat6">
+                  <span data-i18n="collection_cat6">Perfume</span>
+                  <span class="home-moment__cat-note" data-i18n="coming_soon">Coming soon</span>
+                </a>
+              </li>
+              <li class="home-reveal home-reveal--d7">
+                <a class="home-moment__cat home-moment__cat--soon" href="collection.html#cat7">
+                  <span data-i18n="collection_cat7">Diffusers</span>
+                  <span class="home-moment__cat-note" data-i18n="coming_soon">Coming soon</span>
+                </a>
+              </li>
+              <li class="home-reveal home-reveal--d8">
+                <a class="home-moment__cat home-moment__cat--soon" href="collection.html#cat8">
+                  <span data-i18n="collection_cat8">Gift Sets</span>
+                  <span class="home-moment__cat-note" data-i18n="coming_soon">Coming soon</span>
+                </a>
               </li>
             </ul>
             <span class="home-moment__vline home-reveal home-reveal--d2" aria-hidden="true"></span>
@@ -360,39 +527,44 @@
     </main>
 
     <footer class="site-footer">
-      <div class="site-footer__layout">
-        <div class="site-footer__aside">
-          <a
-            class="site-footer__instagram"
-            href="https://www.instagram.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            data-i18n-aria="footer_instagram_aria"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-            </svg>
-          </a>
-        </div>
-        <div class="site-footer__center">
-          <a class="site-footer__logo" href="index.html" data-i18n-aria="logo_aria">
-            <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="180" height="52" alt="Nostalgia Collection" />
-            <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="180" height="52" alt="Nostalgia Collection" />
-          </a>
-          <p class="site-footer__tagline" data-i18n="footer_tagline">
-            Κάθε προϊόν παρασκευάζεται με προσοχή και φυσικά υλικά
-          </p>
-          <ul class="site-footer__lines">
-            <li data-i18n="footer_address">Θεσσαλονίκη · Τ.Κ. 54351</li>
-            <li>
-              <span data-i18n="footer_phone_label">Τηλ:</span>
-              <a href="tel:+306939411774">+30 693 941 1774</a>
-            </li>
-            <li><a href="mailto:mgerostathi@gmail.com">mgerostathi@gmail.com</a></li>
-          </ul>
-        </div>
+      <div class="site-footer__main">
+        <a class="site-footer__logo" href="index.html" data-i18n-aria="logo_aria">
+          <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="180" height="52" alt="Nostalgia Collection" />
+          <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="180" height="52" alt="Nostalgia Collection" />
+        </a>
+        <p class="site-footer__tagline" data-i18n="footer_tagline">
+          Κάθε προϊόν παρασκευάζεται με προσοχή και φυσικά υλικά
+        </p>
+        <ul class="site-footer__socials" data-i18n-aria="footer_socials_aria" aria-label="Κοινωνικά δίκτυα">
+          <li>
+            <a class="site-footer__social" href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" data-i18n-aria="footer_facebook_aria" aria-label="Facebook">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5 3.66 9.15 8.44 9.94v-7.03H7.9v-2.9h2.54V9.85c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56v1.88h2.78l-.44 2.9h-2.34V22c4.78-.79 8.44-4.94 8.44-9.94Z" /></svg>
+            </a>
+          </li>
+          <li>
+            <a class="site-footer__social" href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" data-i18n-aria="footer_instagram_aria" aria-label="Instagram">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></svg>
+            </a>
+          </li>
+          <li>
+            <a class="site-footer__social" href="https://www.linkedin.com/" target="_blank" rel="noopener noreferrer" data-i18n-aria="footer_linkedin_aria" aria-label="LinkedIn">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.13 1.44-2.13 2.94v5.67H9.35V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14ZM7.12 20.45H3.55V9h3.57v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.22.79 24 1.77 24h20.45c.98 0 1.78-.78 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z" /></svg>
+            </a>
+          </li>
+          <li>
+            <a class="site-footer__social" href="https://www.tiktok.com/" target="_blank" rel="noopener noreferrer" data-i18n-aria="footer_tiktok_aria" aria-label="TikTok">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.6 5.82a4.28 4.28 0 0 1-1.06-2.82h-3.3v12.93a2.59 2.59 0 0 1-2.59 2.5 2.59 2.59 0 0 1-.46-5.13v-3.36a5.9 5.9 0 0 0-5.34 5.87A5.9 5.9 0 0 0 9.65 21.8a5.9 5.9 0 0 0 5.9-5.9V9.01a7.57 7.57 0 0 0 4.45 1.43V7.13a4.28 4.28 0 0 1-3.4-1.31Z" /></svg>
+            </a>
+          </li>
+        </ul>
+        <ul class="site-footer__lines">
+          <li data-i18n="footer_address">Θεσσαλονίκη · Τ.Κ. 54351</li>
+          <li>
+            <span data-i18n="footer_phone_label">Τηλ:</span>
+            <a href="tel:+306939411774">+30 693 941 1774</a>
+          </li>
+          <li><a href="mailto:mgerostathi@gmail.com">mgerostathi@gmail.com</a></li>
+        </ul>
       </div>
       <div class="site-footer__bar">
         <nav class="site-footer__legal" data-i18n-aria="footer_legal_aria">
@@ -439,12 +611,13 @@
   <script src="js/i18n.js"></script>
   <script src="js/cookies.js"></script>
   <script src="js/products.js"></script>
-  <script src="js/side-nav.js"></script>
+  <script src="js/side-nav.js?v=7"></script>
   <script src="js/cart.js"></script>
-  <script src="js/account.js"></script>
+  <script src="js/account.js?v=7"></script>
   <script src="js/theme.js"></script>
   <script src="js/nav-mega.js"></script>
   <script src="js/home-reveal.js"></script>
+  <script src="js/home-collections-carousel.js"></script>
   <script src="js/header-scroll.js"></script>
   <script src="js/home-toast.js"></script>
 </body>

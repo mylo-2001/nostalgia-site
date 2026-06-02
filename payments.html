@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="logo/logo.png" type="image/png" />
+  <title>Nostalgia Collection · Τρόποι Πληρωμής</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Montserrat:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/base.css?v=logo1" />
+  <link rel="stylesheet" href="css/side-nav.css?v=2" />
+  <link rel="stylesheet" href="css/legal.css" />
+  <link rel="stylesheet" href="css/shop.css" />
+  <link rel="stylesheet" href="css/account.css" />
+</head>
+<body data-page="payments">
+  <div class="page-wrap">
+    <header class="site-header">
+      <nav class="site-header__bar" data-i18n-aria="nav_aria">
+        <div class="mobile-nav-panel" id="mobile-nav-panel">
+          <div class="site-nav site-nav--left">
+            <a href="index.html" data-i18n="nav_home">Αρχική</a>
+            <a href="collection.html" data-i18n="nav_collection">Συλλογή</a>
+          </div>
+          <a class="site-header__logo site-header__logo--pulse" href="index.html" data-i18n-aria="logo_aria">
+            <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
+            <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
+          </a>
+          <div class="site-nav site-nav--right">
+            <a href="about.html" data-i18n="nav_about">Σχετικά</a>
+            <a href="contact.html" data-i18n="nav_contact">Επικοινωνία</a>
+            <button type="button" class="lang-toggle" id="lang-toggle">English</button>
+            <button type="button" class="theme-toggle" id="theme-toggle"></button>
+          </div>
+        </div>
+        <a class="site-header__logo site-header__logo--topbar" href="index.html" data-i18n-aria="logo_aria">
+          <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
+          <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
+        </a>
+        <button class="mobile-nav-toggle" type="button" aria-controls="mobile-nav-panel" aria-expanded="false" aria-label="Open navigation"><span></span><span></span><span></span></button>
+      </nav>
+    </header>
+    <main>
+      <section class="legal-page">
+        <nav class="legal-breadcrumb" aria-label="Breadcrumb">
+          <a href="index.html" data-i18n="nav_home">Αρχική</a>
+          <span class="legal-breadcrumb__sep" aria-hidden="true">·</span>
+          <span data-i18n="payments_heading">Payment and refunds</span>
+        </nav>
+        <header class="page-intro page-intro--legal">
+          <h1 data-i18n="payments_heading">Payment and refunds</h1>
+          <div class="section-rule" aria-hidden="true"></div>
+        </header>
+        <article class="legal-content">
+          <section class="legal-section">
+            <h2 data-i18n="payments_section1_title">1. Payment</h2>
+            <p data-i18n="payments_section1_p1">Payment is made when the order is placed. We accept major debit and credit cards. The customer is responsible for any bank fees charged by their card issuer.</p>
+            <p data-i18n="payments_section1_p2">All online payments are processed through a secure external platform (Stripe) with 3D Secure when required. If payment authorization fails, the order is cancelled automatically and the customer is informed by email.</p>
+            <p data-i18n="payments_section1_p3">The customer is charged for product value, applicable taxes/duties, and delivery fees (if any).</p>
+          </section>
+
+          <section class="legal-section">
+            <h2 data-i18n="payments_section2_title">2. Returns and refunds</h2>
+            <p data-i18n="payments_section2_p1">Customers may request a return within fourteen (14) days from delivery. The return request should include products being returned and the order reference.</p>
+            <p data-i18n="payments_section2_p2">Returned items must be in original condition: unused, undamaged, with original packaging, tags, labels, and related documents.</p>
+            <p data-i18n="payments_section2_p3">If a returned product does not meet these conditions, the refund may be rejected and the item may be sent back to the customer.</p>
+            <p data-i18n="payments_section2_p4">Unless otherwise stated, refunds are issued to the original payment method within up to fourteen (14) days from return receipt or shipping proof (whichever comes first).</p>
+          </section>
+
+          <section class="legal-section">
+            <h2 data-i18n="payments_notes_title">Important notes</h2>
+            <p data-i18n="payments_notes_p1">Products purchased from third-party marketplaces are not eligible for return processing through this website policy.</p>
+            <p><span data-i18n="payments_notes_p2">For support regarding payment, invoice, damaged delivery, or return status, please contact us via the</span> <a href="contact.html" data-i18n="nav_contact">contact page</a>.</p>
+          </section>
+        </article>
+
+        <section class="legal-section legal-trust-grid" aria-label="Trust highlights">
+          <article class="legal-trust-card">
+            <h3 data-i18n="payments_trust1_title">Free shipping</h3>
+            <p data-i18n="payments_trust1_text">For all orders over 100€.</p>
+          </article>
+          <article class="legal-trust-card">
+            <h3 data-i18n="payments_trust2_title">Returns or reimbursement</h3>
+            <p data-i18n="payments_trust2_text">We replace or reimburse your order if you are not completely satisfied.</p>
+          </article>
+          <article class="legal-trust-card">
+            <h3 data-i18n="payments_trust3_title">Personalized</h3>
+            <p data-i18n="payments_trust3_text">Gift-ready presentation and careful packaging for every order.</p>
+          </article>
+        </section>
+      </section>
+    </main>
+    <footer class="site-footer"></footer>
+  </div>
+  <script src="js/i18n.js"></script>
+  <script src="js/cookies.js"></script>
+  <script src="js/products.js"></script>
+  <script src="js/side-nav.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/account.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/header-scroll.js"></script>
+</body>
+</html>

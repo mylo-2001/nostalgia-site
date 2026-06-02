@@ -144,6 +144,25 @@
 
     initMobileNav();
     initBackToTop();
+    initSiteChrome();
+  }
+
+  function initSiteChrome() {
+    if (window.NostalgiaSiteChrome && typeof window.NostalgiaSiteChrome.init === "function") {
+      window.NostalgiaSiteChrome.init();
+      return;
+    }
+    if (document.querySelector('script[data-site-chrome="1"]')) return;
+    var script = document.createElement("script");
+    script.src = "js/site-chrome.js?v=13";
+    script.async = false;
+    script.setAttribute("data-site-chrome", "1");
+    script.onload = function () {
+      if (window.NostalgiaSiteChrome && typeof window.NostalgiaSiteChrome.init === "function") {
+        window.NostalgiaSiteChrome.init();
+      }
+    };
+    document.body.appendChild(script);
   }
 
   if (document.readyState === "loading") {

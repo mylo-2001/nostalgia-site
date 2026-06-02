@@ -54,6 +54,34 @@
       href: "collection.html#cat4",
       ctaKey: "side_nav_discover",
     },
+    cat5: {
+      image: "product%20photo/Ni%20Terra/product%20photo.png",
+      titleKey: "collection_cat5",
+      descKey: "side_nav_visual_cat_desc",
+      href: "collection.html#cat5",
+      ctaKey: "side_nav_discover",
+    },
+    cat6: {
+      image: "home%20page%20photo/home%20collection.png",
+      titleKey: "collection_cat6",
+      descKey: "side_nav_visual_cat_desc",
+      href: "collection.html#cat6",
+      ctaKey: "side_nav_discover",
+    },
+    cat7: {
+      image: "home%20page%20photo/home%20collection.png",
+      titleKey: "collection_cat7",
+      descKey: "side_nav_visual_cat_desc",
+      href: "collection.html#cat7",
+      ctaKey: "side_nav_discover",
+    },
+    cat8: {
+      image: "home%20page%20photo/home%20collection.png",
+      titleKey: "collection_cat8",
+      descKey: "side_nav_visual_cat_desc",
+      href: "collection.html#cat8",
+      ctaKey: "side_nav_discover",
+    },
     about: {
       image: "home%20page%20photo/about%20photo%20.png",
       titleKey: "nav_about_mega_title",
@@ -126,8 +154,8 @@
       "        </div>" +
       '        <div class="side-nav__divider" aria-hidden="true"></div>' +
       '        <ul class="side-nav__list side-nav__list--secondary">' +
-      '          <li><button type="button" class="side-nav__link side-nav__link--small side-nav__link--expand" data-side-panel="account"><span class="side-nav__link-text" data-i18n="account_my_account">Ο λογαριασμός μου</span><span class="side-nav__chev" aria-hidden="true">›</span></button></li>' +
-      '          <li><button type="button" class="side-nav__link side-nav__link--small" data-account-mode="register"><span class="side-nav__link-text" data-i18n="account_create_prompt">Δημιουργία λογαριασμού</span></button></li>' +
+      '          <li><a class="side-nav__link side-nav__link--small" href="account.html?mode=login"><span class="side-nav__link-text" data-i18n="account_my_account">Ο λογαριασμός μου</span></a></li>' +
+      '          <li><a class="side-nav__link side-nav__link--small" href="account.html?mode=register"><span class="side-nav__link-text" data-i18n="account_create_prompt">Δημιουργία λογαριασμού</span></a></li>' +
       '          <li><button type="button" class="side-nav__link side-nav__link--small" data-newsletter-open><span class="side-nav__link-text" data-i18n="newsletter_title">Newsletter</span></button></li>' +
       '          <li><a class="side-nav__link side-nav__link--small" href="cart.html"><span class="side-nav__link-text" data-i18n="cart_heading">Το καλάθι σου</span></a></li>' +
       '          <li><a class="side-nav__link side-nav__link--small" href="privacy.html"><span class="side-nav__link-text" data-i18n="footer_privacy">Προστασία Δεδομένων</span></a></li>' +
@@ -140,12 +168,18 @@
       '            <p class="side-nav__sub-label" data-i18n="nav_collection">Συλλογή</p>' +
       "          </div>" +
       '          <ul class="side-nav__list side-nav__list--sub">' +
-      '            <li><a class="side-nav__sublink" href="collection.html" data-visual="collection"><span class="side-nav__sublink-text"><span data-i18n="side_nav_all_collections">Όλες οι συλλογές</span><span class="side-nav__sublink-count" data-cat-count="all" aria-hidden="true"></span></span></a></li>' +
+      '            <li class="side-nav__subgroup-label" data-i18n="side_nav_group_candles">Κεριά</li>' +
       '            <li><a class="side-nav__sublink" href="collection.html#cat1" data-visual="cat1"><span class="side-nav__sublink-text"><span data-i18n="collection_cat1">Art Class Murano Candle</span><span class="side-nav__sublink-count" data-cat-count="cat1" aria-hidden="true"></span></span></a></li>' +
       '            <li><a class="side-nav__sublink" href="collection.html#cat2" data-visual="cat2"><span class="side-nav__sublink-text"><span data-i18n="collection_cat2">Driftwood Beeswax Flame</span><span class="side-nav__sublink-count" data-cat-count="cat2" aria-hidden="true"></span></span></a></li>' +
       '            <li><a class="side-nav__sublink" href="collection.html#cat3" data-visual="cat3"><span class="side-nav__sublink-text"><span data-i18n="collection_cat3">Liquid Eternal</span><span class="side-nav__sublink-count" data-cat-count="cat3" aria-hidden="true"></span></span></a></li>' +
       '            <li><a class="side-nav__sublink" href="collection.html#cat4" data-visual="cat4"><span class="side-nav__sublink-text"><span data-i18n="collection_cat4">Unique Art Objects</span><span class="side-nav__sublink-count" data-cat-count="cat4" aria-hidden="true"></span></span></a></li>' +
-      '            <li><a class="side-nav__sublink side-nav__sublink--all" href="collection.html" data-visual="collection" data-i18n="side_nav_see_all">Δείτε όλα</a></li>' +
+      '            <li><a class="side-nav__sublink" href="collection.html#cat5" data-visual="cat5"><span class="side-nav__sublink-text"><span data-i18n="collection_cat5">NI Terra</span><span class="side-nav__sublink-count" data-cat-count="cat5" aria-hidden="true"></span></span></a></li>' +
+      '            <li class="side-nav__subgroup-divider" aria-hidden="true"></li>' +
+      '            <li class="side-nav__subgroup-label" data-i18n="side_nav_group_non_candles">Άλλα προϊόντα</li>' +
+      '            <li><a class="side-nav__sublink" href="collection.html#cat6" data-visual="cat6"><span class="side-nav__sublink-text"><span data-i18n="collection_cat6">Perfume</span><span class="side-nav__sublink-count" data-cat-count="cat6" aria-hidden="true"></span></span></a></li>' +
+      '            <li><a class="side-nav__sublink" href="collection.html#cat7" data-visual="cat7"><span class="side-nav__sublink-text"><span data-i18n="collection_cat7">Diffusers</span><span class="side-nav__sublink-count" data-cat-count="cat7" aria-hidden="true"></span></span></a></li>' +
+      '            <li><a class="side-nav__sublink" href="collection.html#cat8" data-visual="cat8"><span class="side-nav__sublink-text"><span data-i18n="collection_cat8">Gift Sets</span><span class="side-nav__sublink-count" data-cat-count="cat8" aria-hidden="true"></span></span></a></li>' +
+      '            <li><a class="side-nav__sublink side-nav__sublink--all" href="collection.html" data-visual="collection" data-i18n="side_nav_all_collections">Όλες οι συλλογές</a></li>' +
       "          </ul>" +
       "        </div>" +
       '        <div class="side-nav__panel side-nav__panel--sub" data-side-sub="about">' +
@@ -160,13 +194,6 @@
       '            <li><a class="side-nav__sublink" href="about.html#vision" data-visual="about"><span data-i18n="about_tab_vision">Our Vision</span></a></li>' +
       '            <li><a class="side-nav__sublink side-nav__sublink--all" href="about.html" data-visual="about" data-i18n="side_nav_see_all">Δείτε όλα</a></li>' +
       "          </ul>" +
-      "        </div>" +
-      '        <div class="side-nav__panel side-nav__panel--sub side-nav__panel--account" data-side-sub="account">' +
-      '          <div class="side-nav__sub-head">' +
-      '            <button type="button" class="side-nav__back" data-side-nav-back aria-label="Back">‹</button>' +
-      '            <p class="side-nav__sub-label" data-i18n="account_my_account">Ο λογαριασμός μου</p>' +
-      "          </div>" +
-      '          <div id="account-panel-root"></div>' +
       "        </div>" +
       '        <figure class="side-nav__sub-feature" id="side-nav-sub-feature" hidden aria-hidden="true">' +
       '          <div class="side-nav__sub-feature-media">' +
@@ -403,13 +430,7 @@
   }
 
   function openForAccount() {
-    clearMenuHoverTimers();
-    clearHoverTimers();
-    if (isDrawerOpen()) {
-      openSubPanel("account");
-      return;
-    }
-    openDrawer({ focus: false, keepPanel: true, panel: "account" });
+    window.location.href = "account.html?mode=login";
   }
 
   function closeDrawer(opts) {
@@ -568,7 +589,12 @@
 
     drawer.querySelectorAll("[data-side-panel]").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        openSubPanel(btn.getAttribute("data-side-panel"));
+        var panel = btn.getAttribute("data-side-panel");
+        if (panel === "account") {
+          window.location.href = "account.html?mode=login";
+          return;
+        }
+        openSubPanel(panel);
       });
     });
 

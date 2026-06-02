@@ -5,6 +5,7 @@
   var NEWSLETTER_DISMISS_KEY = "nostalgia-newsletter-dismissed";
   var newsletterPopupTimer = null;
   var panelMode = "login";
+  var redirectingToAccountPage = false;
 
   function t(key) {
     if (window.NostalgiaI18n && typeof window.NostalgiaI18n.t === "function") {
@@ -88,6 +89,8 @@
       email: email,
       firstname: data.firstname.trim(),
       lastname: data.lastname.trim(),
+      birthDate: data.birthDate || "",
+      newsletterOptin: !!data.newsletterOptin,
       passwordHash: hashPassword(data.password),
     });
     writeUsers(users);
@@ -152,20 +155,29 @@
 
   function buildRegisterHTML() {
     return (
-      '<div class="account-panel">' +
-      '  <h2 class="account-panel__title" data-i18n="account_register_title">Δημιουργία λογαριασμού</h2>' +
-      '  <form class="account-form" id="account-register-form" novalidate>' +
-      '    <label class="account-field"><span data-i18n="checkout_firstname_label">Όνομα</span><input type="text" name="firstname" required autocomplete="given-name" /></label>' +
-      '    <label class="account-field"><span data-i18n="checkout_lastname_label">Επώνυμο</span><input type="text" name="lastname" required autocomplete="family-name" /></label>' +
-      '    <label class="account-field"><span data-i18n="checkout_email_label">Email</span><input type="email" name="email" required autocomplete="email" /></label>' +
-      '    <label class="account-field"><span data-i18n="account_password_label">Κωδικός</span><input type="password" name="password" required autocomplete="new-password" minlength="6" /></label>' +
-      '    <label class="account-field"><span data-i18n="account_password_confirm_label">Επιβεβαίωση κωδικού</span><input type="password" name="passwordConfirm" required autocomplete="new-password" minlength="6" /></label>' +
-      '    <button type="submit" class="account-btn account-btn--gold" data-i18n="account_create_btn">Δημιουργία</button>' +
-      '    <p class="account-form__error" id="account-register-error" hidden></p>' +
-      "  </form>" +
-      '  <p class="account-panel__switch">' +
-      '    <button type="button" class="account-link account-link--block" id="account-show-login" data-i18n="account_have_account">Έχετε ήδη λογαριασμό;</button>' +
-      "  </p>" +
+      '<div class="account-panel account-panel--register">' +
+      '  <h2 class="account-panel__title account-panel__title--register" data-i18n="account_create_heading">Create New Customer Account</h2>' +
+      '  <div class="account-register">' +
+      '    <form class="account-form account-form--register" id="account-register-form" novalidate>' +
+      '      <p class="account-form__section" data-i18n="account_personal_info">Personal information</p>' +
+      '      <label class="account-field"><span data-i18n="checkout_firstname_label">Όνομα</span><input type="text" name="firstname" required autocomplete="given-name" /></label>' +
+      '      <label class="account-field"><span data-i18n="checkout_lastname_label">Επώνυμο</span><input type="text" name="lastname" required autocomplete="family-name" /></label>' +
+      '      <label class="account-check"><input type="checkbox" name="newsletterOptin" /><span data-i18n="account_newsletter_optin">Sign up for newsletter</span></label>' +
+      '      <label class="account-field"><span data-i18n="account_birth_label">Date of birth</span><input type="date" name="birthDate" autocomplete="bday" /></label>' +
+      '      <p class="account-form__hint" data-i18n="account_birth_hint">Τα γενέθλιά σας μάς βοηθούν να σας στείλουμε κάτι ξεχωριστό.</p>' +
+      '      <p class="account-form__section" data-i18n="account_signin_info">Sign-in information</p>' +
+      '      <label class="account-field"><span data-i18n="checkout_email_label">Email</span><input type="email" name="email" required autocomplete="email" /></label>' +
+      '      <label class="account-field"><span data-i18n="account_password_label">Κωδικός</span><input type="password" name="password" required autocomplete="new-password" minlength="6" /></label>' +
+      '      <label class="account-field"><span data-i18n="account_password_confirm_label">Επιβεβαίωση κωδικού</span><input type="password" name="passwordConfirm" required autocomplete="new-password" minlength="6" /></label>' +
+      '      <button type="submit" class="account-btn account-btn--outline account-btn--register-submit" data-i18n="account_create_btn">Δημιουργία</button>' +
+      '      <button type="button" class="account-link account-link--register-back" id="account-show-login" data-i18n="account_back_to_login">Back</button>' +
+      '      <p class="account-form__error" id="account-register-error" hidden></p>' +
+      "    </form>" +
+      '    <aside class="account-register__why" aria-hidden="true">' +
+      '      <h3 class="account-register__why-title" data-i18n="account_why_title">Why an account?</h3>' +
+      '      <p class="account-register__why-text" data-i18n="account_why_text">Δημιούργησε λογαριασμό για ταχύτερο checkout και ιστορικό παραγγελιών.</p>' +
+      "    </aside>" +
+      "  </div>" +
       "</div>"
     );
   }
@@ -188,7 +200,7 @@
   }
 
   function focusFirstAccountField() {
-    var root = document.getElementById("account-panel-root");
+    var root = getPanelRoot();
     if (!root) return;
     var input = root.querySelector("input:not([type=hidden])");
     if (input) input.focus();
@@ -238,16 +250,42 @@
     });
 
     document.addEventListener("click", function (e) {
+      var legacyAccountPanelBtn = e.target.closest('[data-side-panel="account"]');
+      if (legacyAccountPanelBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        navigateToAccountPage("login");
+        return;
+      }
       if (e.target.closest("#header-account-btn")) {
         e.preventDefault();
-        openAccountPanel("login");
+        navigateToAccountPage("login");
         return;
       }
       var btn = e.target.closest("[data-account-mode]");
       if (!btn) return;
       e.preventDefault();
-      openAccountPanel(btn.getAttribute("data-account-mode") || "login");
+      navigateToAccountPage(btn.getAttribute("data-account-mode") || "login");
     });
+  }
+
+  function isAccountPage() {
+    return document.body && document.body.getAttribute("data-page") === "account";
+  }
+
+  function navigateToAccountPage(mode) {
+    if (isAccountPage()) {
+      panelMode = mode === "register" ? "register" : "login";
+      renderPanel();
+      focusFirstAccountField();
+      try {
+        history.replaceState(null, "", "account.html?mode=" + encodeURIComponent(panelMode));
+      } catch (e) {}
+      return;
+    }
+    if (redirectingToAccountPage) return;
+    redirectingToAccountPage = true;
+    window.location.href = "account.html?mode=" + encodeURIComponent(mode === "register" ? "register" : "login");
   }
 
   function handleLoginSubmit(loginForm) {
@@ -279,6 +317,8 @@
       email: registerForm.email.value,
       firstname: registerForm.firstname.value,
       lastname: registerForm.lastname.value,
+      birthDate: registerForm.birthDate ? registerForm.birthDate.value : "",
+      newsletterOptin: !!(registerForm.newsletterOptin && registerForm.newsletterOptin.checked),
       password: registerForm.password.value,
     });
     if (!result.ok) {
@@ -294,34 +334,17 @@
   }
 
   function openAccountPanel(mode) {
+    if (!isAccountPage()) {
+      navigateToAccountPage(mode);
+      return;
+    }
     panelMode = mode === "register" ? "register" : "login";
-    function show() {
-      renderPanel();
-      focusFirstAccountField();
-    }
-    if (window.NostalgiaSideNav && typeof window.NostalgiaSideNav.openForAccount === "function") {
-      window.NostalgiaSideNav.openForAccount();
-      show();
-      return;
-    }
-    if (window.NostalgiaSideNav) {
-      if (typeof window.NostalgiaSideNav.isOpen === "function" && window.NostalgiaSideNav.isOpen()) {
-        window.NostalgiaSideNav.openPanel("account");
-        show();
-      } else {
-        window.NostalgiaSideNav.open();
-        window.setTimeout(function () {
-          window.NostalgiaSideNav.openPanel("account");
-          show();
-        }, 280);
-      }
-      return;
-    }
-    show();
+    renderPanel();
+    focusFirstAccountField();
   }
 
   function renderPanel() {
-    var root = document.getElementById("account-panel-root");
+    var root = getPanelRoot();
     if (!root) return;
     var session = getSession();
     if (session) {
@@ -337,12 +360,42 @@
   }
 
   function ensurePanelRoot() {
-    var root = document.getElementById("account-panel-root");
+    if (!isAccountPage()) return;
+    var root = getPanelRoot();
     if (root) {
       renderPanel();
       return;
     }
     window.requestAnimationFrame(ensurePanelRoot);
+  }
+
+  function getPanelRoot() {
+    if (isAccountPage()) {
+      return document.querySelector("main #account-panel-root");
+    }
+    return null;
+  }
+
+  function disableLegacyDrawerAccountUI() {
+    if (isAccountPage()) return;
+    document.querySelectorAll(".side-nav__panel--account, [data-side-sub='account']").forEach(function (el) {
+      el.remove();
+    });
+    document.querySelectorAll(".side-nav [data-side-panel='account']").forEach(function (el) {
+      el.setAttribute("href", "account.html?mode=login");
+      el.removeAttribute("data-side-panel");
+      if (el.tagName === "BUTTON") {
+        var a = document.createElement("a");
+        a.className = el.className;
+        a.href = "account.html?mode=login";
+        a.innerHTML = el.innerHTML;
+        el.parentNode.replaceChild(a, el);
+      }
+    });
+    document.querySelectorAll(".side-nav #account-panel-root").forEach(function (el) {
+      el.innerHTML = "";
+      el.remove();
+    });
   }
 
   function buildNewsletterHTML() {
@@ -564,6 +617,11 @@
   }
 
   function init() {
+    if (isAccountPage()) {
+      var params = new URLSearchParams(window.location.search);
+      panelMode = params.get("mode") === "register" ? "register" : "login";
+    }
+    disableLegacyDrawerAccountUI();
     ensureStylesheet();
     bindAccountDelegation();
     bindNewsletter();

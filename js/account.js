@@ -14,6 +14,50 @@
     return key;
   }
 
+  var PASSWORD_TOGGLE_BTN =
+    '<button type="button" class="account-password-toggle" data-i18n-aria="account_password_show" aria-pressed="false">' +
+    '<svg class="account-password-toggle__icon account-password-toggle__icon--show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>' +
+    '<svg class="account-password-toggle__icon account-password-toggle__icon--hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19M1 1l22 22"/></svg>' +
+    "</button>";
+
+  function passwordFieldHTML(name, autocomplete) {
+    return (
+      '<span class="account-password-wrap">' +
+      '<input type="password" name="' +
+      name +
+      '" required autocomplete="' +
+      autocomplete +
+      '" minlength="6" />' +
+      PASSWORD_TOGGLE_BTN +
+      "</span>"
+    );
+  }
+
+  function bindPasswordToggles(root) {
+    if (!root) return;
+    root.querySelectorAll(".account-password-toggle").forEach(function (btn) {
+      if (btn.dataset.bound === "1") return;
+      btn.dataset.bound = "1";
+      var wrap = btn.closest(".account-password-wrap");
+      var input = wrap && wrap.querySelector("input");
+      if (!input) return;
+
+      function syncToggleState() {
+        var visible = input.type === "text";
+        btn.setAttribute("aria-pressed", visible ? "true" : "false");
+        btn.setAttribute("aria-label", t(visible ? "account_password_hide" : "account_password_show"));
+        btn.classList.toggle("is-visible", visible);
+      }
+
+      btn.addEventListener("click", function () {
+        input.type = input.type === "password" ? "text" : "password";
+        syncToggleState();
+      });
+
+      syncToggleState();
+    });
+  }
+
   function ensureStylesheet() {
     if (document.querySelector('link[href*="account.css"]')) return;
     var link = document.createElement("link");
@@ -139,7 +183,9 @@
       '  <h2 class="account-panel__title" data-i18n="account_login_title">Σύνδεση</h2>' +
       '  <form class="account-form" id="account-login-form" novalidate>' +
       '    <label class="account-field"><span data-i18n="checkout_email_label">Email</span><input type="email" name="email" required autocomplete="email" /></label>' +
-      '    <label class="account-field"><span data-i18n="account_password_label">Κωδικός</span><input type="password" name="password" required autocomplete="current-password" minlength="6" /></label>' +
+      '    <label class="account-field account-field--password"><span data-i18n="account_password_label">Κωδικός</span>' +
+      passwordFieldHTML("password", "current-password") +
+      "</label>" +
       '    <div class="account-form__row">' +
       '      <button type="button" class="account-link" id="account-forgot" data-i18n="account_forgot">Ξεχάσατε τον κωδικό;</button>' +
       '      <button type="submit" class="account-btn account-btn--outline" data-i18n="account_sign_in">Σύνδεση</button>' +
@@ -167,8 +213,12 @@
       '      <p class="account-form__hint" data-i18n="account_birth_hint">Τα γενέθλιά σας μάς βοηθούν να σας στείλουμε κάτι ξεχωριστό.</p>' +
       '      <p class="account-form__section" data-i18n="account_signin_info">Sign-in information</p>' +
       '      <label class="account-field"><span data-i18n="checkout_email_label">Email</span><input type="email" name="email" required autocomplete="email" /></label>' +
-      '      <label class="account-field"><span data-i18n="account_password_label">Κωδικός</span><input type="password" name="password" required autocomplete="new-password" minlength="6" /></label>' +
-      '      <label class="account-field"><span data-i18n="account_password_confirm_label">Επιβεβαίωση κωδικού</span><input type="password" name="passwordConfirm" required autocomplete="new-password" minlength="6" /></label>' +
+      '      <label class="account-field account-field--password"><span data-i18n="account_password_label">Κωδικός</span>' +
+      passwordFieldHTML("password", "new-password") +
+      "</label>" +
+      '      <label class="account-field account-field--password"><span data-i18n="account_password_confirm_label">Επιβεβαίωση κωδικού</span>' +
+      passwordFieldHTML("passwordConfirm", "new-password") +
+      "</label>" +
       '      <button type="submit" class="account-btn account-btn--outline account-btn--register-submit" data-i18n="account_create_btn">Δημιουργία</button>' +
       '      <button type="button" class="account-link account-link--register-back" id="account-show-login" data-i18n="account_back_to_login">Back</button>' +
       '      <p class="account-form__error" id="account-register-error" hidden></p>' +
@@ -357,6 +407,7 @@
     if (window.NostalgiaI18n && window.NostalgiaI18n.applyLang) {
       window.NostalgiaI18n.applyLang(window.NostalgiaI18n.getLang(), { restartStory: false });
     }
+    bindPasswordToggles(root);
   }
 
   function ensurePanelRoot() {

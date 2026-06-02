@@ -103,6 +103,65 @@
   border-bottom-color: var(--accent);
 }
 
+.account-password-wrap {
+  position: relative;
+  display: block;
+}
+
+.account-field--password .account-password-wrap input {
+  width: 100%;
+  padding-right: 2.35rem;
+}
+
+.account-password-toggle {
+  position: absolute;
+  right: 0;
+  bottom: 0.42rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: color var(--transition);
+}
+
+.account-password-toggle:hover,
+.account-password-toggle:focus-visible {
+  color: var(--accent);
+  outline: none;
+}
+
+.account-password-toggle__icon {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.account-password-toggle__icon--hide {
+  display: none;
+}
+
+.account-password-toggle.is-visible .account-password-toggle__icon--show {
+  display: none;
+}
+
+.account-password-toggle.is-visible .account-password-toggle__icon--hide {
+  display: block;
+}
+
+body[data-page="account"] .account-password-toggle {
+  color: rgba(245, 240, 232, 0.55);
+}
+
+body[data-page="account"] .account-password-toggle:hover,
+body[data-page="account"] .account-password-toggle:focus-visible {
+  color: var(--accent);
+}
+
 .account-form__row {
   display: flex;
   align-items: center;

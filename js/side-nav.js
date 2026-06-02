@@ -158,6 +158,7 @@
       '          <li><a class="side-nav__link side-nav__link--small" href="account.html?mode=register"><span class="side-nav__link-text" data-i18n="account_create_prompt">Δημιουργία λογαριασμού</span></a></li>' +
       '          <li><button type="button" class="side-nav__link side-nav__link--small" data-newsletter-open><span class="side-nav__link-text" data-i18n="newsletter_title">Newsletter</span></button></li>' +
       '          <li><a class="side-nav__link side-nav__link--small" href="cart.html"><span class="side-nav__link-text" data-i18n="cart_heading">Το καλάθι σου</span></a></li>' +
+      '          <li><a class="side-nav__link side-nav__link--small" href="wishlist.html"><span class="side-nav__link-text" data-i18n="wishlist_heading">Αγαπημένα</span></a></li>' +
       '          <li><a class="side-nav__link side-nav__link--small" href="privacy.html"><span class="side-nav__link-text" data-i18n="footer_privacy">Προστασία Δεδομένων</span></a></li>' +
       "        </ul>" +
       "      </div>" +

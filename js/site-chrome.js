@@ -33,6 +33,7 @@
       '      <h4 data-i18n="footer_orders_title">' + t("footer_orders_title") + "</h4>" +
       '      <ul class="site-footer__list">' +
       "        <li><a href=\"account.html?mode=login\" data-i18n=\"account_my_account\">" + t("account_my_account") + "</a></li>" +
+      '        <li><a href="wishlist.html" data-i18n="footer_wishlist">' + t("footer_wishlist") + "</a></li>" +
       '        <li><a href="shipping-returns.html" data-i18n="footer_shipping_returns">' + t("footer_shipping_returns") + "</a></li>" +
       '        <li><a href="payments.html" data-i18n="footer_payments">' + t("footer_payments") + "</a></li>" +
       '        <li><a href="faq.html" data-i18n="footer_faq">' + t("footer_faq") + "</a></li>" +

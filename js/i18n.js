@@ -78,6 +78,12 @@
       product_buy_now: "Αγόρασέ το τώρα",
       wishlist_add: "Προσθήκη στα αγαπημένα",
       wishlist_remove: "Αφαίρεση από αγαπημένα",
+      wishlist_heading: "Αγαπημένα",
+      wishlist_lead: "Τα προϊόντα που αποθήκευσες για αργότερα.",
+      wishlist_empty_title: "Δεν έχεις αγαπημένα ακόμα",
+      wishlist_empty_text: "Πάτα ♡ σε ένα προϊόν για να το προσθέσεις εδώ.",
+      wishlist_count: "{n} προϊόντα",
+      footer_wishlist: "Αγαπημένα",
       related_title: "Μπορεί να σας αρέσει",
       reviews_title: "Κριτικές",
       reviews_avg: "Μέσος όρος",
@@ -164,6 +170,7 @@
       checkout_success_email_note: "Θα ανοίξει το email σας για αποστολή της παραγγελίας.",
       checkout_email_subject: "Παραγγελία Nostalgia Collection",
       meta_title_cart: "Nostalgia Collection · Καλάθι",
+      meta_title_wishlist: "Nostalgia Collection · Αγαπημένα",
       meta_title_product: "Nostalgia Collection · Προϊόν",
       meta_title_checkout: "Nostalgia Collection · Ολοκλήρωση",
       eshop_coming_soon: "Σύντομα έρχεται και e-shop για αγορές μέσα από το site.",
@@ -613,6 +620,12 @@
       product_buy_now: "Buy it now",
       wishlist_add: "Add to wishlist",
       wishlist_remove: "Remove from wishlist",
+      wishlist_heading: "Wishlist",
+      wishlist_lead: "Products you saved for later.",
+      wishlist_empty_title: "Your wishlist is empty",
+      wishlist_empty_text: "Tap ♡ on a product page to save it here.",
+      wishlist_count: "{n} items",
+      footer_wishlist: "Wishlist",
       related_title: "You may also like",
       reviews_title: "Reviews",
       reviews_avg: "Average",
@@ -699,6 +712,7 @@
       checkout_success_email_note: "Your email app will open to send the order details.",
       checkout_email_subject: "Nostalgia Collection order",
       meta_title_cart: "Nostalgia Collection · Cart",
+      meta_title_wishlist: "Nostalgia Collection · Wishlist",
       meta_title_product: "Nostalgia Collection · Product",
       meta_title_checkout: "Nostalgia Collection · Checkout",
       eshop_coming_soon: "An e-shop is coming soon, so you can shop directly through the site.",
@@ -1135,6 +1149,7 @@
     else if (page === "collection") metaKey = "meta_title_collection";
     else if (page === "contact") metaKey = "meta_title_contact";
     else if (page === "cart") metaKey = "meta_title_cart";
+    else if (page === "wishlist") metaKey = "meta_title_wishlist";
     else if (page === "product") metaKey = "meta_title_product";
     else if (page === "checkout") metaKey = "meta_title_checkout";
     else if (page === "privacy") metaKey = "meta_title_privacy";

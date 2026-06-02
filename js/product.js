@@ -1,5 +1,4 @@
 (function () {
-  var WISHLIST_KEY = "nostalgia-wishlist";
   var REVIEWS_KEY = "nostalgia-reviews";
 
   function t(key) {
@@ -114,7 +113,7 @@
     var wishlistBtn = document.getElementById("product-toggle-wishlist");
     if (wishlistBtn) {
       wishlistBtn.addEventListener("click", function () {
-        toggleWishlist(product.id);
+        if (window.NostalgiaWishlist) window.NostalgiaWishlist.toggle(product.id);
         wishlistBtn.textContent = getWishlistLabel(product.id);
       });
     }
@@ -122,34 +121,9 @@
     bindReviews(product);
   }
 
-  function getWishlist() {
-    try {
-      return JSON.parse(localStorage.getItem(WISHLIST_KEY) || "[]");
-    } catch (e) {
-      return [];
-    }
-  }
-
-  function saveWishlist(list) {
-    try {
-      localStorage.setItem(WISHLIST_KEY, JSON.stringify(list));
-    } catch (e) {}
-  }
-
-  function isWishlisted(id) {
-    return getWishlist().indexOf(id) !== -1;
-  }
-
-  function toggleWishlist(id) {
-    var list = getWishlist();
-    var idx = list.indexOf(id);
-    if (idx === -1) list.push(id);
-    else list.splice(idx, 1);
-    saveWishlist(list);
-  }
-
   function getWishlistLabel(id) {
-    return isWishlisted(id) ? "♥ " + t("wishlist_remove") : "♡ " + t("wishlist_add");
+    var has = window.NostalgiaWishlist && window.NostalgiaWishlist.has(id);
+    return has ? "♥ " + t("wishlist_remove") : "♡ " + t("wishlist_add");
   }
 
   function getReviews(productId) {

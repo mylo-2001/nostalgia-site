@@ -9,6 +9,7 @@
   var sidebarEl;
   var heroActionsEl;
   var footEl;
+  var extrasEl;
   var couponEl;
   var couponForm;
   var couponInput;
@@ -228,6 +229,7 @@
 
     if (heroActionsEl) heroActionsEl.hidden = !hasItems;
     if (sidebarEl) sidebarEl.hidden = !hasItems;
+    if (extrasEl) extrasEl.hidden = !hasItems;
     if (footEl) footEl.hidden = !hasItems;
     if (couponEl) couponEl.hidden = !hasItems;
 
@@ -258,6 +260,7 @@
     miniListEl = document.getElementById("cart-mini-items");
     sidebarEl = document.getElementById("cart-sidebar");
     heroActionsEl = document.getElementById("cart-page-hero-actions");
+    extrasEl = document.getElementById("cart-page-extras");
     footEl = document.getElementById("cart-page-foot");
     couponEl = document.getElementById("cart-coupon");
     couponForm = document.getElementById("cart-coupon-form");

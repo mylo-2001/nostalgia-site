@@ -11,7 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Montserrat:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/base.css?v=locale-drawer" />
   <link rel="stylesheet" href="css/side-nav.css?v=header-trudon" />
-  <link rel="stylesheet" href="css/shop.css?v=trudon-coupon" />
+  <link rel="stylesheet" href="css/shop.css?v=mobile-cart" />
   <link rel="stylesheet" href="css/account.css" />
   <link rel="stylesheet" href="css/legal.css" />
   <script>
@@ -123,7 +123,19 @@
             </div>
 
             <ul class="cart-lines" id="cart-items" hidden></ul>
+          </div>
 
+          <aside class="cart-sidebar" id="cart-sidebar" hidden aria-label="Σύνοψη">
+            <div class="cart-sidebar__box cart-sidebar__box--mini" id="cart-mini-list" aria-labelledby="cart-mini-heading">
+              <h2 class="cart-sidebar__heading" id="cart-mini-heading" data-i18n="cart_my_cart">Το καλάθι μου</h2>
+              <ul class="cart-sidebar__mini-list" id="cart-mini-items"></ul>
+            </div>
+            <div class="cart-sidebar__box cart-sidebar__box--summary" id="cart-summary" aria-labelledby="cart-summary-heading">
+              <h2 class="cart-sidebar__heading" id="cart-summary-heading" data-i18n="cart_order_summary">Σύνοψη παραγγελίας</h2>
+            </div>
+          </aside>
+
+          <div class="cart-page__extras" id="cart-page-extras" hidden>
             <div class="cart-coupon" id="cart-coupon" hidden>
               <form class="cart-coupon__form" id="cart-coupon-form" novalidate>
                 <label class="cart-coupon__label" for="cart-coupon-input" data-i18n="cart_coupon_label">ΚΩΔΙΚΟΣ ΚΟΥΠΟΝΙΟΥ</label>
@@ -153,16 +165,6 @@
               <p class="cart-page__foot-note" data-i18n="cart_foot_note">Η Nostalgia επιβεβαιώνει κάθε παραγγελία προσωπικά — με προσοχή στη λεπτομέρεια και στην εμπειρία σας.</p>
             </footer>
           </div>
-
-          <aside class="cart-sidebar" id="cart-sidebar" hidden aria-label="Σύνοψη">
-            <div class="cart-sidebar__box" id="cart-mini-list" aria-labelledby="cart-mini-heading">
-              <h2 class="cart-sidebar__heading" id="cart-mini-heading" data-i18n="cart_my_cart">Το καλάθι μου</h2>
-              <ul class="cart-sidebar__mini-list" id="cart-mini-items"></ul>
-            </div>
-            <div class="cart-sidebar__box cart-sidebar__box--summary" id="cart-summary" aria-labelledby="cart-summary-heading">
-              <h2 class="cart-sidebar__heading" id="cart-summary-heading" data-i18n="cart_order_summary">Σύνοψη παραγγελίας</h2>
-            </div>
-          </aside>
         </div>
       </section>
     </main>
@@ -218,7 +220,7 @@
   <script src="js/products.js"></script>
   <script src="js/side-nav.js"></script>
   <script src="js/cart.js"></script>
-  <script src="js/cart-page.js?v=trudon-coupon"></script>
+  <script src="js/cart-page.js?v=mobile-cart"></script>
   <script src="js/account.js"></script>
   <script src="js/breadcrumbs.js?v=4"></script>
 

@@ -9,11 +9,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Montserrat:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/base.css?v=logo1" />
-  <link rel="stylesheet" href="css/side-nav.css?v=light-nav2" />
-  <link rel="stylesheet" href="css/home.css?v=home-flow" />
+  <link rel="stylesheet" href="css/base.css?v=locale-drawer" />
+  <link rel="stylesheet" href="css/side-nav.css?v=header-trudon" />
+  <link rel="stylesheet" href="css/home.css?v=home-cat-carousel" />
   <link rel="stylesheet" href="css/legal.css" />
-  <link rel="stylesheet" href="css/shop.css" />
+  <link rel="stylesheet" href="css/shop.css?v=cart-drawer" />
   <link rel="stylesheet" href="css/account.css" />
   <script>
     (function () {
@@ -268,7 +268,7 @@
                 <span class="home-collections__head-rule" aria-hidden="true"></span>
               </div>
 
-              <div class="home-collections__carousel" id="home-collections-carousel">
+              <div class="home-collections__carousel home-collections__carousel--editorial" id="home-collections-carousel">
                 <button
                   type="button"
                   class="home-collections__carousel-nav home-collections__carousel-nav--prev"
@@ -285,78 +285,93 @@
                     aria-labelledby="home-collections-heading"
                   >
                     <li class="home-collections__carousel-slide">
-                      <a class="home-collections__cat" href="collection.html#cat1">
+                      <a class="home-collections__cat home-collections__cat--editorial" href="collection.html#cat1">
                         <figure class="home-collections__cat-media">
                           <img
                             src="product%20photo/art%20class%20murano%20candle/product%20photo%20home%20page%20.png"
                             alt=""
-                            width="320"
-                            height="320"
+                            width="400"
+                            height="500"
                             loading="lazy"
                             decoding="async"
                           />
                         </figure>
-                        <span class="home-collections__cat-label" data-i18n="collection_cat1">Art Class Murano Candle</span>
+                        <div class="home-collections__cat-body">
+                          <span class="home-collections__cat-label" data-i18n="collection_cat1">Art Class Murano Candle</span>
+                          <span class="home-collections__cat-cta" data-i18n="home_cat_discover">Ανακάλυψε</span>
+                        </div>
                       </a>
                     </li>
                     <li class="home-collections__carousel-slide">
-                      <a class="home-collections__cat" href="collection.html#cat2">
+                      <a class="home-collections__cat home-collections__cat--editorial" href="collection.html#cat2">
                         <figure class="home-collections__cat-media">
                           <img
                             src="product%20photo/driftwood%20beeswax%20flame/product%20photo%20home%20page%20.png"
                             alt=""
-                            width="320"
-                            height="320"
+                            width="400"
+                            height="500"
                             loading="lazy"
                             decoding="async"
                           />
                         </figure>
-                        <span class="home-collections__cat-label" data-i18n="collection_cat2">Driftwood Beeswax Flame</span>
+                        <div class="home-collections__cat-body">
+                          <span class="home-collections__cat-label" data-i18n="collection_cat2">Driftwood Beeswax Flame</span>
+                          <span class="home-collections__cat-cta" data-i18n="home_cat_discover">Ανακάλυψε</span>
+                        </div>
                       </a>
                     </li>
                     <li class="home-collections__carousel-slide">
-                      <a class="home-collections__cat" href="collection.html#cat3">
+                      <a class="home-collections__cat home-collections__cat--editorial" href="collection.html#cat3">
                         <figure class="home-collections__cat-media">
                           <img
                             src="product%20photo/liquid%20eternal/product%203.png"
                             alt=""
-                            width="320"
-                            height="320"
+                            width="400"
+                            height="500"
                             loading="lazy"
                             decoding="async"
                           />
                         </figure>
-                        <span class="home-collections__cat-label" data-i18n="collection_cat3">Liquid Eternal</span>
+                        <div class="home-collections__cat-body">
+                          <span class="home-collections__cat-label" data-i18n="collection_cat3">Liquid Eternal</span>
+                          <span class="home-collections__cat-cta" data-i18n="home_cat_discover">Ανακάλυψε</span>
+                        </div>
                       </a>
                     </li>
                     <li class="home-collections__carousel-slide">
-                      <a class="home-collections__cat" href="collection.html#cat4">
+                      <a class="home-collections__cat home-collections__cat--editorial" href="collection.html#cat4">
                         <figure class="home-collections__cat-media">
                           <img
                             src="product%20photo/unique%20art%20vessel/product%204.png"
                             alt=""
-                            width="320"
-                            height="320"
+                            width="400"
+                            height="500"
                             loading="lazy"
                             decoding="async"
                           />
                         </figure>
-                        <span class="home-collections__cat-label" data-i18n="collection_cat4">Unique Art Objects</span>
+                        <div class="home-collections__cat-body">
+                          <span class="home-collections__cat-label" data-i18n="collection_cat4">Unique Art Objects</span>
+                          <span class="home-collections__cat-cta" data-i18n="home_cat_discover">Ανακάλυψε</span>
+                        </div>
                       </a>
                     </li>
                     <li class="home-collections__carousel-slide">
-                      <a class="home-collections__cat" href="collection.html#cat5">
+                      <a class="home-collections__cat home-collections__cat--editorial" href="collection.html#cat5">
                         <figure class="home-collections__cat-media">
                           <img
                             src="product%20photo/Ni%20Terra/product%20photo.png"
                             alt=""
-                            width="320"
-                            height="320"
+                            width="400"
+                            height="500"
                             loading="lazy"
                             decoding="async"
                           />
                         </figure>
-                        <span class="home-collections__cat-label" data-i18n="collection_cat5">NI Terra</span>
+                        <div class="home-collections__cat-body">
+                          <span class="home-collections__cat-label" data-i18n="collection_cat5">NI Terra</span>
+                          <span class="home-collections__cat-cta" data-i18n="home_cat_discover">Ανακάλυψε</span>
+                        </div>
                       </a>
                     </li>
                   </ul>
@@ -621,17 +636,18 @@
       <p class="eshop-toast__text" data-i18n="contact_order_message">Για οποιαδήποτε απορία ή παραγγελία, επικοινωνήστε μαζί μας στο +30 693 941 1774.</p>
     </aside>
   </div>
+  <script src="js/europe-countries.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/cookies.js"></script>
   <script src="js/products.js"></script>
-  <script src="js/side-nav.js?v=7"></script>
+  <script src="js/side-nav.js?v=wide-menu"></script>
   <script src="js/cart.js"></script>
   <script src="js/account.js?v=7"></script>
   <script src="js/breadcrumbs.js?v=4"></script>
 
   <script src="js/theme.js"></script>
   <script src="js/nav-mega.js"></script>
-  <script src="js/home-collections-carousel.js"></script>
+  <script src="js/home-collections-carousel.js?v=2"></script>
   <script src="js/header-scroll.js"></script>
   <script src="js/home-toast.js"></script>
 </body>

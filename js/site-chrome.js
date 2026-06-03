@@ -92,18 +92,21 @@
   function ensureFooterStyles() {
     var legacy = document.getElementById("site-chrome-footer-style");
     if (legacy) legacy.remove();
-    if (document.getElementById("site-chrome-footer-style-v14")) return;
+    if (document.getElementById("site-chrome-footer-style-v15")) return;
     var style = document.createElement("style");
-    style.id = "site-chrome-footer-style-v14";
+    style.id = "site-chrome-footer-style-v15";
     style.textContent = `
       .site-footer {
         padding-top: 2.8rem;
       }
       .site-footer__layout--rich {
         display: grid;
-        grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+        grid-template-columns: minmax(220px, 280px) minmax(0, max-content);
         align-items: start;
-        gap: 1.6rem 2.6rem;
+        gap: 1.6rem clamp(1.5rem, 3vw, 2.75rem);
+        width: 100%;
+        max-width: var(--site-max, 1320px);
+        margin: 0 auto;
       }
       .site-footer__center--brand {
         grid-column: 1;
@@ -134,8 +137,10 @@
       .site-footer__links {
         grid-column: 2;
         display: grid;
-        grid-template-columns: repeat(3, minmax(155px, 1fr));
-        gap: 1.2rem 1.8rem;
+        grid-template-columns: repeat(3, minmax(9.25rem, 11.25rem));
+        justify-content: start;
+        gap: 1.2rem clamp(1.25rem, 2.5vw, 2rem);
+        max-width: 40rem;
       }
       .site-footer__col h4 {
         margin: 0 0 0.75rem;
@@ -236,6 +241,14 @@
         letter-spacing: 0.08em;
         color: var(--ink-muted);
       }
+      @media (min-width: 1400px) {
+        .site-footer__layout--rich {
+          grid-template-columns: minmax(240px, 300px) minmax(0, max-content);
+        }
+        .site-footer__links {
+          grid-template-columns: repeat(3, 10.5rem);
+        }
+      }
       @media (max-width: 860px) {
         .site-footer__layout--rich {
           grid-template-columns: 1fr;
@@ -271,6 +284,20 @@
     document.head.appendChild(style);
   }
 
+  var SEARCH_ICON =
+    '<svg class="site-search-trigger__icon" viewBox="0 0 24 24" focusable="false" aria-hidden="true">' +
+    '<circle cx="10.5" cy="10.5" r="6.25" fill="none" stroke="currentColor" stroke-width="1.65"/>' +
+    '<path d="M15.2 15.2L19 19" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"/>' +
+    "</svg>";
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
   function buildSearchIndex() {
     var items = [];
     if (window.NostalgiaProducts && typeof window.NostalgiaProducts.getAll === "function") {
@@ -278,6 +305,7 @@
         return {
           title: p.title,
           subtitle: p.categoryName,
+          image: p.image,
           href: "product.html?id=" + encodeURIComponent(p.id),
         };
       });
@@ -285,90 +313,185 @@
     return items;
   }
 
-  function ensureSearch() {
-    if (document.getElementById("site-search-modal")) return;
+  function ensureSearchTrigger() {
+    if (document.getElementById("site-search-trigger")) return;
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "site-search-trigger";
+    btn.id = "site-search-trigger";
+    btn.setAttribute("aria-controls", "site-search-modal");
+    btn.setAttribute("aria-expanded", "false");
+    btn.setAttribute("aria-label", t("search_label"));
+    btn.innerHTML = SEARCH_ICON;
+
+    var tools = document.querySelector(".site-header__tools");
+    if (tools) {
+      var lang = document.getElementById("lang-toggle");
+      if (lang) tools.insertBefore(btn, lang);
+      else tools.appendChild(btn);
+      return;
+    }
+
     var navRight = document.querySelector(".site-nav--right");
-    if (navRight && !navRight.querySelector(".site-search-trigger")) {
-      var trigger = document.createElement("button");
-      trigger.type = "button";
-      trigger.className = "site-search-trigger";
-      trigger.textContent = t("search_label");
-      navRight.insertBefore(trigger, navRight.firstChild);
+    if (navRight) navRight.insertBefore(btn, navRight.firstChild);
+  }
+
+  var searchDrawerApi = null;
+
+  function bindSearchTriggers() {
+    if (!searchDrawerApi) return;
+    document.querySelectorAll(".site-search-trigger").forEach(function (btn) {
+      if (btn.getAttribute("data-search-bound") === "1") return;
+      btn.setAttribute("data-search-bound", "1");
+      btn.addEventListener("click", function () {
+        if (document.getElementById("site-search-modal").classList.contains("is-open")) {
+          searchDrawerApi.close();
+        } else {
+          searchDrawerApi.open();
+        }
+      });
+    });
+  }
+
+  function ensureSearch() {
+    if (document.getElementById("site-search-modal")) {
+      bindSearchTriggers();
+      return;
     }
 
     var modal = document.createElement("aside");
     modal.id = "site-search-modal";
-    modal.className = "site-search-modal";
+    modal.className = "site-search-drawer";
     modal.hidden = true;
+    modal.setAttribute("aria-hidden", "true");
     modal.innerHTML =
-      '<div class="site-search-modal__backdrop"></div>' +
-      '<div class="site-search-modal__panel" role="dialog" aria-modal="true" aria-label="' + t("search_label") + '">' +
-      '  <div class="site-search-modal__head">' +
-      '    <p class="site-search-modal__title" data-i18n="search_label">' + t("search_label") + "</p>" +
-      '    <button type="button" class="site-search-modal__close" aria-label="' + t("toast_close_aria") + '">×</button>' +
+      '<div class="site-search-drawer__backdrop" data-search-close tabindex="-1"></div>' +
+      '<div class="site-search-drawer__panel" role="dialog" aria-modal="true" aria-labelledby="site-search-drawer-title">' +
+      '  <button type="button" class="site-search-drawer__close" data-search-close aria-label="' +
+      escapeHtml(t("toast_close_aria")) +
+      '">×</button>' +
+      '  <div class="site-search-drawer__field">' +
+      '    <label class="visually-hidden" for="site-search-drawer-input" id="site-search-drawer-title" data-i18n="search_label">' +
+      t("search_label") +
+      "</label>" +
+      '    <input id="site-search-drawer-input" class="site-search-drawer__input" type="search" autocomplete="off" data-i18n-placeholder="search_placeholder" placeholder="' +
+      escapeHtml(t("search_placeholder")) +
+      '" />' +
+      '    <span class="site-search-drawer__field-icon" aria-hidden="true">' +
+      SEARCH_ICON +
+      "</span>" +
       "  </div>" +
-      '  <input class="site-search-modal__input" type="search" placeholder="' + t("search_placeholder") + '" />' +
-      '  <ul class="site-search-modal__results"></ul>' +
-      "  </div>";
+      '  <p class="site-search-drawer__suggest-title" data-search-suggest-title data-i18n="search_suggestions">' +
+      t("search_suggestions") +
+      "</p>" +
+      '  <ul class="site-search-drawer__list" data-search-list></ul>' +
+      "</div>";
     document.body.appendChild(modal);
 
-    var input = modal.querySelector(".site-search-modal__input");
-    var results = modal.querySelector(".site-search-modal__results");
-    var close = modal.querySelector(".site-search-modal__close");
-    var backdrop = modal.querySelector(".site-search-modal__backdrop");
-    var triggers = document.querySelectorAll(".site-search-trigger");
+    var input = modal.querySelector(".site-search-drawer__input");
+    var list = modal.querySelector("[data-search-list]");
+    var suggestTitle = modal.querySelector("[data-search-suggest-title]");
+    var backdrop = modal.querySelector(".site-search-drawer__backdrop");
     var index = buildSearchIndex();
+    var defaultSuggestions = index.slice(0, 4);
 
-    function open() {
-      modal.hidden = false;
-      modal.classList.add("is-open");
-      input.value = "";
-      renderResults(index);
-      input.focus();
-    }
-
-    function closeModal() {
-      modal.classList.remove("is-open");
-      modal.hidden = true;
-    }
-
-    function renderResults(list) {
-      results.innerHTML = "";
-      if (!list.length) {
-        results.innerHTML = '<li class="site-search-modal__empty">' + t("search_no_results") + "</li>";
+    function renderList(items, isEmptyQuery) {
+      list.innerHTML = "";
+      if (suggestTitle) {
+        suggestTitle.hidden = !isEmptyQuery;
+      }
+      if (!items.length) {
+        var empty = document.createElement("li");
+        empty.className = "site-search-drawer__empty";
+        empty.textContent = t("search_no_results");
+        list.appendChild(empty);
         return;
       }
-      list.slice(0, 12).forEach(function (item) {
+      items.slice(0, 12).forEach(function (item) {
         var li = document.createElement("li");
         li.innerHTML =
-          '<a href="' + item.href + '">' +
-          '<span class="site-search-modal__result-title">' + item.title + "</span>" +
-          '<span class="site-search-modal__result-sub">' + item.subtitle + "</span>" +
+          '<a class="site-search-drawer__product" href="' +
+          item.href +
+          '">' +
+          '<img class="site-search-drawer__product-img" src="' +
+          escapeHtml(item.image || "") +
+          '" alt="" loading="lazy" decoding="async" />' +
+          '<span class="site-search-drawer__product-copy">' +
+          '<span class="site-search-drawer__product-type">' +
+          escapeHtml(item.subtitle) +
+          "</span>" +
+          '<span class="site-search-drawer__product-name">' +
+          escapeHtml(item.title) +
+          "</span>" +
+          "</span>" +
           "</a>";
-        results.appendChild(li);
+        list.appendChild(li);
       });
     }
+
+    function setOpen(open) {
+      modal.hidden = !open;
+      modal.setAttribute("aria-hidden", open ? "false" : "true");
+      modal.classList.toggle("is-open", open);
+      document.body.classList.toggle("search-drawer-open", open);
+      document.querySelectorAll(".site-search-trigger").forEach(function (btn) {
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+    }
+
+    function openSearch() {
+      if (window.NostalgiaSideNav && typeof window.NostalgiaSideNav.close === "function") {
+        window.NostalgiaSideNav.close({ restoreFocus: false });
+      }
+      if (window.NostalgiaCart && typeof window.NostalgiaCart.closeDrawer === "function") {
+        window.NostalgiaCart.closeDrawer();
+      }
+      if (window.NostalgiaLocale && typeof window.NostalgiaLocale.close === "function") {
+        window.NostalgiaLocale.close();
+      }
+      setOpen(true);
+      input.value = "";
+      renderList(defaultSuggestions, true);
+      window.setTimeout(function () {
+        input.focus();
+      }, 420);
+    }
+
+    function closeSearch() {
+      setOpen(false);
+      var trigger = document.getElementById("site-search-trigger");
+      if (trigger) trigger.focus();
+    }
+
+    modal.querySelectorAll("[data-search-close]").forEach(function (el) {
+      el.addEventListener("click", closeSearch);
+    });
 
     input.addEventListener("input", function () {
       var q = input.value.trim().toLowerCase();
       if (!q) {
-        renderResults(index);
+        renderList(defaultSuggestions, true);
         return;
       }
       var filtered = index.filter(function (item) {
         return (item.title + " " + item.subtitle).toLowerCase().indexOf(q) !== -1;
       });
-      renderResults(filtered);
+      renderList(filtered, false);
     });
 
-    triggers.forEach(function (btn) {
-      btn.addEventListener("click", open);
-    });
-    close.addEventListener("click", closeModal);
-    backdrop.addEventListener("click", closeModal);
     document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && !modal.hidden) closeModal();
+      if (e.key === "Escape" && modal.classList.contains("is-open")) closeSearch();
     });
+
+    searchDrawerApi = { open: openSearch, close: closeSearch };
+    window.NostalgiaSearchDrawer = searchDrawerApi;
+    bindSearchTriggers();
+  }
+
+  function setupSearchUi() {
+    ensureSearchTrigger();
+    ensureSearch();
   }
 
   function init() {
@@ -377,7 +500,8 @@
     ensureAnnouncement();
     ensureFooterStyles();
     enhanceFooter();
-    ensureSearch();
+    setupSearchUi();
+    document.addEventListener("nostalgia-side-nav-ready", setupSearchUi);
     if (window.NostalgiaI18n && typeof window.NostalgiaI18n.applyLang === "function") {
       window.NostalgiaI18n.applyLang(window.NostalgiaI18n.getLang(), { restartStory: false });
     }

@@ -9,6 +9,42 @@
     return key;
   }
 
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function getLang() {
+    return document.documentElement.lang === "en" ? "en" : "el";
+  }
+
+  function getCountryCode() {
+    var select = document.getElementById("checkout-country");
+    if (select && select.value) return select.value;
+    if (window.NostalgiaLocale && typeof window.NostalgiaLocale.getCountry === "function") {
+      return window.NostalgiaLocale.getCountry();
+    }
+    return "GR";
+  }
+
+  function getCountryLabel(code) {
+    if (window.NostalgiaEuropeCountries) {
+      return window.NostalgiaEuropeCountries.getName(code, getLang());
+    }
+    return code === "GR" ? t("checkout_country_value") : code;
+  }
+
+  function getStoredCoupon() {
+    try {
+      return localStorage.getItem("nostalgia-coupon") || "";
+    } catch (e) {
+      return "";
+    }
+  }
+
   function getPayMethod() {
     var selected = document.querySelector('input[name="pay_method"]:checked');
     return selected ? selected.value : "stripe";
@@ -19,10 +55,15 @@
     return selected ? selected.value : "receipt";
   }
 
+  function isGreeceCheckout() {
+    return getCountryCode() === "GR";
+  }
+
   function fullAddress(data) {
-    var line1 = data.street + " " + data.streetNumber;
+    var line1 = data.street + (data.streetNumber ? " " + data.streetNumber : "");
     var line2 = data.postal + " " + data.city;
     if (data.prefecture) line2 += ", " + data.prefecture;
+    if (data.country) line2 += ", " + data.country;
     return line1 + ", " + line2;
   }
 
@@ -46,6 +87,8 @@
       prefecture: form.prefecture.value.trim(),
       floor: form.floor.value.trim(),
       locationType: form.locationType.value.trim(),
+      countryCode: getCountryCode(),
+      country: getCountryLabel(getCountryCode()),
       notes: form.notes.value.trim(),
       docType: getDocType(),
       company: document.getElementById("checkout-company").value.trim(),
@@ -61,12 +104,12 @@
       !data.street ||
       !data.streetNumber ||
       !data.city ||
-      !data.postal ||
-      !data.prefecture ||
-      !data.floor ||
-      !data.locationType
+      !data.postal
     ) {
       return null;
+    }
+    if (data.countryCode === "GR") {
+      if (!data.prefecture || !data.floor || !data.locationType) return null;
     }
     if (data.docType === "invoice" && (!data.company || !data.afm || !data.doy)) {
       return null;
@@ -88,11 +131,21 @@
     ];
     if (data.phone) parts.push(t("checkout_phone_label") + ": " + data.phone);
     parts.push(t("checkout_mobile_label") + ": " + data.mobile);
+    parts.push(t("checkout_country_label") + ": " + data.country);
     parts.push(t("checkout_address_label") + ": " + fullAddress(data));
-    parts.push(t("checkout_floor_label") + ": " + window.NostalgiaAddressOptions.floorLabel(data.floor, t));
-    parts.push(
-      t("checkout_location_type_label") + ": " + window.NostalgiaAddressOptions.locationLabel(data.locationType, t)
-    );
+    if (data.countryCode === "GR" && data.prefecture) {
+      parts.push(t("checkout_prefecture_label") + ": " + data.prefecture);
+    }
+    if (data.floor) {
+      parts.push(t("checkout_floor_label") + ": " + window.NostalgiaAddressOptions.floorLabel(data.floor, t));
+    }
+    if (data.locationType) {
+      parts.push(
+        t("checkout_location_type_label") + ": " + window.NostalgiaAddressOptions.locationLabel(data.locationType, t)
+      );
+    }
+    var coupon = getStoredCoupon();
+    if (coupon) parts.push(t("cart_coupon_row") + ": " + coupon);
     parts.push(t("checkout_doc_title") + ": " + (data.docType === "invoice" ? t("checkout_doc_invoice") : t("checkout_doc_receipt")));
     if (data.docType === "invoice") {
       parts.push(t("checkout_company_label") + ": " + data.company);
@@ -133,21 +186,37 @@
         "</div>";
     }
 
+    var coupon = getStoredCoupon();
+    var couponRow = coupon
+      ? '<div class="checkout-summary__row checkout-summary__row--coupon"><span data-i18n="cart_coupon_row">' +
+        escapeHtml(t("cart_coupon_row")) +
+        '</span><span class="checkout-summary__coupon">' +
+        escapeHtml(coupon) +
+        "</span></div>"
+      : "";
+
     el.innerHTML =
       addressBlock +
       '<ul class="checkout-lines">' +
       lines
         .map(function (line) {
           return (
-            '<li class="checkout-line"><span><strong>' +
+            '<li class="checkout-line">' +
+            '<span class="checkout-line__name">' +
+            escapeHtml(line.product.title) +
+            "</span>" +
+            '<span class="checkout-line__meta">Qty ' +
             line.qty +
-            "×</strong> " +
-            line.product.title +
-            "</span></li>"
+            "</span>" +
+            "</li>"
           );
         })
         .join("") +
-      "</ul>";
+      "</ul>" +
+      couponRow +
+      '<p class="checkout-summary__note" data-i18n="cart_summary_note">' +
+      escapeHtml(t("cart_summary_note")) +
+      "</p>";
   }
 
   function updateCta() {
@@ -162,15 +231,25 @@
     }
   }
 
+  function updateStepIndicators() {
+    document.querySelectorAll("[data-checkout-step-indicator]").forEach(function (el) {
+      var n = parseInt(el.getAttribute("data-checkout-step-indicator"), 10);
+      el.classList.toggle("is-active", n === step);
+      el.classList.toggle("is-done", n < step);
+    });
+  }
+
   function showStep(n) {
     step = n;
     var shipping = document.getElementById("checkout-step-shipping");
     var payment = document.getElementById("checkout-step-payment");
     var back = document.getElementById("checkout-back");
     var stripeNote = document.getElementById("checkout-stripe-note");
+    var nextBtn = document.getElementById("checkout-next");
 
     if (shipping) shipping.hidden = n !== 1;
     if (payment) payment.hidden = n !== 2;
+    if (nextBtn) nextBtn.hidden = n !== 1;
     if (back) {
       back.href = n === 1 ? "cart.html" : "#";
       back.textContent = n === 1 ? t("checkout_back") : t("checkout_back");
@@ -178,6 +257,7 @@
     if (stripeNote) {
       stripeNote.hidden = getPayMethod() !== "stripe";
     }
+    updateStepIndicators();
     updateCta();
     renderSummary();
   }
@@ -208,6 +288,10 @@
     document.getElementById("checkout-step-payment").hidden = true;
     document.getElementById("checkout-sidebar").hidden = true;
     document.getElementById("checkout-back").hidden = true;
+    var steps = document.getElementById("checkout-steps");
+    var hero = document.querySelector(".checkout-page__hero");
+    if (steps) steps.hidden = true;
+    if (hero) hero.hidden = true;
     var layout = document.querySelector(".checkout-page__layout");
     if (layout) layout.hidden = true;
 
@@ -325,9 +409,63 @@
     );
   }
 
+  function populateCountrySelect() {
+    var select = document.getElementById("checkout-country");
+    if (!select || !window.NostalgiaEuropeCountries) return;
+    var lang = getLang();
+    var current = getCountryCode();
+    select.innerHTML = window.NostalgiaEuropeCountries.sorted(lang)
+      .map(function (entry) {
+        return (
+          '<option value="' +
+          entry.code +
+          '">' +
+          escapeHtml(entry[lang] || entry.en) +
+          "</option>"
+        );
+      })
+      .join("");
+    if (window.NostalgiaEuropeCountries.isValid(current)) {
+      select.value = current;
+    } else {
+      select.value = "GR";
+    }
+  }
+
   function updateCountryField() {
-    var country = document.getElementById("checkout-country");
-    if (country) country.value = t("checkout_country_value");
+    populateCountrySelect();
+    updateGrFields();
+  }
+
+  function updateGrFields() {
+    var isGr = isGreeceCheckout();
+    var prefectureWrap = document.getElementById("checkout-prefecture-wrap");
+    var grExtra = document.getElementById("checkout-gr-extra");
+    var prefecture = document.getElementById("checkout-prefecture");
+    var floor = document.getElementById("checkout-floor");
+    var locationType = document.getElementById("checkout-location-type");
+    var postal = document.getElementById("checkout-postal");
+
+    if (prefectureWrap) {
+      prefectureWrap.hidden = !isGr;
+      var cityRow = prefectureWrap.parentElement;
+      if (cityRow) cityRow.classList.toggle("checkout-form__row--single", !isGr);
+    }
+    if (grExtra) grExtra.hidden = !isGr;
+
+    [prefecture, floor, locationType].forEach(function (el) {
+      if (!el) return;
+      if (isGr) el.setAttribute("required", "");
+      else {
+        el.removeAttribute("required");
+        if (!isGr) el.value = "";
+      }
+    });
+
+    if (postal) {
+      if (isGr) postal.setAttribute("maxlength", "5");
+      else postal.removeAttribute("maxlength");
+    }
   }
 
   function updateDocTypeUI() {
@@ -364,15 +502,35 @@
       });
     });
 
+    function goToPayment() {
+      if (!validateShippingForm()) return;
+      showStep(2);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
     if (cta) {
       cta.addEventListener("click", function () {
-        if (step === 1) {
-          if (!validateShippingForm()) return;
-          showStep(2);
-          window.scrollTo({ top: 0, behavior: "smooth" });
-        } else {
-          submitOrder();
+        if (step === 1) goToPayment();
+        else submitOrder();
+      });
+    }
+
+    var nextBtn = document.getElementById("checkout-next");
+    if (nextBtn) {
+      nextBtn.addEventListener("click", goToPayment);
+    }
+
+    var countrySelect = document.getElementById("checkout-country");
+    if (countrySelect) {
+      countrySelect.addEventListener("change", function () {
+        try {
+          localStorage.setItem("nostalgia-country", countrySelect.value);
+        } catch (e) {}
+        updateGrFields();
+        if (window.NostalgiaPlacesCheckout && window.NostalgiaPlacesCheckout.setCountry) {
+          window.NostalgiaPlacesCheckout.setCountry(countrySelect.value);
         }
+        window.dispatchEvent(new CustomEvent("nostalgia-locale-updated"));
       });
     }
 
@@ -393,6 +551,10 @@
     }
 
     window.addEventListener("nostalgia-cart-updated", renderSummary);
+    window.addEventListener("nostalgia-locale-updated", function () {
+      populateCountrySelect();
+      renderSummary();
+    });
     window.NostalgiaOnLangApplied = (function (prev) {
       return function () {
         populatePrefectures();
@@ -413,6 +575,10 @@
     populatePrefectures();
     populateAddressOptions();
     updateCountryField();
+    updateGrFields();
+    if (window.NostalgiaPlacesCheckout && window.NostalgiaPlacesCheckout.registerOnFilled) {
+      window.NostalgiaPlacesCheckout.registerOnFilled(updateGrFields);
+    }
     updateDocTypeUI();
     bindEvents();
     showStep(1);

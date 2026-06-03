@@ -146,7 +146,8 @@
 
     function onScroll() {
       var y = window.scrollY || document.documentElement.scrollTop || 0;
-      header.classList.toggle("site-header--scrolled", y > 28);
+      var threshold = document.body.classList.contains("has-side-nav") ? 6 : 28;
+      header.classList.toggle("site-header--scrolled", y > threshold);
     }
 
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -200,10 +201,11 @@
   function initMicroAnimations() {
     window.addEventListener("nostalgia-cart-updated", function () {
       var badge = document.getElementById("cart-badge");
-      if (!badge) return;
-      badge.classList.remove("is-bounce");
-      void badge.offsetWidth;
-      badge.classList.add("is-bounce");
+      if (badge) {
+        badge.classList.remove("is-bounce");
+        void badge.offsetWidth;
+        badge.classList.add("is-bounce");
+      }
     });
 
     window.addEventListener("nostalgia-wishlist-updated", function () {

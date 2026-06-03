@@ -9,9 +9,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Montserrat:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/base.css?v=logo1" />
-  <link rel="stylesheet" href="css/side-nav.css?v=light-nav2" />
-  <link rel="stylesheet" href="css/shop.css" />
+  <link rel="stylesheet" href="css/base.css?v=locale-drawer" />
+  <link rel="stylesheet" href="css/side-nav.css?v=header-trudon" />
+  <link rel="stylesheet" href="css/shop.css?v=trudon-coupon" />
   <link rel="stylesheet" href="css/account.css" />
   <link rel="stylesheet" href="css/legal.css" />
   <script>
@@ -104,12 +104,15 @@
     </header>
 
     <main>
-      <header class="page-intro">
-        <h1 data-i18n="cart_heading">Το καλάθι σου</h1>
-        <div class="section-rule" aria-hidden="true"></div>
-      </header>
+      <section class="cart-page cart-page--editorial cart-page--empty" id="cart-page-root" aria-labelledby="cart-page-title">
+        <header class="cart-page__hero">
+          <h1 class="cart-page__title" id="cart-page-title" data-i18n="cart_page_title">ΚΑΛΑΘΙ</h1>
+          <div class="cart-page__hero-actions" id="cart-page-hero-actions" hidden>
+            <a class="cart-page__link" href="collection.html" data-i18n="cart_continue_shopping">Συνέχεια αγορών</a>
+            <a class="cart-page__checkout btn-shop btn-shop--primary" href="checkout.html" data-i18n="cart_proceed_checkout">Ολοκλήρωση παραγγελίας</a>
+          </div>
+        </header>
 
-      <section class="cart-page cart-page--empty" id="cart-page-root" aria-labelledby="cart-heading">
         <div class="cart-page__layout cart-page__layout--empty">
           <div class="cart-page__main">
             <div class="cart-empty" id="cart-empty">
@@ -118,9 +121,48 @@
               <p class="cart-empty__text" data-i18n="cart_empty_text">Πρόσθεσε προϊόντα από τη συλλογή για να ξεκινήσεις.</p>
               <a class="btn-shop btn-shop--primary cart-empty__cta" href="collection.html" data-i18n="cart_continue">Συνέχεια αγορών</a>
             </div>
-            <ul class="cart-items" id="cart-items" hidden></ul>
+
+            <ul class="cart-lines" id="cart-items" hidden></ul>
+
+            <div class="cart-coupon" id="cart-coupon" hidden>
+              <form class="cart-coupon__form" id="cart-coupon-form" novalidate>
+                <label class="cart-coupon__label" for="cart-coupon-input" data-i18n="cart_coupon_label">ΚΩΔΙΚΟΣ ΚΟΥΠΟΝΙΟΥ</label>
+                <div class="cart-coupon__row">
+                  <input
+                    id="cart-coupon-input"
+                    class="cart-coupon__input"
+                    type="text"
+                    name="coupon"
+                    autocomplete="off"
+                    spellcheck="false"
+                    data-i18n-placeholder="cart_coupon_placeholder"
+                    placeholder="Εισάγετε τον κωδικό"
+                  />
+                  <button type="submit" class="cart-coupon__apply" data-i18n="cart_coupon_apply">Εφαρμογή</button>
+                </div>
+                <p class="cart-coupon__feedback" id="cart-coupon-feedback" hidden role="status"></p>
+                <button type="button" class="cart-coupon__remove" id="cart-coupon-remove" hidden data-i18n="cart_coupon_remove">Αφαίρεση κουπονιού</button>
+              </form>
+            </div>
+
+            <footer class="cart-page__foot" id="cart-page-foot" hidden>
+              <div class="cart-page__foot-actions">
+                <a class="cart-page__link" href="collection.html" data-i18n="cart_continue_shopping">Συνέχεια αγορών</a>
+                <a class="cart-page__checkout btn-shop btn-shop--primary" href="checkout.html" data-i18n="cart_proceed_checkout">Ολοκλήρωση παραγγελίας</a>
+              </div>
+              <p class="cart-page__foot-note" data-i18n="cart_foot_note">Η Nostalgia επιβεβαιώνει κάθε παραγγελία προσωπικά — με προσοχή στη λεπτομέρεια και στην εμπειρία σας.</p>
+            </footer>
           </div>
-          <aside class="cart-summary" id="cart-summary" hidden aria-label="Σύνοψη παραγγελίας"></aside>
+
+          <aside class="cart-sidebar" id="cart-sidebar" hidden aria-label="Σύνοψη">
+            <div class="cart-sidebar__box" id="cart-mini-list" aria-labelledby="cart-mini-heading">
+              <h2 class="cart-sidebar__heading" id="cart-mini-heading" data-i18n="cart_my_cart">Το καλάθι μου</h2>
+              <ul class="cart-sidebar__mini-list" id="cart-mini-items"></ul>
+            </div>
+            <div class="cart-sidebar__box cart-sidebar__box--summary" id="cart-summary" aria-labelledby="cart-summary-heading">
+              <h2 class="cart-sidebar__heading" id="cart-summary-heading" data-i18n="cart_order_summary">Σύνοψη παραγγελίας</h2>
+            </div>
+          </aside>
         </div>
       </section>
     </main>
@@ -170,12 +212,13 @@
     </footer>
     <button class="back-to-top" type="button" aria-label="Back to top"><span aria-hidden="true">↑</span></button>
   </div>
+  <script src="js/europe-countries.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/cookies.js"></script>
   <script src="js/products.js"></script>
   <script src="js/side-nav.js"></script>
   <script src="js/cart.js"></script>
-  <script src="js/cart-page.js"></script>
+  <script src="js/cart-page.js?v=trudon-coupon"></script>
   <script src="js/account.js"></script>
   <script src="js/breadcrumbs.js?v=4"></script>
 

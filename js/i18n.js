@@ -1,5 +1,15 @@
 (function () {
   var STORAGE_LANG = "nostalgia-lang";
+  var STORAGE_COUNTRY = "nostalgia-country";
+
+  function europeCountriesApi() {
+    return window.NostalgiaEuropeCountries || null;
+  }
+
+  function getCountryCodes() {
+    var api = europeCountriesApi();
+    return api ? api.codes : ["GR", "CY"];
+  }
 
   var STRINGS = {
     el: {
@@ -30,6 +40,16 @@
       lang_aria: "Αλλαγή γλώσσας",
       lang_go_en: "English",
       lang_go_el: "Ελληνικά",
+      locale_aria: "Χώρα, γλώσσα και νόμισμα",
+      locale_drawer_intro:
+        "Επιβεβαιώστε τη χώρα αποστολής και τη γλώσσα πριν από την παραγγελία.",
+      locale_country_label: "Χώρα",
+      locale_language_label: "Γλώσσα",
+      locale_currency_label: "Νόμισμα",
+      locale_currency_value: "Euro (€)",
+      locale_confirm: "Επιβεβαίωση",
+      locale_lang_el: "Ελληνικά",
+      locale_lang_en: "English",
       theme_go_light: "Φωτεινό",
       theme_go_dark: "Σκοτεινό",
       theme_aria_to_light: "Εναλλαγή σε φωτεινό θέμα",
@@ -61,6 +81,27 @@
       home_moment_cta: "Η ιστορία μας",
       cart_aria: "Καλάθι αγορών",
       cart_heading: "Το καλάθι σου",
+      cart_page_title: "ΚΑΛΑΘΙ",
+      cart_my_cart: "Το καλάθι μου",
+      cart_order_summary: "Σύνοψη παραγγελίας",
+      cart_proceed_checkout: "Ολοκλήρωση παραγγελίας",
+      cart_continue_shopping: "Συνέχεια αγορών",
+      cart_estimate_shipping: "Μεταφορικά",
+      cart_products_line: "Προϊόντα",
+      cart_shipping_note: "Υπολογίζονται κατά την ολοκλήρωση της παραγγελίας.",
+      cart_summary_note:
+        "Η οριστική τιμολόγηση σας αποστέλλεται μετά την υποβολή της παραγγελίας.",
+      cart_foot_note:
+        "Η Nostalgia επιβεβαιώνει κάθε παραγγελία προσωπικά — με προσοχή στη λεπτομέρεια και στην εμπειρία σας.",
+      cart_coupon_label: "ΚΩΔΙΚΟΣ ΚΟΥΠΟΝΙΟΥ",
+      cart_coupon_placeholder: "Εισάγετε τον κωδικό",
+      cart_coupon_apply: "Εφαρμογή",
+      cart_coupon_row: "Κουπόνι",
+      cart_coupon_empty: "Πληκτρολογήστε έναν κωδικό κουπονιού.",
+      cart_coupon_saved:
+        "Ο κωδικός καταχωρήθηκε — θα εφαρμοστεί κατά την επιβεβαίωση της παραγγελίας.",
+      cart_coupon_remove: "Αφαίρεση κουπονιού",
+      cart_drawer_empty: "Δεν έχεις προϊόντα στο καλάθι σου.",
       cart_empty_title: "Το καλάθι σου είναι άδειο",
       cart_empty_text: "Πρόσθεσε προϊόντα από τη συλλογή για να ξεκινήσεις.",
       cart_added_title: "Το προϊόν προστέθηκε στο καλάθι σου",
@@ -113,6 +154,15 @@
       product_qty_label: "Ποσότητα",
       product_not_found: "Το προϊόν δεν βρέθηκε",
       checkout_heading: "Ολοκλήρωση παραγγελίας",
+      checkout_page_title: "ΟΛΟΚΛΗΡΩΣΗ",
+      checkout_step_shipping: "1. Αποστολή",
+      checkout_step_payment: "2. Επιβεβαίωση & πληρωμή",
+      checkout_section_address: "Διεύθυνση αποστολής",
+      checkout_order_summary: "Σύνοψη παραγγελίας",
+      checkout_next: "Επόμενο",
+      checkout_shipping_method_title: "Τρόπος αποστολής",
+      checkout_shipping_method_note:
+        "Ο χρόνος παράδοσης εξαρτάται από τον προορισμό. Θα σας ενημερώσουμε μετά την επιβεβαίωση.",
       checkout_summary_title: "Η παραγγελία σου",
       checkout_name_label: "Ονοματεπώνυμο",
       checkout_firstname_label: "Όνομα",
@@ -122,6 +172,7 @@
       checkout_mobile_label: "Κινητό",
       checkout_address_label: "Διεύθυνση αποστολής",
       checkout_street_label: "Οδός",
+      checkout_address_hint: "Ξεκίνα να πληκτρολογείς — θα εμφανιστούν προτάσεις διεύθυνσης.",
       checkout_street_number_label: "Αριθμός οδού",
       checkout_city_label: "Πόλη",
       checkout_postal_label: "Τ.Κ.",
@@ -204,6 +255,7 @@
       home_product_stories_cta: "Ανακάλυψε την ιστορία των προϊόντων — επίλεξε κατηγορία για να μεταφερθείς στην αντίστοιχη ιστορία.",
       home_carousel_prev: "Προηγούμενες κατηγορίες",
       home_carousel_next: "Επόμενες κατηγορίες",
+      home_cat_discover: "Ανακάλυψε",
       collection_heading: "Η συλλογή",
       collection_aria: "Κατηγορίες",
       collection_cat: "Κατηγορία",
@@ -460,8 +512,9 @@
       meta_title_journal: "Nostalgia Collection · Journal",
       announcement_shipping: "Δωρεάν αποστολή για παραγγελίες άνω των 150€",
       search_label: "Αναζήτηση",
-      search_placeholder: "Αναζήτηση προϊόντος ή κατηγορίας...",
+      search_placeholder: "Αναζήτηση...",
       search_no_results: "Δεν βρέθηκαν αποτελέσματα.",
+      search_suggestions: "Μπορεί επίσης να σας αρέσει",
       footer_orders_title: "Orders",
       footer_services_title: "Services",
       footer_information_title: "Information",
@@ -593,6 +646,16 @@
       lang_aria: "Change language",
       lang_go_en: "English",
       lang_go_el: "Ελληνικά",
+      locale_aria: "Country, language and currency",
+      locale_drawer_intro:
+        "Confirm your shipping country and language before placing an order.",
+      locale_country_label: "Country",
+      locale_language_label: "Language",
+      locale_currency_label: "Currency",
+      locale_currency_value: "Euro (€)",
+      locale_confirm: "Confirm",
+      locale_lang_el: "Ελληνικά",
+      locale_lang_en: "English",
       theme_go_light: "Light",
       theme_go_dark: "Dark",
       theme_aria_to_light: "Switch to light theme",
@@ -624,6 +687,27 @@
       home_moment_cta: "Our story",
       cart_aria: "Shopping cart",
       cart_heading: "Your cart",
+      cart_page_title: "SHOPPING CART",
+      cart_my_cart: "MY CART",
+      cart_order_summary: "ORDER SUMMARY",
+      cart_proceed_checkout: "PROCEED TO CHECKOUT",
+      cart_continue_shopping: "Continue shopping",
+      cart_estimate_shipping: "Shipping",
+      cart_products_line: "Products",
+      cart_shipping_note: "Calculated when you complete your order.",
+      cart_summary_note:
+        "Your final quote will be sent to you after you submit your order.",
+      cart_foot_note:
+        "Nostalgia confirms every order personally — with care for detail and your experience.",
+      cart_coupon_label: "COUPON CODE",
+      cart_coupon_placeholder: "Enter coupon code",
+      cart_coupon_apply: "Apply",
+      cart_coupon_row: "Coupon",
+      cart_coupon_empty: "Please enter a coupon code.",
+      cart_coupon_saved:
+        "Code saved — it will be applied when your order is confirmed.",
+      cart_coupon_remove: "Remove coupon",
+      cart_drawer_empty: "You have no items in your shopping cart.",
       cart_empty_title: "Your cart is empty",
       cart_empty_text: "Add products from the collection to get started.",
       cart_added_title: "The product was added to your cart",
@@ -676,6 +760,15 @@
       product_qty_label: "Quantity",
       product_not_found: "Product not found",
       checkout_heading: "Checkout",
+      checkout_page_title: "CHECKOUT",
+      checkout_step_shipping: "1. Shipping",
+      checkout_step_payment: "2. Review & payments",
+      checkout_section_address: "Shipping address",
+      checkout_order_summary: "Order summary",
+      checkout_next: "Next",
+      checkout_shipping_method_title: "Shipping method",
+      checkout_shipping_method_note:
+        "Delivery time depends on your destination. We will confirm details after you submit.",
       checkout_summary_title: "Your order",
       checkout_name_label: "Full name",
       checkout_firstname_label: "First name",
@@ -685,6 +778,7 @@
       checkout_mobile_label: "Mobile",
       checkout_address_label: "Shipping address",
       checkout_street_label: "Street",
+      checkout_address_hint: "Start typing — address suggestions will appear.",
       checkout_street_number_label: "Street number",
       checkout_city_label: "City",
       checkout_postal_label: "Postal code",
@@ -767,6 +861,7 @@
       home_product_stories_cta: "Discover the story of each product — choose a category to jump to its story.",
       home_carousel_prev: "Previous categories",
       home_carousel_next: "Next categories",
+      home_cat_discover: "Discover",
       collection_heading: "The collection",
       collection_aria: "Categories",
       collection_cat: "Category",
@@ -1023,8 +1118,9 @@
       meta_title_journal: "Nostalgia Collection · Journal",
       announcement_shipping: "Free shipping for all orders over €150",
       search_label: "Search",
-      search_placeholder: "Search products or categories...",
+      search_placeholder: "Search...",
       search_no_results: "No results found.",
+      search_suggestions: "You may also like",
       footer_orders_title: "Orders",
       footer_services_title: "Services",
       footer_information_title: "Information",
@@ -1202,11 +1298,8 @@
     else if (page === "journal") metaKey = "meta_title_journal";
     document.title = STRINGS[lang][metaKey];
 
-    var langBtn = document.getElementById("lang-toggle");
-    if (langBtn) {
-      langBtn.textContent = lang === "el" ? STRINGS.el.lang_go_en : STRINGS.en.lang_go_el;
-      langBtn.setAttribute("aria-label", STRINGS[lang].lang_aria);
-    }
+    updateLocaleTrigger();
+    syncCountryFields(lang);
 
     if (typeof window.NostalgiaApplyThemeLabels === "function") {
       window.NostalgiaApplyThemeLabels();
@@ -1266,12 +1359,229 @@
 
   window.resetAboutStoryAnimation = resetAboutStoryAnimation;
 
-  function initLangToggle() {
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function getStoredCountry() {
+    try {
+      var c = localStorage.getItem(STORAGE_COUNTRY);
+      var api = europeCountriesApi();
+      if (api && api.isValid(c)) return c;
+      if (getCountryCodes().indexOf(c) !== -1) return c;
+    } catch (e) {}
+    return "GR";
+  }
+
+  function getCountry() {
+    return getStoredCountry();
+  }
+
+  function countryName(code, lang) {
+    var api = europeCountriesApi();
+    if (api) return api.getName(code, lang);
+    if (code === "CY") return STRINGS[lang].contact_country_cy;
+    return STRINGS[lang].contact_country_gr;
+  }
+
+  function countryCheckoutValue(code, lang) {
+    return countryName(code, lang) + " (" + code + ")";
+  }
+
+  function setCountry(code) {
+    var api = europeCountriesApi();
+    if (api && !api.isValid(code)) code = "GR";
+    else if (!api && getCountryCodes().indexOf(code) === -1) code = "GR";
+    try {
+      localStorage.setItem(STORAGE_COUNTRY, code);
+    } catch (e) {}
+    updateLocaleTrigger();
+    syncCountryFields(getLang());
+    window.dispatchEvent(new CustomEvent("nostalgia-locale-updated"));
+  }
+
+  function syncCountryFields(lang) {
+    var checkoutCountry = document.getElementById("checkout-country");
+    if (checkoutCountry) {
+      checkoutCountry.value = countryCheckoutValue(getCountry(), lang);
+    }
+  }
+
+  function updateLocaleTrigger() {
     var btn = document.getElementById("lang-toggle");
     if (!btn) return;
+    btn.classList.add("locale-trigger");
+    var label = btn.querySelector(".locale-trigger__label");
+    if (!label) {
+      btn.innerHTML = '<span class="locale-trigger__label" aria-hidden="true"></span>';
+      label = btn.querySelector(".locale-trigger__label");
+    }
+    label.textContent = getCountry() + " | €";
+    btn.setAttribute("aria-label", t("locale_aria"));
+    btn.setAttribute("aria-expanded", btn.getAttribute("aria-expanded") || "false");
+    btn.setAttribute("aria-controls", "locale-drawer");
+  }
+
+  var localeDrawerEl;
+  var localeCountrySelect;
+  var localeLangSelect;
+
+  function closeOtherOverlays() {
+    if (window.NostalgiaSideNav && typeof window.NostalgiaSideNav.close === "function") {
+      window.NostalgiaSideNav.close({ restoreFocus: false });
+    }
+    if (window.NostalgiaSearchDrawer && typeof window.NostalgiaSearchDrawer.close === "function") {
+      window.NostalgiaSearchDrawer.close();
+    }
+    if (window.NostalgiaCart && typeof window.NostalgiaCart.closeDrawer === "function") {
+      window.NostalgiaCart.closeDrawer();
+    }
+  }
+
+  function setLocaleDrawerOpen(open) {
+    if (!localeDrawerEl) return;
+    localeDrawerEl.hidden = !open;
+    localeDrawerEl.setAttribute("aria-hidden", open ? "false" : "true");
+    localeDrawerEl.classList.toggle("is-open", open);
+    document.body.classList.toggle("locale-drawer-open", open);
+    var btn = document.getElementById("lang-toggle");
+    if (btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+
+  function fillLocaleSelectOptions() {
+    if (!localeCountrySelect || !localeLangSelect) return;
+    var lang = getLang();
+    var api = europeCountriesApi();
+    var entries = api ? api.sorted(lang) : [{ code: "GR", el: "Ελλάδα", en: "Greece" }, { code: "CY", el: "Κύπρος", en: "Cyprus" }];
+    localeCountrySelect.innerHTML = entries
+      .map(function (entry) {
+        return (
+          '<option value="' +
+          entry.code +
+          '">' +
+          escapeHtml(entry[lang] || entry.en || countryName(entry.code, lang)) +
+          "</option>"
+        );
+      })
+      .join("");
+    localeLangSelect.innerHTML =
+      '<option value="el">' +
+      escapeHtml(STRINGS[lang].locale_lang_el) +
+      '</option><option value="en">' +
+      escapeHtml(STRINGS[lang].locale_lang_en) +
+      "</option>";
+  }
+
+  function syncLocaleDrawerFields() {
+    if (!localeCountrySelect || !localeLangSelect) return;
+    localeCountrySelect.value = getCountry();
+    localeLangSelect.value = getLang();
+  }
+
+  function ensureLocaleDrawer() {
+    if (localeDrawerEl) return;
+
+    var lang = getLang();
+    localeDrawerEl = document.createElement("aside");
+    localeDrawerEl.id = "locale-drawer";
+    localeDrawerEl.className = "locale-drawer";
+    localeDrawerEl.hidden = true;
+    localeDrawerEl.setAttribute("aria-hidden", "true");
+    localeDrawerEl.innerHTML =
+      '<div class="locale-drawer__backdrop" data-locale-close tabindex="-1"></div>' +
+      '<div class="locale-drawer__panel" role="dialog" aria-modal="true" aria-labelledby="locale-drawer-title">' +
+      '  <button type="button" class="locale-drawer__close" data-locale-close aria-label="' +
+      escapeHtml(STRINGS[lang].toast_close_aria) +
+      '">×</button>' +
+      '  <p class="locale-drawer__intro" id="locale-drawer-title" data-i18n="locale_drawer_intro">' +
+      escapeHtml(STRINGS[lang].locale_drawer_intro) +
+      "</p>" +
+      '  <div class="locale-drawer__field">' +
+      '    <label class="locale-drawer__label" for="locale-drawer-country" data-i18n="locale_country_label">' +
+      escapeHtml(STRINGS[lang].locale_country_label) +
+      "</label>" +
+      '    <div class="locale-drawer__select-wrap">' +
+      '      <select id="locale-drawer-country" class="locale-drawer__select"></select>' +
+      "    </div>" +
+      "  </div>" +
+      '  <div class="locale-drawer__field">' +
+      '    <label class="locale-drawer__label" for="locale-drawer-lang" data-i18n="locale_language_label">' +
+      escapeHtml(STRINGS[lang].locale_language_label) +
+      "</label>" +
+      '    <div class="locale-drawer__select-wrap">' +
+      '      <select id="locale-drawer-lang" class="locale-drawer__select"></select>' +
+      "    </div>" +
+      "  </div>" +
+      '  <div class="locale-drawer__field">' +
+      '    <span class="locale-drawer__label" data-i18n="locale_currency_label">' +
+      escapeHtml(STRINGS[lang].locale_currency_label) +
+      "</span>" +
+      '    <p class="locale-drawer__currency" data-i18n="locale_currency_value">' +
+      escapeHtml(STRINGS[lang].locale_currency_value) +
+      "</p>" +
+      "  </div>" +
+      '  <button type="button" class="locale-drawer__confirm btn-shop btn-shop--primary" data-locale-confirm data-i18n="locale_confirm">' +
+      escapeHtml(STRINGS[lang].locale_confirm) +
+      "</button>" +
+      "</div>";
+    document.body.appendChild(localeDrawerEl);
+
+    localeCountrySelect = document.getElementById("locale-drawer-country");
+    localeLangSelect = document.getElementById("locale-drawer-lang");
+    fillLocaleSelectOptions();
+    syncLocaleDrawerFields();
+
+    localeDrawerEl.querySelectorAll("[data-locale-close]").forEach(function (el) {
+      el.addEventListener("click", closeLocaleDrawer);
+    });
+
+    localeDrawerEl.querySelector("[data-locale-confirm]").addEventListener("click", function () {
+      var nextCountry = localeCountrySelect ? localeCountrySelect.value : "GR";
+      var nextLang = localeLangSelect ? localeLangSelect.value : "el";
+      var langChanged = nextLang !== getLang();
+      setCountry(nextCountry);
+      applyLang(nextLang === "en" ? "en" : "el", { restartStory: langChanged });
+      closeLocaleDrawer();
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && localeDrawerEl && localeDrawerEl.classList.contains("is-open")) {
+        closeLocaleDrawer();
+      }
+    });
+  }
+
+  function openLocaleDrawer() {
+    ensureLocaleDrawer();
+    closeOtherOverlays();
+    fillLocaleSelectOptions();
+    syncLocaleDrawerFields();
+    setLocaleDrawerOpen(true);
+    window.setTimeout(function () {
+      var closeBtn = localeDrawerEl.querySelector(".locale-drawer__close");
+      if (closeBtn) closeBtn.focus();
+    }, 420);
+  }
+
+  function closeLocaleDrawer() {
+    setLocaleDrawerOpen(false);
+    var btn = document.getElementById("lang-toggle");
+    if (btn) btn.focus();
+  }
+
+  function initLocaleTrigger() {
+    var btn = document.getElementById("lang-toggle");
+    if (!btn || btn.getAttribute("data-locale-bound") === "1") return;
+    btn.setAttribute("data-locale-bound", "1");
+    btn.type = "button";
+    updateLocaleTrigger();
     btn.addEventListener("click", function () {
-      var next = getLang() === "el" ? "en" : "el";
-      applyLang(next, { restartStory: true });
+      if (localeDrawerEl && localeDrawerEl.classList.contains("is-open")) closeLocaleDrawer();
+      else openLocaleDrawer();
     });
   }
 
@@ -1308,15 +1618,24 @@
     applyLang(stored === "en" || stored === "el" ? stored : "el", {
       restartStory: false,
     });
-    initLangToggle();
+    initLocaleTrigger();
+    ensureLocaleDrawer();
     initAboutStoryObserver();
   }
+
+  window.NostalgiaLocale = {
+    open: openLocaleDrawer,
+    close: closeLocaleDrawer,
+    getCountry: getCountry,
+    setCountry: setCountry,
+  };
 
   window.NostalgiaI18n = {
     strings: STRINGS,
     t: t,
     applyLang: applyLang,
     getLang: getLang,
+    getCountry: getCountry,
   };
 
   if (document.readyState === "loading") {

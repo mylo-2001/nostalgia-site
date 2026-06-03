@@ -17,12 +17,39 @@
     return "light";
   }
 
-  function labelForCurrentTheme(theme) {
-    var I = window.NostalgiaI18n;
-    if (I && typeof I.t === "function") {
-      return theme === "dark" ? I.t("theme_go_light") : I.t("theme_go_dark");
-    }
-    return theme === "dark" ? "Φωτεινό" : "Σκοτεινό";
+  var THEME_TOGGLE_ICONS =
+    '<span class="theme-toggle__icons" aria-hidden="true">' +
+    '<svg class="theme-toggle__icon theme-toggle__icon--sun" viewBox="0 0 24 24" focusable="false">' +
+    '<circle cx="12" cy="12" r="4.25" fill="none" stroke="currentColor" stroke-width="1.65"/>' +
+    '<path fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" d="M12 3.25v2.1M12 18.65v2.1M5.05 5.05l1.48 1.48M17.47 17.47l1.48 1.48M3.25 12h2.1M18.65 12h2.1M5.05 18.95l1.48-1.48M17.47 6.53l1.48-1.48"/>' +
+    "</svg>" +
+    '<svg class="theme-toggle__icon theme-toggle__icon--moon" viewBox="0 0 24 24" focusable="false">' +
+    '<path fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" d="M20.2 14.8a7.35 7.35 0 0 1-9.55-9.55 7.35 7.35 0 1 0 9.55 9.55z"/>' +
+    "</svg>" +
+    "</span>";
+
+  function ensureThemeToggleMarkup() {
+    var toggle = document.getElementById("theme-toggle");
+    if (!toggle || toggle.querySelector(".theme-toggle__icons")) return;
+    toggle.innerHTML = THEME_TOGGLE_ICONS;
+  }
+
+  function iconTargetForTheme(theme) {
+    return theme === "dark" ? "sun" : "moon";
+  }
+
+  function updateThemeToggleUi(theme, animate) {
+    var toggle = document.getElementById("theme-toggle");
+    if (!toggle) return;
+    ensureThemeToggleMarkup();
+    toggle.setAttribute("data-icon", iconTargetForTheme(theme));
+    toggle.setAttribute("aria-label", ariaForCurrentTheme(theme));
+    if (animate === false) return;
+    toggle.classList.add("is-switching");
+    window.clearTimeout(toggle._themeSwitchTimer);
+    toggle._themeSwitchTimer = window.setTimeout(function () {
+      toggle.classList.remove("is-switching");
+    }, 520);
   }
 
   function ariaForCurrentTheme(theme) {
@@ -33,16 +60,13 @@
     return theme === "dark" ? "Εναλλαγή σε φωτεινό θέμα" : "Εναλλαγή σε σκοτεινό θέμα";
   }
 
-  function applyTheme(theme) {
+  function applyTheme(theme, opts) {
+    opts = opts || {};
     if (theme !== "light" && theme !== "dark") {
       theme = getSystemTheme();
     }
     root.setAttribute("data-theme", theme);
-    var toggle = document.getElementById("theme-toggle");
-    if (toggle) {
-      toggle.textContent = labelForCurrentTheme(theme);
-      toggle.setAttribute("aria-label", ariaForCurrentTheme(theme));
-    }
+    updateThemeToggleUi(theme, opts.animateToggle);
   }
 
   function initMobileNav() {
@@ -109,16 +133,12 @@
 
   window.NostalgiaApplyThemeLabels = function () {
     var theme = root.getAttribute("data-theme") === "dark" ? "dark" : "light";
-    var toggle = document.getElementById("theme-toggle");
-    if (toggle) {
-      toggle.textContent = labelForCurrentTheme(theme);
-      toggle.setAttribute("aria-label", ariaForCurrentTheme(theme));
-    }
+    updateThemeToggleUi(theme);
   };
 
   function init() {
     var stored = getStoredTheme();
-    applyTheme(stored || getSystemTheme());
+    applyTheme(stored || getSystemTheme(), { animateToggle: false });
 
     var toggle = document.getElementById("theme-toggle");
     if (toggle) {
@@ -128,7 +148,7 @@
         try {
           localStorage.setItem(STORAGE_KEY, next);
         } catch (e) {}
-        applyTheme(next);
+        applyTheme(next, { animateToggle: true });
       });
     }
 
@@ -137,7 +157,7 @@
         .matchMedia("(prefers-color-scheme: dark)")
         .addEventListener("change", function () {
           if (!getStoredTheme()) {
-            applyTheme(getSystemTheme());
+            applyTheme(getSystemTheme(), { animateToggle: false });
           }
         });
     }
@@ -186,7 +206,7 @@
     }
     if (document.querySelector('script[data-site-chrome="1"]')) return;
     var script = document.createElement("script");
-    script.src = "js/site-chrome.js?v=15";
+    script.src = "js/site-chrome.js?v=18";
     script.async = false;
     script.setAttribute("data-site-chrome", "1");
     script.onload = function () {

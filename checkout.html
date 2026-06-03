@@ -8,9 +8,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Montserrat:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/base.css?v=logo1" />
-  <link rel="stylesheet" href="css/side-nav.css?v=light-nav2" />
-  <link rel="stylesheet" href="css/shop.css" />
+  <link rel="stylesheet" href="css/base.css?v=locale-drawer" />
+  <link rel="stylesheet" href="css/side-nav.css?v=header-trudon" />
+  <link rel="stylesheet" href="css/shop.css?v=places-checkout" />
   <link rel="stylesheet" href="css/account.css" />
   <link rel="stylesheet" href="css/legal.css" />
   <script>
@@ -57,14 +57,23 @@
     </header>
 
     <main>
-      <section class="checkout-page">
-        <a class="checkout-back" id="checkout-back" href="cart.html" data-i18n="checkout_back">← Επιστροφή</a>
+      <section class="checkout-page checkout-page--editorial">
+        <header class="checkout-page__hero">
+          <h1 class="checkout-page__title" data-i18n="checkout_page_title">ΟΛΟΚΛΗΡΩΣΗ</h1>
+        </header>
 
-        <div class="checkout-page__layout">
+        <nav class="checkout-steps" id="checkout-steps" aria-label="Checkout steps">
+          <span class="checkout-steps__item is-active" data-checkout-step-indicator="1" data-i18n="checkout_step_shipping">1. Αποστολή</span>
+          <span class="checkout-steps__item" data-checkout-step-indicator="2" data-i18n="checkout_step_payment">2. Επιβεβαίωση & πληρωμή</span>
+        </nav>
+
+        <div class="checkout-page__layout" id="checkout-layout">
           <div class="checkout-main">
-            <!-- Βήμα 1: Διεύθυνση + απόδειξη/τιμολόγιο -->
             <div class="checkout-step" id="checkout-step-shipping">
-              <h2 class="checkout-step__title" data-i18n="checkout_shipping_title">Πού θέλεις να αποσταλεί η παραγγελία;</h2>
+              <div class="checkout-step__head">
+                <a class="checkout-back" id="checkout-back" href="cart.html" data-i18n="checkout_back">← Επιστροφή</a>
+                <h2 class="checkout-step__section-title" data-i18n="checkout_section_address">Διεύθυνση αποστολής</h2>
+              </div>
 
               <form class="checkout-form" id="checkout-shipping-form" novalidate>
                 <div class="checkout-form__row">
@@ -98,13 +107,16 @@
                   </div>
                   <div class="checkout-form__group checkout-form__group--country">
                     <label for="checkout-country" data-i18n="checkout_country_label">Χώρα</label>
-                    <input type="text" id="checkout-country" name="country" value="Ελλάδα (GR)" readonly />
+                    <select id="checkout-country" name="country" required></select>
                   </div>
                 </div>
                 <div class="checkout-form__row checkout-form__row--street">
                   <div class="checkout-form__group checkout-form__group--street">
                     <label for="checkout-street" data-i18n="checkout_street_label">Οδός</label>
-                    <input type="text" id="checkout-street" name="street" required autocomplete="address-line1" />
+                    <input type="text" id="checkout-street" name="street" required autocomplete="off" />
+                    <p class="checkout-form__hint" id="checkout-address-hint" data-i18n="checkout_address_hint" hidden>
+                      Ξεκίνα να πληκτρολογείς — θα εμφανιστούν προτάσεις διεύθυνσης.
+                    </p>
                   </div>
                   <div class="checkout-form__group checkout-form__group--number">
                     <label for="checkout-street-number" data-i18n="checkout_street_number_label">Αριθμός οδού</label>
@@ -116,19 +128,19 @@
                     <label for="checkout-city" data-i18n="checkout_city_label">Πόλη</label>
                     <input type="text" id="checkout-city" name="city" required autocomplete="address-level2" />
                   </div>
-                  <div class="checkout-form__group">
+                  <div class="checkout-form__group checkout-gr-only" id="checkout-prefecture-wrap">
                     <label for="checkout-prefecture" data-i18n="checkout_prefecture_label">Νομός</label>
-                    <select id="checkout-prefecture" name="prefecture" required></select>
+                    <select id="checkout-prefecture" name="prefecture"></select>
                   </div>
                 </div>
-                <div class="checkout-form__row">
+                <div class="checkout-form__row checkout-gr-only" id="checkout-gr-extra">
                   <div class="checkout-form__group">
                     <label for="checkout-floor" data-i18n="checkout_floor_label">Όροφος</label>
-                    <select id="checkout-floor" name="floor" required></select>
+                    <select id="checkout-floor" name="floor"></select>
                   </div>
                   <div class="checkout-form__group">
                     <label for="checkout-location-type" data-i18n="checkout_location_type_label">Τύπος τοποθεσίας</label>
-                    <select id="checkout-location-type" name="locationType" required></select>
+                    <select id="checkout-location-type" name="locationType"></select>
                   </div>
                 </div>
                 <div class="checkout-form__group">
@@ -136,7 +148,12 @@
                   <textarea id="checkout-notes" name="notes" rows="2"></textarea>
                 </div>
 
-                <h2 class="checkout-step__title checkout-step__title--spaced" data-i18n="checkout_doc_title">Χρειάζεσαι απόδειξη ή τιμολόγιο;</h2>
+                <div class="checkout-shipping-method">
+                  <h3 class="checkout-shipping-method__title" data-i18n="checkout_shipping_method_title">Τρόπος αποστολής</h3>
+                  <p class="checkout-shipping-method__note" data-i18n="checkout_shipping_method_note">Ο χρόνος παράδοσης εξαρτάται από τον προορισμό.</p>
+                </div>
+
+                <h2 class="checkout-step__subtitle checkout-step__title--spaced" data-i18n="checkout_doc_title">Χρειάζεσαι απόδειξη ή τιμολόγιο;</h2>
 
                 <div class="checkout-options" role="radiogroup" aria-labelledby="checkout-doc-label">
                   <span class="visually-hidden" id="checkout-doc-label" data-i18n="checkout_doc_title">Χρειάζεσαι απόδειξη ή τιμολόγιο;</span>
@@ -174,13 +191,18 @@
                     <input type="text" id="checkout-activity" name="activity" />
                   </div>
                 </div>
+
+                <div class="checkout-step__nav">
+                  <button type="button" class="checkout-step__next btn-shop btn-shop--primary" id="checkout-next" data-i18n="checkout_next">Επόμενο</button>
+                </div>
               </form>
             </div>
 
-            <!-- Βήμα 2: Τρόπος πληρωμής -->
             <div class="checkout-step" id="checkout-step-payment" hidden>
-              <button type="button" class="checkout-step-back" id="checkout-step-back" data-i18n="checkout_step_back">← Επιστροφή στα στοιχεία</button>
-              <h2 class="checkout-step__title" data-i18n="checkout_payment_title">Επίλεξε τον τρόπο πληρωμής</h2>
+              <div class="checkout-step__head">
+                <button type="button" class="checkout-step-back" id="checkout-step-back" data-i18n="checkout_step_back">← Επιστροφή στα στοιχεία</button>
+                <h2 class="checkout-step__section-title" data-i18n="checkout_payment_title">Επίλεξε τον τρόπο πληρωμής</h2>
+              </div>
 
               <div class="checkout-options checkout-options--payment" role="radiogroup" aria-labelledby="checkout-pay-label">
                 <span class="visually-hidden" id="checkout-pay-label" data-i18n="checkout_payment_title">Επίλεξε τον τρόπο πληρωμής</span>
@@ -206,10 +228,13 @@
             </div>
           </div>
 
-          <aside class="checkout-sidebar" id="checkout-sidebar" aria-label="Σύνοψη παραγγελίας">
-            <div id="checkout-summary"></div>
-            <button type="button" class="btn-shop btn-shop--primary checkout-sidebar__cta" id="checkout-cta" data-i18n="checkout_to_payment">Στοιχεία πληρωμής</button>
-            <p class="checkout-sidebar__vat" data-i18n="checkout_order_note">Θα επικοινωνήσουμε μαζί σου για επιβεβαίωση και τιμολόγηση.</p>
+          <aside class="checkout-sidebar" id="checkout-sidebar" aria-labelledby="checkout-summary-heading">
+            <div class="checkout-sidebar__box">
+              <h2 class="checkout-sidebar__title" id="checkout-summary-heading" data-i18n="checkout_order_summary">Σύνοψη παραγγελίας</h2>
+              <div id="checkout-summary"></div>
+              <button type="button" class="btn-shop btn-shop--primary checkout-sidebar__cta" id="checkout-cta" data-i18n="checkout_to_payment">Στοιχεία πληρωμής</button>
+              <p class="checkout-sidebar__note" data-i18n="checkout_order_note">Θα επικοινωνήσουμε μαζί σου για επιβεβαίωση και τιμολόγηση.</p>
+            </div>
           </aside>
         </div>
 
@@ -304,6 +329,8 @@
       </div>
     </footer>
   </div>
+  <script src="js/site-config.js"></script>
+  <script src="js/europe-countries.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/cookies.js"></script>
   <script src="js/products.js"></script>
@@ -311,7 +338,8 @@
   <script src="js/cart.js"></script>
   <script src="js/greek-prefectures.js"></script>
   <script src="js/address-options.js"></script>
-  <script src="js/checkout.js"></script>
+  <script src="js/google-places-checkout.js?v=places-checkout"></script>
+  <script src="js/checkout.js?v=places-checkout"></script>
   <script src="js/account.js"></script>
   <script src="js/breadcrumbs.js?v=4"></script>
 

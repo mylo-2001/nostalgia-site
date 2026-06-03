@@ -33,12 +33,48 @@
     }, 0);
   }
 
+  var CART_BAG_ICON =
+    '<span class="cart-link__icon" aria-hidden="true">' +
+    '<svg class="cart-bag-svg" viewBox="0 0 24 24" focusable="false" aria-hidden="true">' +
+    '<g class="cart-bag-svg__swing">' +
+    '<path class="cart-bag-svg__handle" d="M8.35 9.85c0-2.05 1.62-3.7 3.65-3.7s3.65 1.65 3.65 3.7" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"/>' +
+    '<path class="cart-bag-svg__body" d="M7.35 10.35h9.3v11.3H7.35z" fill="none" stroke="currentColor" stroke-width="1.65"/>' +
+    '<rect class="cart-bag-svg__fill" x="8.2" y="14.15" width="7.6" height="7.1" rx="0.35" fill="currentColor"/>' +
+    "</g></svg></span>";
+
+  function ensureCartIconMarkup(link) {
+    if (!link || link.querySelector(".cart-bag-svg")) return;
+    var badge = link.querySelector("#cart-badge") || link.querySelector(".cart-link__badge");
+    var badgeHtml =
+      badge && badge.outerHTML
+        ? badge.outerHTML
+        : '<span class="cart-link__badge" id="cart-badge" hidden>0</span>';
+    link.innerHTML = CART_BAG_ICON + badgeHtml;
+  }
+
+  function pulseCartLink(link) {
+    if (!link) return;
+    link.classList.remove("cart-link--added");
+    void link.offsetWidth;
+    link.classList.add("cart-link--added");
+    window.setTimeout(function () {
+      link.classList.remove("cart-link--added");
+    }, 820);
+  }
+
   function updateBadge() {
     var badge = document.getElementById("cart-badge");
+    var link = document.getElementById("cart-link");
     if (!badge) return;
     var count = getCount();
+    var prev = parseInt(link && link.getAttribute("data-cart-count"), 10) || 0;
     badge.textContent = String(count);
     badge.hidden = count <= 0;
+    if (link) {
+      link.classList.toggle("cart-link--has-items", count > 0);
+      link.setAttribute("data-cart-count", String(count));
+      if (count > prev) pulseCartLink(link);
+    }
   }
 
   function addItem(productId, qty) {
@@ -104,6 +140,185 @@
 
   function getSubtotal() {
     return 0;
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  var drawerEl;
+  var drawerBodyEl;
+  var drawerFootEl;
+
+  function closeOtherOverlays() {
+    if (window.NostalgiaSideNav && typeof window.NostalgiaSideNav.close === "function") {
+      window.NostalgiaSideNav.close({ restoreFocus: false });
+    }
+    if (window.NostalgiaSearchDrawer && typeof window.NostalgiaSearchDrawer.close === "function") {
+      window.NostalgiaSearchDrawer.close();
+    }
+    if (window.NostalgiaLocale && typeof window.NostalgiaLocale.close === "function") {
+      window.NostalgiaLocale.close();
+    }
+  }
+
+  function setCartDrawerOpen(open) {
+    if (!drawerEl) return;
+    drawerEl.hidden = !open;
+    drawerEl.setAttribute("aria-hidden", open ? "false" : "true");
+    drawerEl.classList.toggle("is-open", open);
+    document.body.classList.toggle("cart-drawer-open", open);
+    var trigger = document.getElementById("cart-link");
+    if (trigger) trigger.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+
+  function renderCartDrawer() {
+    if (!drawerBodyEl || !drawerFootEl) return;
+    var lines = getLineItems();
+
+    if (!lines.length) {
+      drawerBodyEl.innerHTML =
+        '<p class="cart-drawer__empty" data-i18n="cart_drawer_empty">' + escapeHtml(t("cart_drawer_empty")) + "</p>";
+      drawerFootEl.hidden = true;
+      drawerFootEl.innerHTML = "";
+      return;
+    }
+
+    drawerFootEl.hidden = false;
+    drawerBodyEl.innerHTML =
+      '<ul class="cart-drawer__list">' +
+      lines
+        .map(function (line) {
+          var p = line.product;
+          var url = window.NostalgiaProducts.getProductUrl(p.id);
+          return (
+            '<li class="cart-drawer__item">' +
+            '<a class="cart-drawer__item-media" href="' +
+            url +
+            '"><img src="' +
+            escapeHtml(p.image) +
+            '" alt="" width="68" height="68" loading="lazy" decoding="async" /></a>' +
+            '<div class="cart-drawer__item-body">' +
+            '<span class="cart-drawer__item-cat">' +
+            escapeHtml(p.categoryName) +
+            "</span>" +
+            '<a class="cart-drawer__item-name" href="' +
+            url +
+            '">' +
+            escapeHtml(p.title) +
+            "</a>" +
+            '<div class="qty-stepper qty-stepper--compact">' +
+            '<button type="button" class="qty-stepper__btn" data-qty-minus data-product-id="' +
+            escapeHtml(p.id) +
+            '" aria-label="-">−</button>' +
+            '<input type="number" class="qty-stepper__input" data-qty-input data-product-id="' +
+            escapeHtml(p.id) +
+            '" value="' +
+            line.qty +
+            '" min="1" max="99" aria-label="' +
+            escapeHtml(t("cart_qty_label")) +
+            '" />' +
+            '<button type="button" class="qty-stepper__btn" data-qty-plus data-product-id="' +
+            escapeHtml(p.id) +
+            '" aria-label="+">+</button>' +
+            "</div>" +
+            '<button type="button" class="cart-drawer__item-remove" data-cart-remove data-product-id="' +
+            escapeHtml(p.id) +
+            '">' +
+            escapeHtml(t("cart_remove")) +
+            "</button>" +
+            "</div></li>"
+          );
+        })
+        .join("") +
+      "</ul>";
+
+    drawerFootEl.innerHTML =
+      '<a class="btn-shop btn-shop--primary" href="checkout.html" data-i18n="cart_checkout">' +
+      escapeHtml(t("cart_checkout")) +
+      "</a>" +
+      '<a class="btn-shop btn-shop--ghost" href="cart.html" data-i18n="cart_view">' +
+      escapeHtml(t("cart_view")) +
+      "</a>";
+
+    bindQtyControls(drawerBodyEl);
+  }
+
+  function ensureCartDrawer() {
+    if (drawerEl) return;
+
+    drawerEl = document.createElement("aside");
+    drawerEl.id = "cart-drawer";
+    drawerEl.className = "cart-drawer";
+    drawerEl.hidden = true;
+    drawerEl.setAttribute("aria-hidden", "true");
+    drawerEl.innerHTML =
+      '<div class="cart-drawer__backdrop" data-cart-drawer-close tabindex="-1"></div>' +
+      '<div class="cart-drawer__panel" role="dialog" aria-modal="true" aria-labelledby="cart-drawer-title">' +
+      '  <button type="button" class="cart-drawer__close" data-cart-drawer-close aria-label="' +
+      escapeHtml(t("toast_close_aria")) +
+      '">×</button>' +
+      '  <header class="cart-drawer__head">' +
+      '    <h2 class="cart-drawer__title" id="cart-drawer-title" data-i18n="cart_heading">' +
+      escapeHtml(t("cart_heading")) +
+      "</h2>" +
+      "  </header>" +
+      '  <div class="cart-drawer__body" data-cart-drawer-body></div>' +
+      '  <footer class="cart-drawer__foot" data-cart-drawer-foot hidden></footer>' +
+      "</div>";
+    document.body.appendChild(drawerEl);
+
+    drawerBodyEl = drawerEl.querySelector("[data-cart-drawer-body]");
+    drawerFootEl = drawerEl.querySelector("[data-cart-drawer-foot]");
+
+    drawerEl.querySelectorAll("[data-cart-drawer-close]").forEach(function (el) {
+      el.addEventListener("click", closeCartDrawer);
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && drawerEl && drawerEl.classList.contains("is-open")) closeCartDrawer();
+    });
+
+    window.addEventListener("nostalgia-cart-updated", function () {
+      if (drawerEl && drawerEl.classList.contains("is-open")) renderCartDrawer();
+    });
+  }
+
+  function openCartDrawer() {
+    ensureCartDrawer();
+    closeOtherOverlays();
+    renderCartDrawer();
+    setCartDrawerOpen(true);
+    if (window.NostalgiaI18n && window.NostalgiaI18n.applyLang) {
+      window.NostalgiaI18n.applyLang(window.NostalgiaI18n.getLang(), { restartStory: false });
+    }
+    window.setTimeout(function () {
+      var closeBtn = drawerEl.querySelector(".cart-drawer__close");
+      if (closeBtn) closeBtn.focus();
+    }, 420);
+  }
+
+  function closeCartDrawer() {
+    setCartDrawerOpen(false);
+    var trigger = document.getElementById("cart-link");
+    if (trigger) trigger.focus();
+  }
+
+  function bindCartLinkClick(link) {
+    if (!link || link.getAttribute("data-cart-click-bound") === "1") return;
+    link.setAttribute("data-cart-click-bound", "1");
+    link.setAttribute("aria-controls", "cart-drawer");
+    link.setAttribute("aria-expanded", "false");
+    link.addEventListener("click", function (e) {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      if (drawerEl && drawerEl.classList.contains("is-open")) closeCartDrawer();
+      else openCartDrawer();
+    });
   }
 
   var modalEl;
@@ -209,18 +424,31 @@
 
     var link = document.getElementById("cart-link");
     if (!link) {
-      link = document.createElement("a");
-      link.href = "cart.html";
+      link = document.createElement("button");
+      link.type = "button";
       link.className = "cart-link";
       link.id = "cart-link";
       link.setAttribute("data-i18n-aria", "cart_aria");
       link.innerHTML =
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-        '<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>' +
-        '<path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>' +
-        "</svg>" +
-        '<span class="cart-link__badge" id="cart-badge" hidden>0</span>';
+        CART_BAG_ICON + '<span class="cart-link__badge" id="cart-badge" hidden>0</span>';
+    } else {
+      ensureCartIconMarkup(link);
+      if (link.tagName === "A") {
+        var next = document.createElement("button");
+        next.type = "button";
+        next.className = link.className;
+        next.id = link.id;
+        Array.prototype.slice.call(link.attributes).forEach(function (attr) {
+          if (attr.name === "href" || attr.name === "id" || attr.name === "class") return;
+          next.setAttribute(attr.name, attr.value);
+        });
+        next.innerHTML = link.innerHTML;
+        link.parentNode.replaceChild(next, link);
+        link = next;
+      }
     }
+
+    bindCartLinkClick(link);
 
     var toolsWrap = navRight && navRight.querySelector(".site-nav__tools");
     var themeBtn = document.getElementById("theme-toggle");
@@ -308,13 +536,15 @@
     getLineItems: getLineItems,
     getSubtotal: getSubtotal,
     showAddedModal: openModal,
+    openDrawer: openCartDrawer,
+    closeDrawer: closeCartDrawer,
     closeModal: closeModal,
     bindQtyControls: bindQtyControls,
     ensureHeaderCorner: ensureHeaderCorner,
     refreshHeaderCart: injectHeaderCart,
     addAndNotify: function (productId, qty) {
       addItem(productId, qty);
-      openModal(productId);
+      openCartDrawer();
     },
   };
 

@@ -56,6 +56,11 @@ body.has-side-nav .site-header__tools {
   white-space: nowrap;
 }
 
+body.has-side-nav .site-header__tools .lang-toggle.locale-trigger {
+  border: none;
+  background: transparent;
+}
+
 body.has-side-nav .site-header__tools .lang-toggle,
 body.has-side-nav .site-header__tools .theme-toggle {
   flex: 0 0 auto;
@@ -194,7 +199,7 @@ html[data-theme="light"] .side-nav {
   top: 0;
   left: 0;
   bottom: 0;
-  width: min(100%, 58rem);
+  width: min(100%, clamp(20rem, 44vw, 44rem));
   max-width: 100%;
   background: var(--sn-bg);
   border-right: 1px solid var(--sn-border);
@@ -876,9 +881,9 @@ body.side-nav-open {
     height: 2.45rem;
   }
 
-  body.has-side-nav .site-header__corner .cart-link svg {
-    width: 1.25rem;
-    height: 1.25rem;
+  body.has-side-nav .site-header__corner .cart-bag-svg {
+    width: 1.08rem;
+    height: 1.08rem;
   }
 }
 
@@ -1003,4 +1008,200 @@ html[data-theme="light"] .side-nav__sub-feature-caption {
 html[data-theme="light"] .side-nav__sub-feature-cta {
   color: var(--accent);
   border-color: var(--rule-strong);
+}
+
+/* Μεγάλες οθόνες: σταθερό πλάτος στήλων, όχι «σπασμένο» mega-menu */
+@media (min-width: 1280px) {
+  .side-nav__drawer {
+    width: min(100%, 44rem);
+  }
+
+  .side-nav__columns {
+    grid-template-columns: minmax(15rem, 17.5rem) 0fr minmax(14rem, 16.5rem);
+  }
+
+  .side-nav.is-sub-open .side-nav__columns {
+    grid-template-columns: minmax(15rem, 17.5rem) minmax(11.5rem, 14.5rem) minmax(14rem, 16.5rem);
+  }
+
+  .side-nav__visual {
+    max-width: 16.5rem;
+  }
+}
+
+@media (min-width: 1600px) {
+  body.has-side-nav .site-header__bar {
+    max-width: var(--site-max, 1320px);
+  }
+}
+
+/* ——— Header Trudon: glass bar, γυμνά icons, GR | € box ——— */
+body.has-side-nav .site-header {
+  background: color-mix(in srgb, var(--header-bg) 68%, transparent);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  border-bottom: 1px solid color-mix(in srgb, var(--header-border) 50%, transparent);
+  box-shadow: none;
+  padding: 0.5rem clamp(0.85rem, 2.8vw, 1.85rem);
+  transition:
+    background 0.45s ease,
+    border-color 0.45s ease,
+    box-shadow 0.45s ease,
+    transform 0.38s cubic-bezier(0.22, 0.82, 0.26, 1);
+}
+
+body.has-side-nav .site-header.site-header--scrolled {
+  background: color-mix(in srgb, var(--header-bg) 82%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--header-border) 65%, transparent);
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] body.has-side-nav .site-header {
+  background: color-mix(in srgb, var(--header-bg) 72%, transparent);
+}
+
+[data-theme="dark"] body.has-side-nav .site-header.site-header--scrolled {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
+}
+
+@media (min-width: 901px) {
+  body.has-side-nav .site-header__bar {
+    min-height: 3.5rem;
+    gap: 1rem;
+  }
+
+  body.has-side-nav .side-nav-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    width: auto;
+    height: auto;
+    padding: 0.35rem 0.2rem;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    font-family: var(--font-display);
+    font-size: 0.72rem;
+    letter-spacing: 0.2em;
+  }
+
+  body.has-side-nav .side-nav-trigger__icon {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 0.22rem;
+    width: 1.05rem;
+  }
+
+  body.has-side-nav .side-nav-trigger__icon span {
+    width: 100%;
+    height: 1px;
+    border-radius: 0;
+    display: block;
+  }
+
+  body.has-side-nav .side-nav-trigger__label {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    clip: auto;
+    white-space: nowrap;
+  }
+
+  body.has-side-nav .site-header__tools {
+    display: flex !important;
+    align-items: center;
+    gap: clamp(0.55rem, 1.15vw, 1.05rem);
+    margin-left: auto;
+  }
+
+  body.has-side-nav .site-header__tools .site-search-trigger {
+    order: 1;
+  }
+
+  body.has-side-nav .site-header__tools .site-header__corner {
+    order: 2;
+    position: static;
+    top: auto;
+    right: auto;
+    transform: none;
+    display: inline-flex;
+    align-items: center;
+    gap: clamp(0.45rem, 0.9vw, 0.75rem);
+    margin: 0;
+  }
+
+  body.has-side-nav .site-header__tools .lang-toggle.locale-trigger {
+    order: 3;
+    padding: 0.4rem 0.62rem;
+    border: 1px solid color-mix(in srgb, var(--rule-strong) 80%, transparent);
+    border-radius: 1px;
+    background: color-mix(in srgb, var(--surface-paper) 50%, transparent);
+    font-family: var(--font-display);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    line-height: 1.2;
+  }
+
+  body.has-side-nav .site-header__tools .theme-toggle {
+    order: 4;
+  }
+
+  body.has-side-nav .site-header__tools .site-search-trigger,
+  body.has-side-nav .site-header__tools .theme-toggle,
+  body.has-side-nav .site-header__corner .cart-link,
+  body.has-side-nav .site-header__corner .header-account-btn {
+    width: auto;
+    height: auto;
+    min-width: 0;
+    min-height: 0;
+    padding: 0.32rem;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  body.has-side-nav .site-header__tools .site-search-trigger:hover,
+  body.has-side-nav .site-header__tools .theme-toggle:hover,
+  body.has-side-nav .site-header__corner .cart-link:hover,
+  body.has-side-nav .site-header__corner .header-account-btn:hover {
+    color: var(--accent);
+    background: transparent;
+    border: none;
+    transform: none;
+    box-shadow: none;
+  }
+
+  body.has-side-nav .site-header__tools .site-search-trigger__icon {
+    width: 1.12rem;
+    height: 1.12rem;
+  }
+
+  body.has-side-nav .site-header__tools .theme-toggle__icons {
+    width: 1.12rem;
+    height: 1.12rem;
+  }
+
+  body.has-side-nav .site-header__corner .cart-bag-svg {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  body.has-side-nav .site-header__corner .header-account-btn svg {
+    width: 1.12rem;
+    height: 1.12rem;
+  }
+
+  body.has-side-nav .site-header__logo.site-header__logo--topbar img {
+    height: clamp(34px, 4vw, 42px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.has-side-nav .site-header {
+    transition-duration: 0.01ms;
+  }
 }

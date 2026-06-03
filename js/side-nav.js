@@ -10,6 +10,12 @@
   var imageCache = {};
   var visibleImgIndex = 0;
   var drawerClosing = false;
+  var menuPinnedOpen = false;
+  var hoverMenuMq = window.matchMedia("(max-width: 1279px)");
+
+  function hoverMenuEnabled() {
+    return hoverCapable && hoverMenuMq.matches;
+  }
 
   var VISUALS = {
     home: {
@@ -129,7 +135,7 @@
     if (document.querySelector('link[href*="side-nav.css"]')) return;
     var link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "css/side-nav.css?v=light-nav2";
+    link.href = "css/side-nav.css?v=wide-menu";
     document.head.appendChild(link);
   }
 
@@ -395,6 +401,7 @@
   }
 
   function scheduleMenuClose() {
+    if (menuPinnedOpen) return;
     if (menuCloseTimer) window.clearTimeout(menuCloseTimer);
     menuCloseTimer = window.setTimeout(function () {
       if (isDrawerOpen()) closeDrawer({ restoreFocus: false });
@@ -408,6 +415,7 @@
       drawerClosing = false;
       drawer.classList.remove("is-closing");
     }
+    if (opts.pinned) menuPinnedOpen = true;
     clearMenuHoverTimers();
     drawer.classList.remove("is-closing");
     drawer.hidden = false;
@@ -438,6 +446,7 @@
     opts = opts || {};
     var drawer = document.getElementById(DRAWER_ID);
     if (!drawer || drawer.hidden || drawerClosing) return;
+    menuPinnedOpen = false;
     clearMenuHoverTimers();
     drawerClosing = true;
     drawer.classList.add("is-closing");
@@ -481,6 +490,10 @@
     if (!trigger || !drawer) return;
     var drawerBody = drawer.querySelector(".side-nav__drawer");
 
+    function canHoverOpen() {
+      return hoverMenuEnabled();
+    }
+
     function isMenuTarget(node) {
       if (!node || !(node instanceof Node)) return false;
       if (trigger.contains(node) || drawer.contains(node)) return true;
@@ -491,6 +504,7 @@
     }
 
     trigger.addEventListener("mouseenter", function () {
+      if (!canHoverOpen()) return;
       clearMenuHoverTimers();
       if (isDrawerOpen() || drawerClosing) return;
       triggerOpenTimer = window.setTimeout(function () {
@@ -500,6 +514,7 @@
     });
 
     trigger.addEventListener("mouseleave", function (e) {
+      if (!canHoverOpen()) return;
       if (isMenuTarget(e.relatedTarget)) return;
       if (triggerOpenTimer) {
         window.clearTimeout(triggerOpenTimer);
@@ -510,11 +525,13 @@
 
     if (drawerBody) {
       drawerBody.addEventListener("mouseenter", function () {
+        if (!canHoverOpen()) return;
         clearMenuHoverTimers();
         if (!isDrawerOpen()) openDrawer({ focus: false });
       });
 
       drawerBody.addEventListener("mouseleave", function (e) {
+        if (!canHoverOpen()) return;
         if (!isMenuTarget(e.relatedTarget)) scheduleMenuClose();
       });
     }
@@ -668,7 +685,7 @@
       if (isDrawerOpen()) {
         closeDrawer();
       } else {
-        openDrawer();
+        openDrawer({ pinned: true });
       }
     }
 

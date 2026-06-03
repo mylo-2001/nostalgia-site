@@ -17,7 +17,11 @@
     var dots = [];
 
     function perView() {
-      return window.innerWidth <= 720 ? 1 : 2;
+      var w = window.innerWidth;
+      if (w <= 640) return 1;
+      if (w <= 900) return 2;
+      if (w <= 1200) return 3;
+      return 4;
     }
 
     function maxIndex() {

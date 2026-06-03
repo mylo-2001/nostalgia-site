@@ -145,6 +145,38 @@
     initMobileNav();
     initBackToTop();
     initSiteChrome();
+    initBreadcrumbs();
+    initSitePolish();
+  }
+
+  function initSitePolish() {
+    if (!document.querySelector('link[data-polish-css="1"]')) {
+      var link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = "css/polish.css?v=8";
+      link.setAttribute("data-polish-css", "1");
+      document.head.appendChild(link);
+    }
+    if (window.NostalgiaPolish) return;
+    if (document.querySelector('script[data-site-polish="1"]')) return;
+    var script = document.createElement("script");
+    script.src = "js/site-polish.js?v=6";
+    script.async = false;
+    script.setAttribute("data-site-polish", "1");
+    document.body.appendChild(script);
+  }
+
+  function initBreadcrumbs() {
+    if (window.NostalgiaBreadcrumbs && typeof window.NostalgiaBreadcrumbs.refresh === "function") {
+      window.NostalgiaBreadcrumbs.refresh();
+      return;
+    }
+    if (document.querySelector('script[data-breadcrumbs="1"]')) return;
+    var script = document.createElement("script");
+    script.src = "js/breadcrumbs.js?v=5";
+    script.async = false;
+    script.setAttribute("data-breadcrumbs", "1");
+    document.body.appendChild(script);
   }
 
   function initSiteChrome() {
@@ -154,7 +186,7 @@
     }
     if (document.querySelector('script[data-site-chrome="1"]')) return;
     var script = document.createElement("script");
-    script.src = "js/site-chrome.js?v=13";
+    script.src = "js/site-chrome.js?v=15";
     script.async = false;
     script.setAttribute("data-site-chrome", "1");
     script.onload = function () {

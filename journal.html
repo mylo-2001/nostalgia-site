@@ -9,10 +9,21 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Montserrat:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/base.css?v=logo1" />
-  <link rel="stylesheet" href="css/side-nav.css?v=2" />
+  <link rel="stylesheet" href="css/side-nav.css?v=light-nav2" />
   <link rel="stylesheet" href="css/legal.css" />
   <link rel="stylesheet" href="css/shop.css" />
-  <link rel="stylesheet" href="css/account.css" />
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("nostalgia-theme");
+        if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+      } catch (e) {}
+      try {
+        var l = localStorage.getItem("nostalgia-lang");
+        if (l === "en" || l === "el") document.documentElement.lang = l;
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body data-page="journal">
   <div class="page-wrap">
@@ -44,16 +55,43 @@
     <main>
       <section class="legal-page">
         <header class="page-intro page-intro--legal">
-          <h1>Journal</h1>
+          <h1 data-i18n="footer_journal">Journal</h1>
           <div class="section-rule" aria-hidden="true"></div>
         </header>
         <article class="legal-content">
-          <h2>Νέα συλλογή — NI Terra</h2>
-          <p>Μια νέα σειρά εμπνευσμένη από φυσικά υλικά, μνήμη και τελετουργία φωτός.</p>
-          <h2>Behind the scenes</h2>
-          <p>Από το εργαστήριο στη Θεσσαλονίκη: επιλογή πρώτων υλών, δοκιμές αρωμάτων, τελική σύνθεση.</p>
-          <h2>Editorial notes</h2>
-          <p>Μικρές ιστορίες για το πώς γεννιούνται οι συλλογές της Nostalgia και πώς συνδέονται με τον χρόνο και τις αναμνήσεις.</p>
+          <p class="site-reveal" data-i18n="journal_intro">Ιστορίες από το εργαστήριο, τη συλλογή και τη Μαρία Γεροστάθη.</p>
+          <div class="journal-grid">
+            <article class="journal-card site-reveal site-reveal--d1">
+              <a href="collection.html#cat5" class="journal-card__media">
+                <img src="home%20page%20photo/home%20collection.png" alt="" loading="lazy" decoding="async" />
+              </a>
+              <div class="journal-card__body">
+                <p class="journal-card__tag" data-i18n="journal_tag_collection">Συλλογή</p>
+                <h2 class="journal-card__title" data-i18n="journal_card1_title">NI Terra — φυσικά υλικά, μνήμη, φως</h2>
+                <p class="journal-card__excerpt" data-i18n="journal_card1_excerpt">Μια νέα σειρά εμπνευσμένη από τη γη και την τελετουργία του κεριού.</p>
+              </div>
+            </article>
+            <article class="journal-card site-reveal site-reveal--d2">
+              <a href="about.html" class="journal-card__media">
+                <img src="home%20page%20photo/about%20photo%20new.png" alt="" loading="lazy" decoding="async" />
+              </a>
+              <div class="journal-card__body">
+                <p class="journal-card__tag" data-i18n="journal_tag_studio">Εργαστήριο</p>
+                <h2 class="journal-card__title" data-i18n="journal_card2_title">Behind the scenes</h2>
+                <p class="journal-card__excerpt" data-i18n="journal_card2_excerpt">Από την επιλογή πρώτων υλών μέχρι την τελική σύνθεση αρωμάτων.</p>
+              </div>
+            </article>
+            <article class="journal-card site-reveal site-reveal--d3">
+              <a href="collection.html#cat4" class="journal-card__media">
+                <img src="Contact%20page%20photo/contact%20photo.png" alt="" loading="lazy" decoding="async" />
+              </a>
+              <div class="journal-card__body">
+                <p class="journal-card__tag" data-i18n="journal_tag_editorial">Editorial</p>
+                <h2 class="journal-card__title" data-i18n="journal_card3_title">Unique Art Objects</h2>
+                <p class="journal-card__excerpt" data-i18n="journal_card3_excerpt">Πώς γεννιούνται οι συλλογές και πώς συνδέονται με τον χρόνο.</p>
+              </div>
+            </article>
+          </div>
         </article>
       </section>
     </main>
@@ -64,7 +102,8 @@
   <script src="js/products.js"></script>
   <script src="js/side-nav.js"></script>
   <script src="js/cart.js"></script>
-  <script src="js/account.js"></script>
+  <script src="js/breadcrumbs.js?v=4"></script>
+
   <script src="js/theme.js"></script>
   <script src="js/header-scroll.js"></script>
 </body>

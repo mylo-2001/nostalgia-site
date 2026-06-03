@@ -47,10 +47,27 @@
   max-width: 18rem;
 }
 
+.page-intro--contact {
+  padding-bottom: clamp(1rem, 2.5vw, 1.5rem);
+}
+
 .contact-section {
   padding: 0 clamp(1rem, 4vw, 2rem) clamp(3rem, 7vw, 5rem);
   max-width: 1280px;
   margin: 0 auto;
+}
+
+.contact-section > .site-breadcrumb {
+  max-width: none;
+  margin: 0 0 clamp(0.85rem, 1.8vw, 1.15rem);
+  padding: 0;
+}
+
+/* Αν το breadcrumb μπει λάθος μέσα στο grid, μην σπάει τη διάταξη */
+.contact-split > .site-breadcrumb {
+  grid-column: 1 / -1;
+  margin: 0 0 0.5rem;
+  padding: 0;
 }
 
 .contact-split {

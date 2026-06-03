@@ -1,25 +1,73 @@
 /* Nostalgia — account login/register + newsletter (Trudon-inspired) */
 
-.side-nav__drawer .account-panel__title,
-.side-nav__drawer .account-panel__name {
+[data-theme="dark"] .side-nav__drawer .account-panel__title,
+[data-theme="dark"] .side-nav__drawer .account-panel__name {
   color: rgba(245, 240, 232, 0.95);
 }
 
-.side-nav__drawer .account-panel__email,
-.side-nav__drawer .account-form__label,
-.side-nav__drawer .account-panel__switch,
-.side-nav__drawer .account-form__hint {
+[data-theme="dark"] .side-nav__drawer .account-panel__email,
+[data-theme="dark"] .side-nav__drawer .account-form__label,
+[data-theme="dark"] .side-nav__drawer .account-panel__switch,
+[data-theme="dark"] .side-nav__drawer .account-form__hint,
+[data-theme="dark"] .side-nav__drawer .account-field span,
+[data-theme="dark"] .side-nav__drawer .account-form__section,
+[data-theme="dark"] .side-nav__drawer .account-check {
   color: rgba(245, 240, 232, 0.58);
 }
 
-.side-nav__drawer .account-form__input {
+[data-theme="dark"] .side-nav__drawer .account-field input,
+[data-theme="dark"] .side-nav__drawer .account-form__input {
   background: rgba(255, 255, 255, 0.07);
   border-color: rgba(255, 255, 255, 0.12);
   color: rgba(245, 240, 232, 0.95);
 }
 
-.side-nav__drawer .account-form__input::placeholder {
+[data-theme="dark"] .side-nav__drawer .account-field input::placeholder,
+[data-theme="dark"] .side-nav__drawer .account-form__input::placeholder {
   color: rgba(245, 240, 232, 0.35);
+}
+
+[data-theme="dark"] .side-nav__drawer .account-link {
+  color: rgba(245, 240, 232, 0.62);
+}
+
+[data-theme="dark"] .side-nav__drawer .account-btn--outline {
+  border-color: rgba(255, 255, 255, 0.22);
+  color: rgba(245, 240, 232, 0.92);
+}
+
+[data-theme="light"] .side-nav__drawer .account-panel__title,
+[data-theme="light"] .side-nav__drawer .account-panel__name,
+[data-theme="light"] .side-nav__drawer .account-field input {
+  color: var(--ink);
+}
+
+[data-theme="light"] .side-nav__drawer .account-panel__email,
+[data-theme="light"] .side-nav__drawer .account-field span,
+[data-theme="light"] .side-nav__drawer .account-panel__switch,
+[data-theme="light"] .side-nav__drawer .account-form__hint,
+[data-theme="light"] .side-nav__drawer .account-form__section,
+[data-theme="light"] .side-nav__drawer .account-check {
+  color: var(--ink-muted);
+}
+
+[data-theme="light"] .side-nav__drawer .account-field input {
+  border-bottom-color: var(--rule-strong);
+  background: transparent;
+}
+
+[data-theme="light"] .side-nav__drawer .account-link {
+  color: var(--ink-muted);
+}
+
+[data-theme="light"] .side-nav__drawer .account-btn--outline {
+  border-color: var(--rule-strong);
+  color: var(--ink);
+}
+
+[data-theme="light"] .side-nav__drawer .account-register__why {
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface-canvas));
+  border-color: var(--rule-hairline);
 }
 
 .side-nav__drawer .account-form__submit {
@@ -153,15 +201,6 @@
   display: block;
 }
 
-body[data-page="account"] .account-password-toggle {
-  color: rgba(245, 240, 232, 0.55);
-}
-
-body[data-page="account"] .account-password-toggle:hover,
-body[data-page="account"] .account-password-toggle:focus-visible {
-  color: var(--accent);
-}
-
 .account-form__row {
   display: flex;
   align-items: center;
@@ -251,91 +290,219 @@ body[data-page="account"] .account-password-toggle:focus-visible {
 }
 
 body[data-page="account"] .account-page {
-  display: grid;
-  grid-template-columns: minmax(20rem, 34rem) minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   min-height: calc(100vh - 5.2rem);
+  padding: 0;
+}
+
+body[data-page="account"] .account-page__split {
+  display: grid;
+  grid-template-columns: minmax(22rem, 36rem) minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+  align-items: stretch;
+}
+
+body[data-page="account"].account-view--register .account-page__split {
+  grid-template-columns: minmax(26rem, min(48rem, 52vw)) minmax(0, 1fr);
 }
 
 body[data-page="account"] .account-page__panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-paper);
+  color: var(--ink);
+  padding: clamp(1.75rem, 4vw, 2.75rem) clamp(1.25rem, 3.6vw, 2.5rem);
+  overflow-y: auto;
+}
+
+[data-theme="dark"] body[data-page="account"] .account-page__panel {
   background: #080f1d;
   color: rgba(245, 240, 232, 0.92);
-  padding: clamp(2rem, 5vw, 3.2rem) clamp(1rem, 3.6vw, 2.2rem);
+}
+
+body[data-page="account"] .account-page__panel .site-breadcrumb {
+  max-width: none;
+  margin: 0;
+  padding: 0 0 1.35rem;
+  font-size: 0.68rem;
+  color: var(--ink-muted);
+}
+
+body[data-page="account"] .account-page__panel .site-breadcrumb__current {
+  color: var(--ink);
+}
+
+body[data-page="account"] .account-page__panel .site-breadcrumb a:hover {
+  color: var(--accent);
 }
 
 body[data-page="account"] .account-page__visual {
   margin: 0;
   position: relative;
+  min-height: 100%;
   overflow: hidden;
   background:
     linear-gradient(160deg, rgba(6, 10, 16, 0.82), rgba(8, 12, 18, 0.76)),
     #090d14;
 }
 
+body[data-page="account"] .account-page__visual::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(105deg, rgba(8, 15, 29, 0.42) 0%, transparent 42%),
+    linear-gradient(0deg, rgba(4, 6, 10, 0.55) 0%, transparent 38%),
+    radial-gradient(ellipse 90% 80% at 58% 42%, transparent 35%, rgba(0, 0, 0, 0.28) 100%);
+}
+
+@keyframes accountVisualZoom {
+  0% {
+    transform: scale(1.05) translate3d(0, 0, 0);
+  }
+  100% {
+    transform: scale(1.14) translate3d(-1.4%, -1%, 0);
+  }
+}
+
+@keyframes accountVisualFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 body[data-page="account"] .account-page__visual img {
+  display: block;
   width: 100%;
   height: 100%;
   min-height: 100%;
   object-fit: cover;
+  object-position: center 35%;
+  transform: scale(1.05);
+  transform-origin: 52% 38%;
+  will-change: transform;
+  animation:
+    accountVisualFadeIn 1.1s ease-out both,
+    accountVisualZoom 24s ease-in-out 1.1s infinite alternate;
 }
 
 body[data-page="account"] #account-panel-root {
-  max-width: 42rem;
+  flex: 1;
+  width: 100%;
+  max-width: 40rem;
   margin: 0 auto;
 }
 
-body[data-page="account"] .account-panel__title,
-body[data-page="account"] .account-panel__name {
+[data-theme="dark"] body[data-page="account"] .account-page__panel .site-breadcrumb {
+  color: rgba(245, 240, 232, 0.5);
+}
+
+[data-theme="dark"] body[data-page="account"] .account-page__panel .site-breadcrumb__current {
+  color: rgba(245, 240, 232, 0.82);
+}
+
+[data-theme="dark"] body[data-page="account"] .account-panel__title,
+[data-theme="dark"] body[data-page="account"] .account-panel__name {
   color: rgba(245, 240, 232, 0.95);
 }
 
-body[data-page="account"] .account-panel__email,
-body[data-page="account"] .account-field span,
-body[data-page="account"] .account-panel__switch,
-body[data-page="account"] .account-form__hint {
+[data-theme="dark"] body[data-page="account"] .account-panel__email,
+[data-theme="dark"] body[data-page="account"] .account-field span,
+[data-theme="dark"] body[data-page="account"] .account-panel__switch,
+[data-theme="dark"] body[data-page="account"] .account-form__hint {
   color: rgba(245, 240, 232, 0.58);
 }
 
-body[data-page="account"] .account-field input {
+[data-theme="dark"] body[data-page="account"] .account-field input {
   color: rgba(245, 240, 232, 0.95);
   border-bottom-color: rgba(245, 240, 232, 0.28);
 }
 
-body[data-page="account"] .account-btn--outline {
+[data-theme="dark"] body[data-page="account"] .account-btn--outline {
   border-color: rgba(245, 240, 232, 0.35);
   color: rgba(245, 240, 232, 0.95);
 }
 
-body[data-page="account"] .account-link {
+[data-theme="dark"] body[data-page="account"] .account-link {
   color: rgba(245, 240, 232, 0.75);
+}
+
+[data-theme="dark"] body[data-page="account"] .account-password-toggle {
+  color: rgba(245, 240, 232, 0.58);
+}
+
+[data-theme="dark"] body[data-page="account"] .account-password-toggle:hover,
+[data-theme="dark"] body[data-page="account"] .account-password-toggle:focus-visible {
+  color: var(--accent);
+}
+
+[data-theme="light"] body[data-page="account"] .account-page__visual {
+  background:
+    linear-gradient(160deg, rgba(243, 238, 228, 0.55), rgba(232, 224, 210, 0.42)),
+    #e8e2d6;
+}
+
+[data-theme="light"] body[data-page="account"] .account-page__visual::after {
+  background:
+    linear-gradient(105deg, rgba(247, 243, 235, 0.35) 0%, transparent 42%),
+    linear-gradient(0deg, rgba(26, 22, 18, 0.1) 0%, transparent 38%),
+    radial-gradient(ellipse 90% 80% at 58% 42%, transparent 35%, rgba(0, 0, 0, 0.06) 100%);
 }
 
 @media (max-width: 980px) {
   body[data-page="account"] .account-page {
-    grid-template-columns: 1fr;
     min-height: auto;
+  }
+
+  body[data-page="account"] .account-page__split {
+    grid-template-columns: 1fr;
   }
 
   body[data-page="account"] .account-page__visual {
     order: -1;
-    max-height: 15rem;
+    min-height: 14rem;
+    max-height: 14rem;
+  }
+
+  body[data-page="account"] .account-page__visual img {
+    min-height: 14rem;
+    transform-origin: center 40%;
+    animation:
+      accountVisualFadeIn 0.85s ease-out both,
+      accountVisualZoom 20s ease-in-out 0.85s infinite alternate;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="account"] .account-page__visual img {
+    animation: none;
+    transform: scale(1.05);
+    opacity: 1;
   }
 }
 
 .account-panel--register {
-  max-width: 58rem;
+  max-width: none;
 }
 
 .account-panel__title--register {
-  margin-bottom: 1.55rem;
-  text-align: center;
-  letter-spacing: 0.1em;
+  margin-bottom: 1.25rem;
+  text-align: left;
+  letter-spacing: 0.12em;
+  font-size: clamp(0.95rem, 2.2vw, 1.1rem);
 }
 
 .account-register {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(200px, 240px);
-  gap: 1.5rem;
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
 }
 
 .account-form--register {
@@ -349,7 +516,7 @@ body[data-page="account"] .account-link {
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(245, 240, 232, 0.74);
+  color: var(--ink-muted);
 }
 
 .account-check {
@@ -361,7 +528,7 @@ body[data-page="account"] .account-link {
   font-size: 0.56rem;
   letter-spacing: 0.11em;
   text-transform: uppercase;
-  color: rgba(245, 240, 232, 0.72);
+  color: var(--ink-muted);
 }
 
 .account-check input[type="checkbox"] {
@@ -378,7 +545,7 @@ body[data-page="account"] .account-link {
   margin: -0.15rem 0 0.35rem;
   font-size: 0.68rem;
   line-height: 1.35;
-  color: rgba(245, 240, 232, 0.48);
+  color: var(--ink-muted);
 }
 
 .account-btn--register-submit {
@@ -394,9 +561,10 @@ body[data-page="account"] .account-link {
 }
 
 .account-register__why {
-  border: 1px solid rgba(197, 160, 96, 0.38);
-  background: rgba(127, 92, 44, 0.24);
-  padding: 0.85rem 0.9rem;
+  border: 1px solid var(--rule-strong);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-muted));
+  padding: 0.9rem 1rem;
+  border-radius: 2px;
 }
 
 .account-register__why-title {
@@ -406,7 +574,7 @@ body[data-page="account"] .account-link {
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(245, 240, 232, 0.92);
+  color: var(--ink);
 }
 
 .account-register__why-text {
@@ -414,18 +582,48 @@ body[data-page="account"] .account-link {
   font-family: var(--font-body);
   font-size: 0.76rem;
   line-height: 1.45;
+  color: var(--ink-muted);
+}
+
+[data-theme="light"] .account-register__why {
+  border-color: rgba(127, 92, 44, 0.28);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface-paper));
+}
+
+[data-theme="dark"] .account-register__why {
+  border-color: rgba(197, 160, 96, 0.32);
+  background: rgba(127, 92, 44, 0.18);
+}
+
+[data-theme="dark"] .account-register__why-title {
+  color: rgba(245, 240, 232, 0.92);
+}
+
+[data-theme="dark"] .account-register__why-text {
   color: rgba(245, 240, 232, 0.75);
 }
 
-@media (max-width: 900px) {
-  .account-register {
-    grid-template-columns: 1fr;
-  }
+[data-theme="dark"] .account-form__section,
+[data-theme="dark"] .account-check {
+  color: rgba(245, 240, 232, 0.72);
+}
 
-  .account-register__why {
-    order: -1;
-    max-width: 24rem;
-  }
+[data-theme="dark"] .account-form--register .account-form__hint {
+  color: rgba(245, 240, 232, 0.48);
+}
+
+body[data-page="account"] .account-form--register .account-form__row--actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 1.5rem;
+  margin-top: 0.5rem;
+}
+
+body[data-page="account"] .account-panel--login .account-panel__title {
+  margin-bottom: 1.75rem;
+  font-size: clamp(1rem, 2.4vw, 1.15rem);
+  letter-spacing: 0.16em;
 }
 
 /* Header account icon — Trudon-style, δίπλα στο καλάθι */
@@ -514,7 +712,47 @@ body[data-page="account"] .account-link {
 }
 
 [data-theme="light"] .newsletter-popup__panel {
-  background: #1a2230;
+  background: var(--surface-paper);
+  border: 1px solid var(--rule-hairline);
+  color: var(--ink);
+  box-shadow:
+    0 18px 48px rgba(47, 37, 27, 0.14),
+    0 2px 8px rgba(47, 37, 27, 0.06);
+}
+
+[data-theme="light"] .newsletter-popup__close {
+  color: var(--ink-muted);
+}
+
+[data-theme="light"] .newsletter-popup__close:hover {
+  color: var(--ink);
+}
+
+[data-theme="light"] .newsletter-popup__lead {
+  color: var(--ink-muted);
+}
+
+[data-theme="light"] .newsletter-field input {
+  background: var(--surface-canvas);
+  color: var(--ink);
+  border: 1px solid var(--rule-hairline);
+}
+
+[data-theme="light"] .newsletter-field input::placeholder {
+  color: color-mix(in srgb, var(--ink-muted) 72%, transparent);
+}
+
+[data-theme="light"] .newsletter-field input:focus {
+  outline: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--rule-hairline));
+}
+
+[data-theme="light"] .newsletter-popup__privacy {
+  color: var(--ink-muted);
+}
+
+[data-theme="light"] .newsletter-popup__privacy:hover {
+  color: var(--accent);
 }
 
 .newsletter-popup__close {

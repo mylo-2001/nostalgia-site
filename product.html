@@ -9,11 +9,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Montserrat:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/base.css?v=logo1" />
-  <link rel="stylesheet" href="css/side-nav.css?v=2" />
+  <link rel="stylesheet" href="css/side-nav.css?v=light-nav2" />
   <link rel="stylesheet" href="css/shop.css" />
   <link rel="stylesheet" href="css/account.css" />
   <link rel="stylesheet" href="css/legal.css" />
+  <link rel="stylesheet" href="css/polish.css?v=7" />
   <script>
+    document.documentElement.classList.remove("page-is-entering", "page-is-leaving");
+    document.body && document.body.classList.remove("has-quick-view-open");
+    if (document.body) document.body.style.overflow = "";
     (function () {
       try {
         var t = localStorage.getItem("nostalgia-theme");
@@ -112,7 +116,9 @@
   <script src="js/side-nav.js"></script>
   <script src="js/cart.js"></script>
   <script src="js/wishlist.js"></script>
-  <script src="js/product.js"></script>
+  <script src="js/breadcrumbs.js?v=4"></script>
+  <script src="js/site-polish.js?v=6"></script>
+  <script src="js/product.js?v=5"></script>
   <script src="js/account.js"></script>
   <script src="js/theme.js"></script>
   <script src="js/header-scroll.js"></script>

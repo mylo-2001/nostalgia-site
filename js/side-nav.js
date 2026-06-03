@@ -129,7 +129,7 @@
     if (document.querySelector('link[href*="side-nav.css"]')) return;
     var link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "css/side-nav.css?v=2";
+    link.href = "css/side-nav.css?v=light-nav2";
     document.head.appendChild(link);
   }
 

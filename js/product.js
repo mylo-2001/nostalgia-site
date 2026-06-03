@@ -13,6 +13,29 @@
     return params.get("id") || "";
   }
 
+  function revealProductContent(root) {
+    if (!root) return;
+    root.querySelectorAll(".site-reveal").forEach(function (el) {
+      el.classList.add("is-visible");
+    });
+    var layout = root.querySelector(".product-page__layout");
+    if (layout) layout.classList.add("is-visible");
+  }
+
+  function updateProductBreadcrumbs(trail) {
+    var tries = 0;
+    function apply() {
+      if (window.NostalgiaBreadcrumbs && typeof window.NostalgiaBreadcrumbs.update === "function") {
+        window.NostalgiaBreadcrumbs.update(trail);
+        return;
+      }
+      if (++tries < 120) {
+        window.setTimeout(apply, 50);
+      }
+    }
+    apply();
+  }
+
   function renderNotFound() {
     var root = document.getElementById("product-page-root");
     if (!root) return;
@@ -25,6 +48,12 @@
       t("cart_continue") +
       "</a>" +
       "</div>";
+    revealProductContent(root);
+    updateProductBreadcrumbs([
+      { labelKey: "nav_home", href: "index.html" },
+      { labelKey: "nav_collection", href: "collection.html" },
+      { text: t("product_not_found") },
+    ]);
   }
 
   function renderProduct(product) {
@@ -44,16 +73,6 @@
       '" decoding="async" />' +
       "  </figure>" +
       '  <div class="product-info">' +
-      '    <p class="product-info__breadcrumb">' +
-      '      <a href="collection.html">' +
-      t("nav_collection") +
-      "</a> · " +
-      '      <a href="collection.html#' +
-      product.catId +
-      '">' +
-      product.categoryName +
-      "</a>" +
-      "    </p>" +
       '    <h1 class="product-info__title">' +
       product.title +
       "</h1>" +
@@ -119,6 +138,26 @@
     }
 
     bindReviews(product);
+
+    var layout = root.querySelector(".product-page__layout");
+    if (layout) layout.classList.add("is-visible");
+    root.querySelectorAll(".product-reviews, .related-products, .product-not-found").forEach(function (el) {
+      el.classList.add("is-visible");
+    });
+
+    revealProductContent(root);
+    clearStuckUi();
+
+    if (window.NostalgiaPolish && typeof window.NostalgiaPolish.refreshReveal === "function") {
+      window.NostalgiaPolish.refreshReveal();
+    }
+
+    updateProductBreadcrumbs([
+      { labelKey: "nav_home", href: "index.html" },
+      { labelKey: "nav_collection", href: "collection.html" },
+      { labelKey: "collection_" + product.catId, href: "collection.html#" + product.catId },
+      { text: product.title },
+    ]);
   }
 
   function getWishlistLabel(id) {
@@ -224,15 +263,38 @@
     );
   }
 
+  function clearStuckUi() {
+    document.documentElement.classList.remove("page-is-leaving", "page-is-entering");
+    document.body.classList.remove("has-quick-view-open");
+    document.body.style.overflow = "";
+    var qv = document.querySelector(".quick-view.is-open");
+    if (qv) {
+      qv.classList.remove("is-open");
+      qv.setAttribute("aria-hidden", "true");
+    }
+    if (window.NostalgiaPolish && typeof window.NostalgiaPolish.closeQuickView === "function") {
+      window.NostalgiaPolish.closeQuickView();
+    }
+  }
+
   function init() {
+    clearStuckUi();
     var id = getProductId();
-    if (!window.NostalgiaProducts) return;
+    if (!window.NostalgiaProducts) {
+      if (!init._retries) init._retries = 0;
+      if (init._retries++ < 80) {
+        window.setTimeout(init, 50);
+      }
+      return;
+    }
+    init._retries = 0;
     var product = window.NostalgiaProducts.getById(id);
     if (!product) {
       renderNotFound();
       return;
     }
     renderProduct(product);
+    clearStuckUi();
   }
 
   if (document.readyState === "loading") {
@@ -240,4 +302,6 @@
   } else {
     init();
   }
+  window.addEventListener("load", init);
+  window.addEventListener("pageshow", clearStuckUi);
 })();

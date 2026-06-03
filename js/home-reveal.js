@@ -1,5 +1,5 @@
 (function () {
-  var SEL = ".home-reveal";
+  var SEL = ".home-reveal, .site-reveal";
 
   function revealAll() {
     document.querySelectorAll(SEL).forEach(function (el) {

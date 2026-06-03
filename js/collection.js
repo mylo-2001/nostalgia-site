@@ -75,7 +75,6 @@
   var productsGridEl;
   var productsTitleEl;
   var productsCountEl;
-  var breadcrumbCurrentEl;
   var heroImgEl;
   var heroWrapEl;
   var heroZoomEl;
@@ -210,7 +209,7 @@
       return;
     }
 
-    products.forEach(function (item) {
+    products.forEach(function (item, i) {
       var productId = item.id;
       var titleText = item.title;
       var productUrl = window.NostalgiaProducts
@@ -218,13 +217,15 @@
         : "product.html?id=" + encodeURIComponent(productId);
 
       var article = document.createElement("article");
-      article.className = "collection-product";
+      article.className = "collection-product site-reveal site-reveal--d" + ((i % 4) + 1);
       article.setAttribute("data-category", catId);
       article.setAttribute("data-product-id", productId);
+      article.setAttribute("data-reveal-tagged", "1");
       article.setAttribute("role", "listitem");
 
       var link = document.createElement("a");
       link.className = "collection-product__link";
+      link.setAttribute("data-polish-no-transition", "1");
       link.href = productUrl;
       link.setAttribute("aria-label", titleText);
 
@@ -249,8 +250,21 @@
       link.appendChild(visual);
       link.appendChild(meta);
       article.appendChild(link);
+
+      var quickBtn = document.createElement("button");
+      quickBtn.type = "button";
+      quickBtn.className = "collection-product__quick";
+      quickBtn.setAttribute("data-quick-view", productId);
+      quickBtn.setAttribute("data-i18n", "product_quick_view");
+      quickBtn.textContent = t("product_quick_view");
+      article.appendChild(quickBtn);
+
       productsGridEl.appendChild(article);
     });
+
+    if (window.NostalgiaPolish && typeof window.NostalgiaPolish.refreshReveal === "function") {
+      window.NostalgiaPolish.refreshReveal();
+    }
   }
 
   function showProducts(catId) {
@@ -269,11 +283,15 @@
       productsTitleEl.setAttribute("data-active-cat", catId);
     }
     updateLead(catId);
-    if (breadcrumbCurrentEl) {
-      breadcrumbCurrentEl.textContent = t("collection_" + catId);
-    }
     updateCategoryHero(catId);
     renderProducts(catId);
+    if (window.NostalgiaBreadcrumbs) {
+      window.NostalgiaBreadcrumbs.refresh();
+    } else {
+      window.setTimeout(function () {
+        if (window.NostalgiaBreadcrumbs) window.NostalgiaBreadcrumbs.refresh();
+      }, 0);
+    }
     try {
       if (history.replaceState) {
         history.replaceState(null, "", location.pathname + location.search + "#" + catId);
@@ -308,6 +326,7 @@
         }
       } catch (e) {}
     }
+    if (window.NostalgiaBreadcrumbs) window.NostalgiaBreadcrumbs.refresh();
   }
 
   function onHash() {
@@ -332,7 +351,6 @@
     productsTitleEl = $("#collection-products-title");
     productsCountEl = $("#collection-products-count");
     productsLeadEl = document.querySelector(".collection-catalog__lead");
-    breadcrumbCurrentEl = $("#collection-breadcrumb-current");
     heroImgEl = $("#collection-catalog-hero-img");
     heroWrapEl = $("#collection-catalog-hero");
     heroZoomEl = $("#collection-catalog-hero-zoom");
@@ -368,18 +386,72 @@
 
     window.addEventListener("hashchange", onHash);
 
+    document.addEventListener(
+      "click",
+      function (e) {
+        var quickBtn = e.target.closest("[data-quick-view]");
+        if (quickBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          openQuickViewForProduct(quickBtn.getAttribute("data-quick-view"));
+          return;
+        }
+        var productLink = e.target.closest(".collection-product__link");
+        if (productLink) {
+          clearNavUiLock();
+        }
+      },
+      true
+    );
+
     window.NostalgiaOnLangApplied = function () {
       var active = productsTitleEl && productsTitleEl.getAttribute("data-active-cat");
       if (active && productsEl && !productsEl.hidden) {
         productsTitleEl.textContent = t("collection_" + active);
         updateLead(active);
-        if (breadcrumbCurrentEl) breadcrumbCurrentEl.textContent = t("collection_" + active);
         updateCategoryHero(active);
+        if (window.NostalgiaBreadcrumbs) window.NostalgiaBreadcrumbs.refresh();
         renderProducts(active);
       }
     };
 
     onHash();
+  }
+
+  function clearNavUiLock() {
+    document.documentElement.classList.remove("page-is-leaving", "page-is-entering");
+    document.body.classList.remove("has-quick-view-open");
+    document.body.style.overflow = "";
+    var qv = document.querySelector(".quick-view.is-open");
+    if (qv) {
+      qv.classList.remove("is-open");
+      qv.setAttribute("aria-hidden", "true");
+    }
+    if (window.NostalgiaPolish && typeof window.NostalgiaPolish.closeQuickView === "function") {
+      window.NostalgiaPolish.closeQuickView();
+    }
+  }
+
+  function openQuickViewForProduct(id) {
+    if (!id) return;
+    if (window.NostalgiaPolish && typeof window.NostalgiaPolish.openQuickView === "function") {
+      window.NostalgiaPolish.openQuickView(id);
+      return;
+    }
+    var tries = 0;
+    (function retry() {
+      if (window.NostalgiaPolish && typeof window.NostalgiaPolish.openQuickView === "function") {
+        window.NostalgiaPolish.openQuickView(id);
+        return;
+      }
+      if (++tries < 60) {
+        window.setTimeout(retry, 50);
+        return;
+      }
+      if (window.NostalgiaProducts && typeof window.NostalgiaProducts.getProductUrl === "function") {
+        window.location.href = window.NostalgiaProducts.getProductUrl(id);
+      }
+    })();
   }
 
   function applyFilters(list) {

@@ -499,7 +499,7 @@ body.cookie-settings-open {
 }
 
 .faq-item[open] summary::after {
-  content: "−";
+  content: "+";
 }
 
 .faq-item p {

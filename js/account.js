@@ -62,7 +62,7 @@
     if (document.querySelector('link[href*="account.css"]')) return;
     var link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "css/account.css";
+    link.href = "css/account.css?v=light4";
     document.head.appendChild(link);
   }
 
@@ -179,7 +179,7 @@
 
   function buildLoginHTML() {
     return (
-      '<div class="account-panel">' +
+      '<div class="account-panel account-panel--login">' +
       '  <h2 class="account-panel__title" data-i18n="account_login_title">Σύνδεση</h2>' +
       '  <form class="account-form" id="account-login-form" novalidate>' +
       '    <label class="account-field"><span data-i18n="checkout_email_label">Email</span><input type="email" name="email" required autocomplete="email" /></label>' +
@@ -204,6 +204,10 @@
       '<div class="account-panel account-panel--register">' +
       '  <h2 class="account-panel__title account-panel__title--register" data-i18n="account_create_heading">Create New Customer Account</h2>' +
       '  <div class="account-register">' +
+      '    <aside class="account-register__why" aria-labelledby="account-why-title">' +
+      '      <h3 class="account-register__why-title" id="account-why-title" data-i18n="account_why_title">Why an account?</h3>' +
+      '      <p class="account-register__why-text" data-i18n="account_why_text">Δημιούργησε λογαριασμό για ταχύτερο checkout και ιστορικό παραγγελιών.</p>' +
+      '    </aside>' +
       '    <form class="account-form account-form--register" id="account-register-form" novalidate>' +
       '      <p class="account-form__section" data-i18n="account_personal_info">Personal information</p>' +
       '      <label class="account-field"><span data-i18n="checkout_firstname_label">Όνομα</span><input type="text" name="firstname" required autocomplete="given-name" /></label>' +
@@ -219,14 +223,12 @@
       '      <label class="account-field account-field--password"><span data-i18n="account_password_confirm_label">Επιβεβαίωση κωδικού</span>' +
       passwordFieldHTML("passwordConfirm", "new-password") +
       "</label>" +
-      '      <button type="submit" class="account-btn account-btn--outline account-btn--register-submit" data-i18n="account_create_btn">Δημιουργία</button>' +
-      '      <button type="button" class="account-link account-link--register-back" id="account-show-login" data-i18n="account_back_to_login">Back</button>' +
+      '      <div class="account-form__row account-form__row--actions">' +
+      '        <button type="button" class="account-link account-link--register-back" id="account-show-login" data-i18n="account_back_to_login">Back</button>' +
+      '        <button type="submit" class="account-btn account-btn--outline account-btn--register-submit" data-i18n="account_create_btn">Δημιουργία</button>' +
+      "      </div>" +
       '      <p class="account-form__error" id="account-register-error" hidden></p>' +
       "    </form>" +
-      '    <aside class="account-register__why" aria-hidden="true">' +
-      '      <h3 class="account-register__why-title" data-i18n="account_why_title">Why an account?</h3>' +
-      '      <p class="account-register__why-text" data-i18n="account_why_text">Δημιούργησε λογαριασμό για ταχύτερο checkout και ιστορικό παραγγελιών.</p>' +
-      "    </aside>" +
       "  </div>" +
       "</div>"
     );
@@ -397,12 +399,22 @@
     var root = getPanelRoot();
     if (!root) return;
     var session = getSession();
+    if (isAccountPage()) {
+      document.body.classList.remove(
+        "account-view--login",
+        "account-view--register",
+        "account-view--logged"
+      );
+    }
     if (session) {
       root.innerHTML = buildLoggedInHTML(session);
+      if (isAccountPage()) document.body.classList.add("account-view--logged");
     } else if (panelMode === "register") {
       root.innerHTML = buildRegisterHTML();
+      if (isAccountPage()) document.body.classList.add("account-view--register");
     } else {
       root.innerHTML = buildLoginHTML();
+      if (isAccountPage()) document.body.classList.add("account-view--login");
     }
     if (window.NostalgiaI18n && window.NostalgiaI18n.applyLang) {
       window.NostalgiaI18n.applyLang(window.NostalgiaI18n.getLang(), { restartStory: false });

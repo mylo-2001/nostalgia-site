@@ -30,6 +30,8 @@
       side_nav_see_all: "Δείτε όλα",
       side_nav_about_all: "Η Nostalgia",
       side_nav_discover: "Ανακάλυψε",
+      side_nav_prefs_label: "Ρυθμίσεις",
+      locale_drawer_prefix: "Χώρα",
       side_nav_visual_home_title: "Nostalgia Collection",
       side_nav_visual_home_desc: "Κεριά αναμνήσεων — χειροποίητη τέχνη φωτός.",
       side_nav_visual_cat_desc: "Μια συλλογή χειροποίητων κεριών με μοναδικό χαρακτήρα.",
@@ -636,6 +638,8 @@
       side_nav_see_all: "See all",
       side_nav_about_all: "About Nostalgia",
       side_nav_discover: "Discover",
+      side_nav_prefs_label: "Preferences",
+      locale_drawer_prefix: "Country",
       side_nav_visual_home_title: "Nostalgia Collection",
       side_nav_visual_home_desc: "Candles of memory — handmade light and art.",
       side_nav_visual_cat_desc: "A collection of handmade candles with a unique character.",
@@ -1420,7 +1424,12 @@
       btn.innerHTML = '<span class="locale-trigger__label" aria-hidden="true"></span>';
       label = btn.querySelector(".locale-trigger__label");
     }
-    label.textContent = getCountry() + " | €";
+    var inDrawer = !!btn.closest("#side-nav-utils-locale");
+    if (inDrawer) {
+      label.textContent = t("locale_drawer_prefix") + ": " + countryName(getCountry(), getLang()) + " | €";
+    } else {
+      label.textContent = getCountry() + " | €";
+    }
     btn.setAttribute("aria-label", t("locale_aria"));
     btn.setAttribute("aria-expanded", btn.getAttribute("aria-expanded") || "false");
     btn.setAttribute("aria-controls", "locale-drawer");
@@ -1568,9 +1577,17 @@
   }
 
   function closeLocaleDrawer() {
-    setLocaleDrawerOpen(false);
-    var btn = document.getElementById("lang-toggle");
-    if (btn) btn.focus();
+    if (!localeDrawerEl) return;
+    var returnFocus = document.getElementById("lang-toggle");
+    var active = document.activeElement;
+    if (returnFocus) {
+      returnFocus.focus();
+    } else if (active && localeDrawerEl.contains(active)) {
+      active.blur();
+    }
+    window.requestAnimationFrame(function () {
+      setLocaleDrawerOpen(false);
+    });
   }
 
   function initLocaleTrigger() {
@@ -1628,6 +1645,7 @@
     close: closeLocaleDrawer,
     getCountry: getCountry,
     setCountry: setCountry,
+    refreshTrigger: updateLocaleTrigger,
   };
 
   window.NostalgiaI18n = {

@@ -313,28 +313,49 @@
     return items;
   }
 
-  function ensureSearchTrigger() {
-    if (document.getElementById("site-search-trigger")) return;
-
-    var btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "site-search-trigger";
-    btn.id = "site-search-trigger";
-    btn.setAttribute("aria-controls", "site-search-modal");
-    btn.setAttribute("aria-expanded", "false");
-    btn.setAttribute("aria-label", t("search_label"));
-    btn.innerHTML = SEARCH_ICON;
-
-    var tools = document.querySelector(".site-header__tools");
-    if (tools) {
-      var lang = document.getElementById("lang-toggle");
-      if (lang) tools.insertBefore(btn, lang);
-      else tools.appendChild(btn);
-      return;
+  function getSearchMount() {
+    var mobile =
+      window.matchMedia && window.matchMedia("(max-width: 900px)").matches;
+    if (mobile) {
+      var slot = document.getElementById("site-header-search-slot");
+      if (slot) return slot;
     }
-
+    var tools = document.querySelector(".site-header__tools");
+    if (tools) return tools;
+    var bar = document.querySelector(".site-header__bar");
+    var trigger = document.getElementById("side-nav-trigger");
+    if (bar && trigger) return { parent: bar, before: trigger.nextSibling };
     var navRight = document.querySelector(".site-nav--right");
-    if (navRight) navRight.insertBefore(btn, navRight.firstChild);
+    return navRight || null;
+  }
+
+  function mountSearchTrigger(btn) {
+    var mount = getSearchMount();
+    if (!mount) return false;
+    if (mount.parent) {
+      mount.parent.insertBefore(btn, mount.before || null);
+      return true;
+    }
+    if (btn.parentNode === mount) return true;
+    var lang = document.getElementById("lang-toggle");
+    if (lang && lang.parentNode === mount) mount.insertBefore(btn, lang);
+    else mount.insertBefore(btn, mount.firstChild || null);
+    return true;
+  }
+
+  function ensureSearchTrigger() {
+    var btn = document.getElementById("site-search-trigger");
+    if (!btn) {
+      btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "site-search-trigger";
+      btn.id = "site-search-trigger";
+      btn.setAttribute("aria-controls", "site-search-modal");
+      btn.setAttribute("aria-expanded", "false");
+      btn.setAttribute("aria-label", t("search_label"));
+      btn.innerHTML = SEARCH_ICON;
+    }
+    mountSearchTrigger(btn);
   }
 
   var searchDrawerApi = null;
@@ -492,6 +513,16 @@
   function setupSearchUi() {
     ensureSearchTrigger();
     ensureSearch();
+    if (window.NostalgiaSideNav && typeof window.NostalgiaSideNav.placeHeaderUtilities === "function") {
+      window.NostalgiaSideNav.placeHeaderUtilities();
+    }
+    if (!window._nostalgiaSearchMqBound && window.matchMedia) {
+      window._nostalgiaSearchMqBound = true;
+      window.matchMedia("(max-width: 900px)").addEventListener("change", function () {
+        ensureSearchTrigger();
+        bindSearchTriggers();
+      });
+    }
   }
 
   function init() {
@@ -507,5 +538,5 @@
     }
   }
 
-  window.NostalgiaSiteChrome = { init: init };
+  window.NostalgiaSiteChrome = { init: init, setupSearch: setupSearchUi };
 })();

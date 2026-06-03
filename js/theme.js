@@ -206,7 +206,7 @@
     }
     if (document.querySelector('script[data-site-chrome="1"]')) return;
     var script = document.createElement("script");
-    script.src = "js/site-chrome.js?v=18";
+    script.src = "js/site-chrome.js?v=search-mobile";
     script.async = false;
     script.setAttribute("data-site-chrome", "1");
     script.onload = function () {

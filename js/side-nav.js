@@ -167,6 +167,12 @@
       '          <li><a class="side-nav__link side-nav__link--small" href="wishlist.html"><span class="side-nav__link-text" data-i18n="wishlist_heading">Αγαπημένα</span></a></li>' +
       '          <li><a class="side-nav__link side-nav__link--small" href="privacy.html"><span class="side-nav__link-text" data-i18n="footer_privacy">Προστασία Δεδομένων</span></a></li>' +
       "        </ul>" +
+      '        <div class="side-nav__utils" id="side-nav-utils" hidden>' +
+      '          <div class="side-nav__utils-row" id="side-nav-utils-row">' +
+      '            <div class="side-nav__utils-locale" id="side-nav-utils-locale"></div>' +
+      '            <div class="side-nav__utils-theme" id="side-nav-utils-theme"></div>' +
+      "          </div>" +
+      "        </div>" +
       "      </div>" +
       '      <div class="side-nav__sub-stack">' +
       '        <div class="side-nav__panel side-nav__panel--sub" data-side-sub="collection">' +
@@ -696,9 +702,62 @@
     }
   }
 
+  var mobileHeaderMq = window.matchMedia("(max-width: 900px)");
+
+  function isMobileHeader() {
+    return mobileHeaderMq.matches;
+  }
+
+  function placeHeaderUtilities() {
+    var tools = document.querySelector(".site-header__tools");
+    var utilsLocale = document.getElementById("side-nav-utils-locale");
+    var utilsTheme = document.getElementById("side-nav-utils-theme");
+    var utilsWrap = document.getElementById("side-nav-utils");
+    var lang = document.getElementById("lang-toggle");
+    var theme = document.getElementById("theme-toggle");
+
+    if (!tools) return;
+
+    if (isMobileHeader()) {
+      if (utilsLocale && lang && lang.parentNode !== utilsLocale) utilsLocale.appendChild(lang);
+      if (utilsTheme && theme && theme.parentNode !== utilsTheme) utilsTheme.appendChild(theme);
+      if (utilsWrap) utilsWrap.hidden = false;
+      document.body.classList.add("has-side-nav-mobile-utils");
+      if (window.NostalgiaLocale && typeof window.NostalgiaLocale.refreshTrigger === "function") {
+        window.NostalgiaLocale.refreshTrigger();
+      }
+    } else {
+      if (lang) tools.appendChild(lang);
+      if (theme) tools.appendChild(theme);
+      if (utilsWrap) utilsWrap.hidden = true;
+      document.body.classList.remove("has-side-nav-mobile-utils");
+      if (window.NostalgiaLocale && typeof window.NostalgiaLocale.refreshTrigger === "function") {
+        window.NostalgiaLocale.refreshTrigger();
+      }
+    }
+  }
+
+  function ensureHeaderSearchSlot() {
+    var bar = document.querySelector(".site-header__bar");
+    var trigger = document.getElementById("side-nav-trigger");
+    if (!bar || !trigger || document.getElementById("site-header-search-slot")) return;
+    var searchSlot = document.createElement("div");
+    searchSlot.className = "site-header__search-slot";
+    searchSlot.id = "site-header-search-slot";
+    bar.insertBefore(searchSlot, trigger.nextSibling);
+  }
+
   function setupHeader() {
     var bar = document.querySelector(".site-header__bar");
-    if (!bar || document.getElementById("side-nav-trigger")) return;
+    if (!bar) return;
+
+    if (document.getElementById("side-nav-trigger")) {
+      ensureHeaderSearchSlot();
+      if (window.NostalgiaSiteChrome && typeof window.NostalgiaSiteChrome.setupSearch === "function") {
+        window.NostalgiaSiteChrome.setupSearch();
+      }
+      return;
+    }
 
     document.body.classList.add("has-side-nav");
 
@@ -722,10 +781,24 @@
 
     var lang = document.getElementById("lang-toggle");
     var theme = document.getElementById("theme-toggle");
-    if (lang && lang.parentNode !== tools) tools.appendChild(lang);
-    if (theme && theme.parentNode !== tools) tools.appendChild(theme);
+    if (
+      lang &&
+      lang.parentNode !== tools &&
+      lang.parentNode !== document.getElementById("side-nav-utils-locale")
+    ) {
+      tools.appendChild(lang);
+    }
+    if (
+      theme &&
+      theme.parentNode !== tools &&
+      theme.parentNode !== document.getElementById("side-nav-utils-theme")
+    ) {
+      tools.appendChild(theme);
+    }
 
     bar.insertBefore(trigger, bar.firstChild);
+
+    ensureHeaderSearchSlot();
 
     var logo = bar.querySelector(".site-header__logo--topbar");
     if (logo && logo.parentNode === bar) {
@@ -734,7 +807,34 @@
       bar.insertBefore(tools, trigger.nextSibling);
     }
 
+    placeHeaderUtilities();
+    if (typeof mobileHeaderMq.addEventListener === "function") {
+      mobileHeaderMq.addEventListener("change", placeHeaderUtilities);
+    } else if (typeof mobileHeaderMq.addListener === "function") {
+      mobileHeaderMq.addListener(placeHeaderUtilities);
+    }
+
     bindMenuTrigger(trigger, hamburger);
+
+    if (window.NostalgiaSiteChrome && typeof window.NostalgiaSiteChrome.setupSearch === "function") {
+      window.NostalgiaSiteChrome.setupSearch();
+    }
+  }
+
+  function ensureDrawerUtils() {
+    if (document.getElementById("side-nav-utils")) return;
+    var navColumn = document.querySelector(".side-nav__nav-column");
+    if (!navColumn) return;
+    var wrap = document.createElement("div");
+    wrap.className = "side-nav__utils";
+    wrap.id = "side-nav-utils";
+    wrap.hidden = true;
+    wrap.innerHTML =
+      '<div class="side-nav__utils-row" id="side-nav-utils-row">' +
+      '<div class="side-nav__utils-locale" id="side-nav-utils-locale"></div>' +
+      '<div class="side-nav__utils-theme" id="side-nav-utils-theme"></div>' +
+      "</div>";
+    navColumn.appendChild(wrap);
   }
 
   function init() {
@@ -742,8 +842,14 @@
     if (!document.getElementById(DRAWER_ID)) {
       document.body.insertAdjacentHTML("beforeend", buildDrawerHTML());
     }
+    ensureDrawerUtils();
     preloadImages();
     setupHeader();
+    ensureHeaderSearchSlot();
+    placeHeaderUtilities();
+    if (window.NostalgiaSiteChrome && typeof window.NostalgiaSiteChrome.setupSearch === "function") {
+      window.NostalgiaSiteChrome.setupSearch();
+    }
     bindDrawerEvents();
     bindTriggerHover();
     bindHoverNavigation();
@@ -774,6 +880,7 @@
     openPanel: openSubPanel,
     openForAccount: openForAccount,
     isOpen: isDrawerOpen,
+    placeHeaderUtilities: placeHeaderUtilities,
   };
 
   if (document.readyState === "loading") {

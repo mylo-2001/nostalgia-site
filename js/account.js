@@ -396,6 +396,7 @@
   }
 
   function renderPanel() {
+    ensureStylesheet();
     var root = getPanelRoot();
     if (!root) return;
     var session = getSession();
@@ -498,6 +499,10 @@
   function closeNewsletter() {
     var modal = document.getElementById("newsletter-modal");
     if (!modal) return;
+    var active = document.activeElement;
+    if (active && modal.contains(active)) {
+      active.blur();
+    }
     modal.classList.remove("is-visible");
     modal.setAttribute("aria-hidden", "true");
     window.setTimeout(function () {
@@ -685,7 +690,6 @@
       panelMode = params.get("mode") === "register" ? "register" : "login";
     }
     disableLegacyDrawerAccountUI();
-    ensureStylesheet();
     bindAccountDelegation();
     bindNewsletter();
     ensurePanelRoot();

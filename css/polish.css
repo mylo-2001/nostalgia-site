@@ -90,6 +90,17 @@ body[data-page="product"] #product-page-root {
   box-shadow: 0 10px 32px rgba(0, 0, 0, 0.35);
 }
 
+@media (max-width: 900px) {
+  [data-theme="dark"] .page-wrap::before {
+    display: none;
+  }
+
+  .site-header.site-header--scrolled {
+    backdrop-filter: blur(8px) saturate(1.05);
+    -webkit-backdrop-filter: blur(8px) saturate(1.05);
+  }
+}
+
 /* ——— Site reveal (non-home pages) ——— */
 .site-reveal {
   opacity: 0;

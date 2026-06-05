@@ -142,6 +142,13 @@
     function reveal() {
       heroImgEl.src = src;
       heroImgEl.alt = label;
+      if (window.NostalgiaImages && typeof window.NostalgiaImages.upgrade === "function") {
+        window.NostalgiaImages.upgrade(heroImgEl, {
+          priority: true,
+          sizes: "100vw",
+        });
+        heroImgEl = document.getElementById("collection-catalog-hero-img");
+      }
       if (heroWrapEl) {
         heroWrapEl.setAttribute("data-hero-cat", catId);
       }
@@ -232,12 +239,22 @@
       var visual = document.createElement("div");
       visual.className = "collection-product__visual";
 
-      var img = document.createElement("img");
-      img.src = item.image;
-      img.alt = "";
-      img.loading = "lazy";
-      img.decoding = "async";
-      visual.appendChild(img);
+      if (window.NostalgiaImages && typeof window.NostalgiaImages.create === "function") {
+        visual.appendChild(
+          window.NostalgiaImages.create(item.image, {
+            alt: "",
+            loading: "lazy",
+            sizes: "(max-width: 640px) 50vw, 280px",
+          })
+        );
+      } else {
+        var img = document.createElement("img");
+        img.src = item.image;
+        img.alt = "";
+        img.loading = "lazy";
+        img.decoding = "async";
+        visual.appendChild(img);
+      }
 
       var meta = document.createElement("div");
       meta.className = "collection-product__meta";

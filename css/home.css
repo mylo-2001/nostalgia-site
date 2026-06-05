@@ -187,27 +187,27 @@
   box-shadow: 0 16px 44px rgba(0, 0, 0, 0.28);
 }
 
-/* Hero εμφάνιση: stagger + blur που λιώνει + ήπιο scale (luxury reveal) */
-.hero-home__content .hero-home__title {
-  opacity: 0;
-  clip-path: inset(0 100% 0 0);
-  animation: heroRevealTitle 2.35s cubic-bezier(0.22, 0.82, 0.26, 1) 0.28s forwards;
-  will-change: opacity, transform, clip-path;
-}
-
-.hero-home__content .hero-home__lead {
-  opacity: 0;
-  clip-path: inset(0 100% 0 0);
-  animation: heroRevealLead 2.45s cubic-bezier(0.22, 0.82, 0.26, 1) 1.1s forwards;
-  will-change: opacity, transform, clip-path;
-}
-
+/* Hero εμφάνιση: ίδιο clip-path wipe σε όλα τα στοιχεία, μόνο stagger στα delays */
+.hero-home__content .hero-home__title,
+.hero-home__content .hero-home__lead,
 .hero-home__content .hero-home__cta {
   opacity: 0;
   transform: translateY(10px);
   clip-path: inset(0 100% 0 0);
-  animation: heroRevealCta 1.45s cubic-bezier(0.22, 0.82, 0.26, 1) 2.55s forwards;
+  animation: heroRevealLine 1.45s cubic-bezier(0.22, 0.82, 0.26, 1) forwards;
   will-change: opacity, transform, clip-path;
+}
+
+.hero-home__content .hero-home__title {
+  animation-delay: 0.28s;
+}
+
+.hero-home__content .hero-home__lead {
+  animation-delay: 1.1s;
+}
+
+.hero-home__content .hero-home__cta {
+  animation-delay: 2.55s;
 }
 
 .hero-home__whisper {
@@ -236,9 +236,22 @@
   transform: translateY(10px);
   clip-path: inset(0 100% 0 0);
   animation:
-    heroRevealWhisper 1.4s cubic-bezier(0.22, 0.82, 0.26, 1) 4.15s forwards,
+    heroRevealLine 1.45s cubic-bezier(0.22, 0.82, 0.26, 1) 4.15s forwards,
     heroWhisperGlow 4.2s ease-in-out 5.65s infinite;
   will-change: opacity, transform, clip-path;
+}
+
+@keyframes heroRevealLine {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+    clip-path: inset(0 100% 0 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    clip-path: inset(0 0 0 0);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

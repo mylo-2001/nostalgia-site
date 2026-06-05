@@ -65,13 +65,7 @@
 
     root.innerHTML =
       '<div class="product-page__layout">' +
-      '  <figure class="product-gallery">' +
-      '    <img class="product-gallery__img" src="' +
-      product.image +
-      '" alt="' +
-      product.title.replace(/"/g, "&quot;") +
-      '" decoding="async" />' +
-      "  </figure>" +
+      '  <figure class="product-gallery" id="product-gallery-figure"></figure>' +
       '  <div class="product-info">' +
       '    <h1 class="product-info__title">' +
       product.title +
@@ -109,6 +103,27 @@
       "</div>" +
       renderReviewsHTML(product) +
       renderRelatedHTML(product);
+
+    var galleryFigure = document.getElementById("product-gallery-figure");
+    if (galleryFigure) {
+      if (window.NostalgiaImages && typeof window.NostalgiaImages.create === "function") {
+        galleryFigure.appendChild(
+          window.NostalgiaImages.create(product.image, {
+            alt: product.title,
+            className: "product-gallery__img",
+            priority: true,
+            sizes: "(max-width: 900px) 100vw, 50vw",
+          })
+        );
+      } else {
+        galleryFigure.innerHTML =
+          '<img class="product-gallery__img" src="' +
+          product.image +
+          '" alt="' +
+          product.title.replace(/"/g, "&quot;") +
+          '" decoding="async" />';
+      }
+    }
 
     var qtyInput = document.getElementById("product-qty");
     document.getElementById("product-qty-minus").addEventListener("click", function () {

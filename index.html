@@ -6,18 +6,17 @@
   <link rel="icon" href="logo/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="logo/logo.png" />
   <title>Nostalgia Collection · Αρχική</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
     rel="preload"
     as="image"
-    href="home%20page%20photo/home%20photo.png"
+    href="home%20page%20photo/home%20photo.webp"
+    type="image/webp"
     fetchpriority="high"
   />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Montserrat:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/fonts.css?v=1" />
   <link rel="stylesheet" href="css/base.css?v=locale-drawer" />
   <link rel="stylesheet" href="css/side-nav.css?v=mobile-header-3" />
-  <link rel="stylesheet" href="css/home.css?v=hero-reveal" />
+  <link rel="stylesheet" href="css/home.css?v=hero-unified" />
   <link rel="stylesheet" href="css/legal.css" />
   <link rel="stylesheet" href="css/shop.css?v=cart-drawer" />
   <link rel="stylesheet" href="css/account.css" />
@@ -153,15 +152,23 @@
     <main>
       <section class="hero-home" data-i18n-aria="hero_aria">
         <div class="hero-home__media" aria-hidden="true">
-          <img
-            class="hero-home__bg"
-            src="home%20page%20photo/home%20photo.png"
-            alt=""
-            width="1200"
-            height="800"
-            fetchpriority="high"
-            decoding="sync"
-          />
+          <picture>
+            <source
+              type="image/webp"
+              srcset="home%20page%20photo/home%20photo-480w.webp 480w, home%20page%20photo/home%20photo-960w.webp 960w, home%20page%20photo/home%20photo-1440w.webp 1440w"
+              sizes="100vw"
+            />
+            <img
+              class="hero-home__bg"
+              src="home%20page%20photo/home%20photo.png"
+              alt=""
+              width="1200"
+              height="800"
+              fetchpriority="high"
+              decoding="sync"
+              data-webp="1"
+            />
+          </picture>
           <div class="hero-home__overlay"></div>
         </div>
         <div class="hero-home__inner">
@@ -549,7 +556,7 @@
 
       <section class="home-seasonal home-seasonal--pre-footer site-reveal" aria-labelledby="home-seasonal-title">
         <div class="home-seasonal__media" aria-hidden="true">
-          <img src="product%20photo/Ni%20Terra/product%201.png" alt="" width="1400" height="600" decoding="async" />
+          <img src="product%20photo/Ni%20Terra/product%201.png" alt="" width="1400" height="600" loading="lazy" decoding="async" />
           <div class="home-seasonal__overlay"></div>
         </div>
         <div class="home-seasonal__inner">
@@ -643,8 +650,11 @@
       <p class="eshop-toast__text" data-i18n="contact_order_message">Για οποιαδήποτε απορία ή παραγγελία, επικοινωνήστε μαζί μας στο +30 693 941 1774.</p>
     </aside>
   </div>
-  <script src="js/europe-countries.js" defer></script>
-  <script src="js/i18n.js" defer></script>
+  <script defer src="js/europe-countries.js"></script>
+  <script defer src="js/images.js?v=2"></script>
+  <script defer src="js/i18n-bundles/shared.js?v=1"></script>
+  <script defer src="js/i18n-bundles/home.js?v=1"></script>
+  <script defer src="js/i18n-core.js?v=1"></script>
   <script src="js/cookies.js" defer></script>
   <script src="js/products.js" defer></script>
   <script src="js/side-nav.js?v=wide-menu" defer></script>

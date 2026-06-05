@@ -41,6 +41,12 @@
     return !img || img.dataset.webp === "1" || !!img.closest("picture");
   }
 
+  function shouldUpgrade(img) {
+    if (isAlreadyOptimized(img)) return false;
+    if (img.classList.contains("brand-logo")) return false;
+    return true;
+  }
+
   function buildPictureShell(img, pngSrc, options) {
     options = options || {};
     if (!img || !pngSrc || !/\.png$/i.test(decodePath(pngSrc))) return null;
@@ -106,13 +112,14 @@
 
   function upgradeAll(root, selector) {
     (root || document).querySelectorAll(selector || 'img[src*=".png"]').forEach(function (img) {
+      if (!shouldUpgrade(img)) return;
       upgradeImg(img);
     });
   }
 
   function initImageUpgrades() {
     document.querySelectorAll('img[src*=".png"]').forEach(function (img) {
-      if (isAlreadyOptimized(img)) return;
+      if (!shouldUpgrade(img)) return;
       if (img.classList.contains("home-collections__feature-img")) {
         img.setAttribute("sizes", "(max-width: 900px) 100vw, 50vw");
       } else if (img.closest(".home-collections__carousel-slide")) {

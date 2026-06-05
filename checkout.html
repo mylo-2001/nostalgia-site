@@ -113,7 +113,15 @@
                 <div class="checkout-form__row checkout-form__row--street">
                   <div class="checkout-form__group checkout-form__group--street">
                     <label for="checkout-street" data-i18n="checkout_street_label">Οδός</label>
-                    <input type="text" id="checkout-street" name="street" required autocomplete="off" />
+                    <input
+                      type="text"
+                      id="checkout-street"
+                      name="street"
+                      required
+                      autocomplete="off"
+                      data-i18n-placeholder="checkout_street_placeholder"
+                      placeholder="Εισαγάγετε τοποθεσία"
+                    />
                     <p class="checkout-form__hint" id="checkout-address-hint" data-i18n="checkout_address_hint" hidden>
                       Ξεκίνα να πληκτρολογείς — θα εμφανιστούν προτάσεις διεύθυνσης.
                     </p>
@@ -338,7 +346,7 @@
   <script src="js/cart.js"></script>
   <script src="js/greek-prefectures.js"></script>
   <script src="js/address-options.js"></script>
-  <script src="js/google-places-checkout.js?v=places-checkout"></script>
+  <script src="js/google-places-checkout.js?v=geo-checkout"></script>
   <script src="js/checkout.js?v=places-checkout"></script>
   <script src="js/account.js"></script>
   <script src="js/breadcrumbs.js?v=4"></script>

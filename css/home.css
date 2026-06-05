@@ -3010,6 +3010,12 @@
 
 .home-collections__carousel-viewport {
   overflow: hidden;
+  touch-action: pan-y pinch-zoom;
+}
+
+.home-collections__carousel-viewport.is-swiping {
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .home-collections__carousel-track {
@@ -3020,6 +3026,10 @@
   gap: 0.85rem;
   transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
+}
+
+.home-collections__carousel-track.is-dragging {
+  transition: none;
 }
 
 .home-collections__carousel-slide {

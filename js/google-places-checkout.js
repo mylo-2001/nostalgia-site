@@ -6,6 +6,8 @@
   var autocomplete = null;
   var streetInput = null;
   var scriptLoading = false;
+  var lastGeoCoords = null;
+  var geoPrompted = false;
 
   function getKey() {
     var cfg = window.NostalgiaSiteConfig || {};
@@ -160,6 +162,77 @@
     }
   }
 
+  function biasAutocompleteToCoords(lat, lng) {
+    if (!autocomplete || !window.google || !window.google.maps) return;
+    var circle = new window.google.maps.Circle({
+      center: { lat: lat, lng: lng },
+      radius: 18000,
+    });
+    autocomplete.setBounds(circle.getBounds());
+  }
+
+  function reverseGeocodeAndFill(lat, lng) {
+    if (!window.google || !window.google.maps) return;
+    var geocoder = new window.google.maps.Geocoder();
+    geocoder.geocode({ location: { lat: lat, lng: lng } }, function (results, status) {
+      if (status !== "OK" || !results || !results[0] || !results[0].address_components) return;
+      applyPlace({ address_components: results[0].address_components });
+    });
+  }
+
+  function markGeoDenied() {
+    try {
+      sessionStorage.setItem("nostalgia-geo-denied", "1");
+    } catch (e) {}
+  }
+
+  function canPromptGeo() {
+    try {
+      return sessionStorage.getItem("nostalgia-geo-denied") !== "1";
+    } catch (e) {
+      return true;
+    }
+  }
+
+  function requestUserLocation() {
+    if (!navigator.geolocation || !canPromptGeo()) return;
+
+    navigator.geolocation.getCurrentPosition(
+      function (pos) {
+        lastGeoCoords = {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        };
+        if (!getKey()) return;
+        loadMaps(function () {
+          if (lastGeoCoords) {
+            biasAutocompleteToCoords(lastGeoCoords.lat, lastGeoCoords.lng);
+            if (streetInput && !streetInput.value.trim()) {
+              reverseGeocodeAndFill(lastGeoCoords.lat, lastGeoCoords.lng);
+            }
+          }
+        });
+      },
+      function (err) {
+        if (err && err.code === 1) markGeoDenied();
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 12000,
+        maximumAge: 300000,
+      }
+    );
+  }
+
+  function bindGeolocationOnStreetFocus() {
+    if (!streetInput) return;
+    streetInput.addEventListener("focus", function () {
+      if (geoPrompted) return;
+      geoPrompted = true;
+      requestUserLocation();
+    });
+  }
+
   function bindAutocomplete() {
     if (!streetInput || !window.google || !window.google.maps || !window.google.maps.places) return;
 
@@ -176,6 +249,10 @@
     if (restrict) opts.componentRestrictions = restrict;
 
     autocomplete = new window.google.maps.places.Autocomplete(streetInput, opts);
+
+    if (lastGeoCoords) {
+      biasAutocompleteToCoords(lastGeoCoords.lat, lastGeoCoords.lng);
+    }
 
     autocomplete.addListener("place_changed", function () {
       var place = autocomplete.getPlace();
@@ -208,10 +285,20 @@
 
     showHint(true);
     streetInput.setAttribute("autocomplete", "off");
+    bindGeolocationOnStreetFocus();
 
     loadMaps(function () {
       bindAutocomplete();
     });
+  }
+
+  function initWithoutMaps() {
+    streetInput = document.getElementById("checkout-street");
+    if (!streetInput || !document.getElementById("checkout-shipping-form")) return;
+    if (!navigator.geolocation) return;
+    showHint(false);
+    streetInput.setAttribute("autocomplete", "off");
+    bindGeolocationOnStreetFocus();
   }
 
   window.NostalgiaPlacesCheckout = {
@@ -224,8 +311,12 @@
   };
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
+    document.addEventListener("DOMContentLoaded", function () {
+      init();
+      if (!getKey()) initWithoutMaps();
+    });
   } else {
     init();
+    if (!getKey()) initWithoutMaps();
   }
 })();

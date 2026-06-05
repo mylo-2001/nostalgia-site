@@ -28,14 +28,19 @@
       return Math.max(0, slides.length - perView());
     }
 
-    function setTrackPosition() {
+    function slideStep() {
       var slideWidth = slides[0].getBoundingClientRect().width;
       var gap = 0;
       try {
         gap = parseFloat(window.getComputedStyle(track).columnGap || window.getComputedStyle(track).gap || "0");
       } catch (e) {}
-      var offset = (slideWidth + gap) * index;
-      track.style.transform = "translateX(" + -offset + "px)";
+      return slideWidth + gap;
+    }
+
+    function setTrackPosition(dragDelta) {
+      var offset = slideStep() * index;
+      var drag = typeof dragDelta === "number" ? dragDelta : 0;
+      track.style.transform = "translateX(" + (-offset + drag) + "px)";
     }
 
     function updateControls() {
@@ -81,6 +86,91 @@
     nextBtn.addEventListener("click", function () {
       goTo(index + 1);
     });
+
+    function bindTouchSwipe() {
+      var touchStartX = 0;
+      var touchStartY = 0;
+      var touchDeltaX = 0;
+      var swiping = false;
+      var dragging = false;
+      var blockedClick = false;
+      var SWIPE_THRESHOLD = 42;
+
+      function clampDrag(dx) {
+        if (index <= 0 && dx > 0) return dx * 0.32;
+        if (index >= maxIndex() && dx < 0) return dx * 0.32;
+        return dx;
+      }
+
+      viewport.addEventListener(
+        "touchstart",
+        function (e) {
+          if (e.touches.length !== 1) return;
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+          touchDeltaX = 0;
+          swiping = false;
+          dragging = true;
+          track.classList.add("is-dragging");
+        },
+        { passive: true }
+      );
+
+      viewport.addEventListener(
+        "touchmove",
+        function (e) {
+          if (!dragging || e.touches.length !== 1) return;
+          var dx = e.touches[0].clientX - touchStartX;
+          var dy = e.touches[0].clientY - touchStartY;
+
+          if (!swiping) {
+            if (Math.abs(dx) < 8 || Math.abs(dx) <= Math.abs(dy)) return;
+            swiping = true;
+            viewport.classList.add("is-swiping");
+          }
+
+          touchDeltaX = clampDrag(dx);
+          setTrackPosition(touchDeltaX);
+        },
+        { passive: true }
+      );
+
+      function endTouch() {
+        if (!dragging) return;
+        dragging = false;
+        track.classList.remove("is-dragging");
+        viewport.classList.remove("is-swiping");
+
+        if (swiping && Math.abs(touchDeltaX) >= SWIPE_THRESHOLD) {
+          if (touchDeltaX < 0) goTo(index + 1);
+          else goTo(index - 1);
+          blockedClick = true;
+          window.setTimeout(function () {
+            blockedClick = false;
+          }, 320);
+        } else {
+          setTrackPosition();
+        }
+
+        swiping = false;
+        touchDeltaX = 0;
+      }
+
+      viewport.addEventListener("touchend", endTouch, { passive: true });
+      viewport.addEventListener("touchcancel", endTouch, { passive: true });
+
+      viewport.addEventListener(
+        "click",
+        function (e) {
+          if (!blockedClick) return;
+          e.preventDefault();
+          e.stopPropagation();
+        },
+        true
+      );
+    }
+
+    bindTouchSwipe();
 
     var resizeTimer = null;
     window.addEventListener("resize", function () {

@@ -191,14 +191,14 @@
 .hero-home__content .hero-home__title {
   opacity: 0;
   clip-path: inset(0 100% 0 0);
-  animation: heroRevealTitle 2.35s cubic-bezier(0.22, 0.82, 0.26, 1) 0.28s forwards;
+  animation: heroRevealTitle 1.15s cubic-bezier(0.22, 0.82, 0.26, 1) 0.08s forwards;
   will-change: opacity, transform, clip-path;
 }
 
 .hero-home__content .hero-home__lead {
   opacity: 0;
   clip-path: inset(0 100% 0 0);
-  animation: heroRevealLead 2.45s cubic-bezier(0.22, 0.82, 0.26, 1) 1.1s forwards;
+  animation: heroRevealLead 1.2s cubic-bezier(0.22, 0.82, 0.26, 1) 0.38s forwards;
   will-change: opacity, transform, clip-path;
 }
 
@@ -206,7 +206,7 @@
   opacity: 0;
   transform: translateY(10px);
   clip-path: inset(0 100% 0 0);
-  animation: heroRevealCta 1.45s cubic-bezier(0.22, 0.82, 0.26, 1) 2.55s forwards;
+  animation: heroRevealCta 0.95s cubic-bezier(0.22, 0.82, 0.26, 1) 0.72s forwards;
   will-change: opacity, transform, clip-path;
 }
 
@@ -236,9 +236,36 @@
   transform: translateY(10px);
   clip-path: inset(0 100% 0 0);
   animation:
-    heroRevealWhisper 1.4s cubic-bezier(0.22, 0.82, 0.26, 1) 4.15s forwards,
-    heroWhisperGlow 4.2s ease-in-out 5.65s infinite;
+    heroRevealWhisper 0.95s cubic-bezier(0.22, 0.82, 0.26, 1) 1.05s forwards,
+    heroWhisperGlow 4.2s ease-in-out 2.1s infinite;
   will-change: opacity, transform, clip-path;
+}
+
+html[data-hero-seen="1"] .hero-home__content .hero-home__title,
+html[data-hero-seen="1"] .hero-home__content .hero-home__lead,
+html[data-hero-seen="1"] .hero-home__content .hero-home__cta,
+html[data-hero-seen="1"] .hero-home__content .hero-home__whisper {
+  opacity: 1;
+  transform: none;
+  clip-path: none;
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-home__bg {
+    animation: none;
+    transform: scale(1.03);
+  }
+
+  .hero-home__content .hero-home__title,
+  .hero-home__content .hero-home__lead,
+  .hero-home__content .hero-home__cta,
+  .hero-home__content .hero-home__whisper {
+    opacity: 1;
+    transform: none;
+    clip-path: none;
+    animation: none;
+  }
 }
 
 @keyframes heroRevealTitle {

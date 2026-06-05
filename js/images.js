@@ -41,10 +41,10 @@
     return !img || img.dataset.webp === "1" || !!img.closest("picture");
   }
 
-  function wrapPicture(img, pngSrc, options) {
+  function buildPictureShell(img, pngSrc, options) {
     options = options || {};
-    if (!img || !pngSrc || !/\.png$/i.test(decodePath(pngSrc))) return img;
-    if (img.closest("picture")) return img;
+    if (!img || !pngSrc || !/\.png$/i.test(decodePath(pngSrc))) return null;
+    if (img.closest("picture")) return null;
 
     var sizes = options.sizes || img.getAttribute("sizes") || "100vw";
     var picture = document.createElement("picture");
@@ -66,22 +66,24 @@
     }
 
     picture.appendChild(source);
-    picture.appendChild(img);
     return picture;
   }
 
   function upgradeImg(img, options) {
     if (isAlreadyOptimized(img)) {
-      if (img) img.dataset.webp = "1";
+      img.dataset.webp = "1";
       return img;
     }
     var src = img.getAttribute("src");
     if (!src || !/\.png$/i.test(decodePath(src))) return img;
     var parent = img.parentNode;
-    if (!parent) return img;
-    var picture = wrapPicture(img, src, options || {});
-    if (picture === img) return img;
+    if (!parent || !parent.contains(img)) return img;
+
+    var picture = buildPictureShell(img, src, options || {});
+    if (!picture) return img;
+
     parent.replaceChild(picture, img);
+    picture.appendChild(img);
     img.dataset.webp = "1";
     return img;
   }
@@ -94,7 +96,12 @@
     if (options.height) img.height = options.height;
     if (options.className) img.className = options.className;
     if (options.loading) img.loading = options.loading;
-    return wrapPicture(img, pngSrc, options);
+
+    var picture = buildPictureShell(img, pngSrc, options);
+    if (!picture) return img;
+    picture.appendChild(img);
+    img.dataset.webp = "1";
+    return picture;
   }
 
   function upgradeAll(root, selector) {
@@ -105,10 +112,7 @@
 
   function initImageUpgrades() {
     document.querySelectorAll('img[src*=".png"]').forEach(function (img) {
-      if (img.closest("picture")) {
-        img.dataset.webp = "1";
-        return;
-      }
+      if (isAlreadyOptimized(img)) return;
       if (img.classList.contains("home-collections__feature-img")) {
         img.setAttribute("sizes", "(max-width: 900px) 100vw, 50vw");
       } else if (img.closest(".home-collections__carousel-slide")) {
@@ -123,7 +127,6 @@
   window.NostalgiaImages = {
     webp: webpUrl,
     srcSet: webpSrcSet,
-    wrap: wrapPicture,
     upgrade: upgradeImg,
     create: createPicture,
     upgradeAll: upgradeAll,

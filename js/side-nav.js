@@ -11,7 +11,7 @@
   var visibleImgIndex = 0;
   var drawerClosing = false;
   var menuPinnedOpen = false;
-  var hoverMenuMq = window.matchMedia("(max-width: 1279px)");
+  var hoverMenuMq = window.matchMedia("(min-width: 901px)");
 
   function hoverMenuEnabled() {
     return hoverCapable && hoverMenuMq.matches;

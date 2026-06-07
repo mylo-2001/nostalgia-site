@@ -461,22 +461,71 @@ body[data-page="account"] #account-panel-root {
     min-height: auto;
   }
 
-  body[data-page="account"] .account-page__split {
+  body[data-page="account"] .account-page__split,
+  body[data-page="account"].account-view--register .account-page__split {
     grid-template-columns: 1fr;
+  }
+
+  body[data-page="account"] .account-page__panel {
+    padding: 1.35rem 1.1rem 1.75rem;
   }
 
   body[data-page="account"] .account-page__visual {
     order: -1;
-    min-height: 14rem;
-    max-height: 14rem;
+    min-height: 11rem;
+    max-height: 11rem;
   }
 
   body[data-page="account"] .account-page__visual img {
-    min-height: 14rem;
+    min-height: 11rem;
     transform-origin: center 40%;
     animation:
       accountVisualFadeIn 0.85s ease-out both,
       accountVisualZoom 20s ease-in-out 0.85s infinite alternate;
+  }
+
+  body[data-page="account"] .account-panel__title--register {
+    font-size: 0.82rem;
+    letter-spacing: 0.1em;
+    line-height: 1.45;
+    max-width: 100%;
+    overflow-wrap: normal;
+    word-break: normal;
+  }
+
+  body[data-page="account"] .account-register {
+    gap: 1rem;
+  }
+
+  body[data-page="account"] .account-btn--register-submit {
+    width: 100%;
+    min-width: 0;
+  }
+
+  body[data-page="account"] .account-form--register .account-form__row--actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  body[data-page="account"] .account-link--register-back {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  body[data-page="account"] .account-page__visual {
+    min-height: 9rem;
+    max-height: 9rem;
+  }
+
+  body[data-page="account"] .account-page__visual img {
+    min-height: 9rem;
+  }
+
+  body[data-page="account"] .account-register__why {
+    padding: 0.75rem 0.85rem;
   }
 }
 

@@ -75,6 +75,10 @@
       { sel: ".collection-catalog__head", cls: ["site-reveal"] },
       { sel: ".journal-card", cls: ["site-reveal"] },
       { sel: ".home-seasonal", cls: ["site-reveal"] },
+      { sel: ".home-ritual", cls: ["site-reveal"] },
+      { sel: ".home-scent-teaser", cls: ["site-reveal"] },
+      { sel: ".gift-card", cls: ["site-reveal"] },
+      { sel: ".checkout-trust", cls: ["site-reveal"] },
       { sel: ".cart-empty", cls: ["site-reveal"] },
       { sel: ".wishlist-empty", cls: ["site-reveal"] },
     ];

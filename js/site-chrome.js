@@ -27,6 +27,15 @@
       "      <li><span data-i18n=\"footer_phone_label\">" + t("footer_phone_label") + '</span> <a href="tel:+306939411774">+30 693 941 1774</a></li>' +
       '      <li><a href="mailto:mgerostathi@gmail.com">mgerostathi@gmail.com</a></li>' +
       "    </ul>" +
+      '    <div class="site-footer__newsletter">' +
+      '      <h4 class="site-footer__newsletter-title" data-i18n="footer_newsletter_title">' + t("footer_newsletter_title") + "</h4>" +
+      '      <p class="site-footer__newsletter-lead" data-i18n="footer_newsletter_lead">' + t("footer_newsletter_lead") + "</p>" +
+      '      <form class="footer-newsletter-form" id="footer-newsletter-form" novalidate>' +
+      '        <input type="email" name="email" required placeholder="Email" data-i18n-placeholder="newsletter_email_ph" />' +
+      '        <button type="submit" class="footer-newsletter-form__submit" data-i18n="footer_newsletter_submit">' + t("footer_newsletter_submit") + "</button>" +
+      '        <p class="footer-newsletter-form__success" id="footer-newsletter-success" hidden data-i18n="newsletter_success">' + t("newsletter_success") + "</p>" +
+      "      </form>" +
+      "    </div>" +
       "  </div>" +
       '  <div class="site-footer__links">' +
       '    <section class="site-footer__col">' +
@@ -43,6 +52,8 @@
       '      <h4 data-i18n="footer_services_title">' + t("footer_services_title") + "</h4>" +
       '      <ul class="site-footer__list">' +
       '        <li><a href="about.html" data-i18n="nav_about">' + t("nav_about") + "</a></li>" +
+      '        <li><a href="scent-finder.html" data-i18n="nav_scent_finder">' + t("nav_scent_finder") + "</a></li>" +
+      '        <li><a href="gift-experience.html" data-i18n="nav_gift">' + t("nav_gift") + "</a></li>" +
       '        <li><a href="contact.html" data-i18n="nav_contact">' + t("nav_contact") + "</a></li>" +
       "      </ul>" +
       "    </section>" +
@@ -536,6 +547,24 @@
     if (window.NostalgiaI18n && typeof window.NostalgiaI18n.applyLang === "function") {
       window.NostalgiaI18n.applyLang(window.NostalgiaI18n.getLang(), { restartStory: false });
     }
+    bindFooterNewsletter();
+  }
+
+  function bindFooterNewsletter() {
+    var form = document.getElementById("footer-newsletter-form");
+    if (!form || form.dataset.bound === "1") return;
+    form.dataset.bound = "1";
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (!form.reportValidity()) return;
+      if (window.NostalgiaAccount && typeof window.NostalgiaAccount.saveNewsletter === "function") {
+        window.NostalgiaAccount.saveNewsletter({ email: form.email.value });
+      }
+      form.querySelector("input").disabled = true;
+      form.querySelector("button").hidden = true;
+      var ok = document.getElementById("footer-newsletter-success");
+      if (ok) ok.hidden = false;
+    });
   }
 
   window.NostalgiaSiteChrome = { init: init, setupSearch: setupSearchUi };

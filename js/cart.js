@@ -544,9 +544,47 @@
     refreshHeaderCart: injectHeaderCart,
     addAndNotify: function (productId, qty) {
       addItem(productId, qty);
-      openCartDrawer();
+      showCartToast(productId);
     },
   };
+
+  var toastEl;
+  var toastTimer;
+
+  function showCartToast(productId) {
+    if (!window.NostalgiaProducts) return;
+    var product = window.NostalgiaProducts.getById(productId);
+    if (!product) return;
+    if (!toastEl) {
+      toastEl = document.createElement("aside");
+      toastEl.className = "cart-toast";
+      toastEl.id = "cart-toast";
+      toastEl.setAttribute("aria-live", "polite");
+      document.body.appendChild(toastEl);
+    }
+    toastEl.innerHTML =
+      '<img class="cart-toast__thumb" src="' +
+      product.image +
+      '" alt="" width="44" height="44" decoding="async" />' +
+      '<div class="cart-toast__body">' +
+      '  <p class="cart-toast__title" data-i18n="cart_toast_added">' +
+      t("cart_toast_added") +
+      "</p>" +
+      '  <p class="cart-toast__name">' +
+      product.title +
+      "</p>" +
+      "</div>" +
+      '<a class="cart-toast__link" href="cart.html" data-i18n="cart_view">' +
+      t("cart_view") +
+      "</a>";
+    toastEl.classList.remove("is-visible");
+    void toastEl.offsetWidth;
+    toastEl.classList.add("is-visible");
+    if (toastTimer) window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(function () {
+      toastEl.classList.remove("is-visible");
+    }, 3200);
+  }
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);

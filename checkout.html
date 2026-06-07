@@ -7,8 +7,9 @@
   <title>Nostalgia Collection · Ολοκλήρωση παραγγελίας</title>
   <link rel="stylesheet" href="css/fonts.css?v=1" />
 <link rel="stylesheet" href="css/base.css?v=locale-drawer" />
-  <link rel="stylesheet" href="css/side-nav.css?v=mobile-header-3" />
+  <link rel="stylesheet" href="css/side-nav.css?v=dark-theme" />
   <link rel="stylesheet" href="css/shop.css?v=places-checkout" />
+  <link rel="stylesheet" href="css/experience.css?v=3" />
   <link rel="stylesheet" href="css/account.css" />
   <link rel="stylesheet" href="css/legal.css" />
   <script>
@@ -154,6 +155,84 @@
                   <textarea id="checkout-notes" name="notes" rows="2"></textarea>
                 </div>
 
+                <section class="checkout-gift" id="checkout-gift" aria-labelledby="checkout-gift-heading">
+                  <h2 class="checkout-step__subtitle checkout-gift__heading" id="checkout-gift-heading" data-i18n="checkout_gift_title">Δώρο</h2>
+                  <label class="checkout-gift__master">
+                    <input type="checkbox" id="checkout-is-gift" name="isGift" />
+                    <span class="checkout-gift__master-box">
+                      <span class="checkout-gift__master-title" data-i18n="checkout_gift_is_gift">Η παραγγελία είναι δώρο</span>
+                      <span class="checkout-gift__master-desc" data-i18n="checkout_gift_is_gift_desc">Ενεργοποιεί τις επιλογές συσκευασίας και αποστολής δώρου.</span>
+                    </span>
+                  </label>
+
+                  <div class="checkout-gift__options" id="checkout-gift-options" hidden>
+                    <label class="checkout-gift__card">
+                      <input type="checkbox" id="checkout-gift-wrap" name="giftWrap" />
+                      <span class="checkout-gift__card-inner">
+                        <span class="checkout-gift__icon" aria-hidden="true">◈</span>
+                        <span class="checkout-gift__card-title" data-i18n="gift_wrap_title">Gift wrapping</span>
+                        <span class="checkout-gift__card-text" data-i18n="gift_wrap_text">Χειροποίητη συσκευασία με ριζόχαρτο, κορδέλα και κερί σφραγίδα.</span>
+                      </span>
+                    </label>
+
+                    <div class="checkout-gift__card checkout-gift__card--expandable">
+                      <label class="checkout-gift__card-toggle">
+                        <input type="checkbox" id="checkout-gift-message-toggle" name="giftMessage" />
+                        <span class="checkout-gift__card-inner">
+                          <span class="checkout-gift__icon" aria-hidden="true">✉</span>
+                          <span class="checkout-gift__card-title" data-i18n="gift_message_title">Προσωπικό μήνυμα</span>
+                          <span class="checkout-gift__card-text" data-i18n="gift_message_text">Χειρόγραφη κάρτα με το μήνυμά σας — διακριτικά, ποιητικά.</span>
+                        </span>
+                      </label>
+                      <div class="checkout-gift__expand" id="checkout-gift-message-wrap" hidden>
+                        <label class="checkout-gift__field-label" for="checkout-gift-message" data-i18n="checkout_gift_message_label">Το κείμενο της κάρτας</label>
+                        <textarea id="checkout-gift-message" name="giftMessageText" rows="4" maxlength="280" data-i18n-placeholder="checkout_gift_message_placeholder" placeholder="Γράψτε εδώ το μήνυμα που θέλετε στην χειρόγραφη κάρτα…"></textarea>
+                        <p class="checkout-gift__field-hint" data-i18n="checkout_gift_message_hint">Θα γραφτεί χειρόγραφα στην κάρτα — όπως ακριβώς το γράφετε εδώ.</p>
+                      </div>
+                    </div>
+
+                    <div class="checkout-gift__card checkout-gift__card--expandable">
+                      <label class="checkout-gift__card-toggle">
+                        <input type="checkbox" id="checkout-gift-box-toggle" name="giftBox" />
+                        <span class="checkout-gift__card-inner">
+                          <span class="checkout-gift__icon" aria-hidden="true">▣</span>
+                          <span class="checkout-gift__card-title" data-i18n="gift_box_title">Επιλογή κουτιού</span>
+                          <span class="checkout-gift__card-text" data-i18n="gift_box_text">Ξύλινο ή χαρτί αρχειοθέτησης — ανάλογα τη συλλογή.</span>
+                        </span>
+                      </label>
+                      <div class="checkout-gift__expand checkout-gift__box-options" id="checkout-gift-box-wrap" hidden role="radiogroup" aria-labelledby="checkout-gift-box-label">
+                        <span class="visually-hidden" id="checkout-gift-box-label" data-i18n="gift_box_title">Επιλογή κουτιού</span>
+                        <label class="checkout-gift__box-opt">
+                          <input type="radio" name="giftBoxType" value="wood" />
+                          <span data-i18n="checkout_gift_box_wood">Ξύλινο κουτί</span>
+                        </label>
+                        <label class="checkout-gift__box-opt">
+                          <input type="radio" name="giftBoxType" value="archive" />
+                          <span data-i18n="checkout_gift_box_archive">Χαρτί αρχειοθέτησης</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div class="checkout-gift__card checkout-gift__card--expandable">
+                      <label class="checkout-gift__card-toggle">
+                        <input type="checkbox" id="checkout-gift-ship-other" name="giftShipOther" />
+                        <span class="checkout-gift__card-inner">
+                          <span class="checkout-gift__icon" aria-hidden="true">↗</span>
+                          <span class="checkout-gift__card-title" data-i18n="gift_ship_title">Αποστολή σε άλλο πρόσωπο</span>
+                          <span class="checkout-gift__card-text" data-i18n="gift_ship_text">Στέλνουμε απευθείας στον παραλήπτη — χωρίς τιμή στο δέμα.</span>
+                        </span>
+                      </label>
+                      <div class="checkout-gift__expand" id="checkout-gift-recipient-wrap" hidden>
+                        <p class="checkout-gift__hint" data-i18n="checkout_gift_ship_hint">Η διεύθυνση αποστολής παραπάνω είναι του παραλήπτη.</p>
+                        <div class="checkout-form__group">
+                          <label for="checkout-gift-recipient" data-i18n="checkout_gift_recipient_label">Όνομα παραλήπτη (προαιρετικά)</label>
+                          <input type="text" id="checkout-gift-recipient" name="giftRecipient" autocomplete="name" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
                 <div class="checkout-shipping-method">
                   <h3 class="checkout-shipping-method__title" data-i18n="checkout_shipping_method_title">Τρόπος αποστολής</h3>
                   <p class="checkout-shipping-method__note" data-i18n="checkout_shipping_method_note">Ο χρόνος παράδοσης εξαρτάται από τον προορισμό.</p>
@@ -240,6 +319,28 @@
               <div id="checkout-summary"></div>
               <button type="button" class="btn-shop btn-shop--primary checkout-sidebar__cta" id="checkout-cta" data-i18n="checkout_to_payment">Στοιχεία πληρωμής</button>
               <p class="checkout-sidebar__note" data-i18n="checkout_order_note">Θα επικοινωνήσουμε μαζί σου για επιβεβαίωση και τιμολόγηση.</p>
+              <div class="checkout-trust" aria-label="Trust">
+                <div class="checkout-trust__item">
+                  <svg class="checkout-trust__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 3l7 3v6c0 4.2-2.8 7.6-7 9-4.2-1.4-7-4.8-7-9V6l7-3z"/></svg>
+                  <p class="checkout-trust__title" data-i18n="checkout_trust_secure">Ασφαλείς πληρωμές</p>
+                  <p class="checkout-trust__text" data-i18n="checkout_trust_secure_text">Stripe & αντικαταβολή με προσοχή στα στοιχεία σας.</p>
+                </div>
+                <div class="checkout-trust__item">
+                  <svg class="checkout-trust__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 10l8-5 8 5v8a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-8z"/></svg>
+                  <p class="checkout-trust__title" data-i18n="checkout_trust_handmade">Χειροποίητο στην Ελλάδα</p>
+                  <p class="checkout-trust__text" data-i18n="checkout_trust_handmade_text">Κάθε κερί φτιάχνεται με μέτρο και υλικά επιλεγμένα.</p>
+                </div>
+                <div class="checkout-trust__item">
+                  <svg class="checkout-trust__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="1"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  <p class="checkout-trust__title" data-i18n="checkout_trust_packaging">Προσεκτική συσκευασία</p>
+                  <p class="checkout-trust__text" data-i18n="checkout_trust_packaging_text">Gift-ready παρουσίαση για κάθε παραγγελία.</p>
+                </div>
+                <div class="checkout-trust__item">
+                  <svg class="checkout-trust__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 7h13l5 5v5H3z"/><path d="M16 7v5h5"/></svg>
+                  <p class="checkout-trust__title" data-i18n="checkout_trust_returns">Επιστροφές & αποστολές</p>
+                  <p class="checkout-trust__text" data-i18n="checkout_trust_returns_text">Δείτε την πολιτική αποστολών και επιστροφών.</p>
+                </div>
+              </div>
             </div>
           </aside>
         </div>
@@ -339,7 +440,8 @@
   <script defer src="js/europe-countries.js"></script>
   <script defer src="js/images.js?v=4"></script>
     <script defer src="js/i18n-bundles/shared.js?v=1"></script>
-  <script defer src="js/i18n-bundles/shop.js?v=1"></script>
+  <script defer src="js/i18n-bundles/shop.js?v=2"></script>
+  <script defer src="js/i18n-bundles/content.js?v=4"></script>
   <script defer src="js/i18n-core.js?v=1"></script>
   <script defer src="js/cookies.js"></script>
   <script defer src="js/products.js"></script>
@@ -348,7 +450,7 @@
   <script defer src="js/greek-prefectures.js"></script>
   <script defer src="js/address-options.js"></script>
   <script defer src="js/google-places-checkout.js?v=geo-checkout"></script>
-  <script defer src="js/checkout.js?v=places-checkout"></script>
+  <script defer src="js/checkout.js?v=gift-options"></script>
   <script defer src="js/account.js"></script>
   <script defer src="js/breadcrumbs.js?v=4"></script>
 

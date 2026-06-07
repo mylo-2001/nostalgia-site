@@ -75,21 +75,69 @@
     return t("collection_" + catId) + " · " + index;
   }
 
+  var CAT_KIND = {
+    cat1: "candle",
+    cat2: "candle",
+    cat3: "candle",
+    cat4: "candle",
+    cat5: "candle",
+    cat6: "aroma",
+    cat7: "aroma",
+    cat8: "gift",
+  };
+
+  var CAT_SCENT = {
+    cat1: { temp: "warm", family: "floral", room: "living", mood: "romantic" },
+    cat2: { temp: "warm", family: "woody", room: "bedroom", mood: "memory" },
+    cat3: { temp: "fresh", family: "floral", room: "bathroom", mood: "calm" },
+    cat4: { temp: "warm", family: "woody", room: "living", mood: "celebration" },
+    cat5: { temp: "warm", family: "woody", room: "bedroom", mood: "calm" },
+    cat6: { temp: "warm", family: "floral", room: "living", mood: "romantic" },
+    cat7: { temp: "fresh", family: "floral", room: "bathroom", mood: "calm" },
+    cat8: { temp: "warm", family: "woody", room: "living", mood: "celebration" },
+  };
+
+  var LIMITED_STOCK = {
+    "cat1-1": 4,
+    "cat1-3": 4,
+    "cat4-2": 4,
+    "cat5-1": 4,
+  };
+
   function buildCatalog() {
     var list = [];
     CAT_IDS.forEach(function (catId) {
       var images = CAT_IMAGES[catId] || [];
       for (var i = 1; i <= images.length; i++) {
+        var id = catId + "-" + i;
         list.push({
-          id: catId + "-" + i,
+          id: id,
           catId: catId,
           index: i,
           image: images[i - 1],
           titleKey: buildProductKey(catId, i, "title"),
+          scent: CAT_SCENT[catId] || null,
+          limited: LIMITED_STOCK[id] != null,
+          stock: LIMITED_STOCK[id] != null ? LIMITED_STOCK[id] : null,
         });
       }
     });
     return list;
+  }
+
+  function getCategoryKind(catId) {
+    return CAT_KIND[catId] || "candle";
+  }
+
+  function getMeta(id) {
+    var p = byId[id];
+    if (!p) return null;
+    return {
+      scent: p.scent,
+      kind: getCategoryKind(p.catId),
+      limited: p.limited,
+      stock: p.stock,
+    };
   }
 
   var catalog = buildCatalog();
@@ -118,6 +166,12 @@
   window.NostalgiaProducts = {
     CAT_IDS: CAT_IDS,
     CAT_IMAGES: CAT_IMAGES,
+    CAT_KIND: CAT_KIND,
+    CAT_SCENT: CAT_SCENT,
+    getCategoryKind: getCategoryKind,
+    getCategoryUrl: function (catId) {
+      return "collection.html#" + encodeURIComponent(catId);
+    },
     getAll: function () {
       refreshTitles();
       return catalog.slice();
@@ -132,6 +186,7 @@
     getProductUrl: function (id) {
       return "product.html?id=" + encodeURIComponent(id);
     },
+    getMeta: getMeta,
     refresh: refreshTitles,
   };
 

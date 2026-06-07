@@ -63,10 +63,29 @@
     document.title =
       product.title + " · Nostalgia Collection";
 
+    var badgesHtml = "";
+    if (product.limited) {
+      badgesHtml =
+        '<div class="product-info__badges">' +
+        '  <span class="product-badge__line" data-i18n="badge_handmade">' +
+        t("badge_handmade") +
+        "</span>" +
+        '  <span class="product-badge__line" data-i18n="badge_limited">' +
+        t("badge_limited") +
+        "</span>" +
+        (product.stock
+          ? '  <span class="product-badge__line product-badge__line--stock">' +
+            t("badge_stock").replace("{n}", String(product.stock)) +
+            "</span>"
+          : "") +
+        "</div>";
+    }
+
     root.innerHTML =
       '<div class="product-page__layout">' +
-      '  <figure class="product-gallery" id="product-gallery-figure"></figure>' +
+      '  <figure class="product-gallery candle-hover" id="product-gallery-figure"></figure>' +
       '  <div class="product-info">' +
+      badgesHtml +
       '    <h1 class="product-info__title">' +
       product.title +
       "</h1>" +

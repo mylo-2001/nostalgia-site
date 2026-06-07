@@ -237,7 +237,25 @@
       link.setAttribute("aria-label", titleText);
 
       var visual = document.createElement("div");
-      visual.className = "collection-product__visual";
+      visual.className = "collection-product__visual candle-hover";
+
+      if (item.limited) {
+        var badge = document.createElement("div");
+        badge.className = "product-badge";
+        badge.innerHTML =
+          '<span class="product-badge__line" data-i18n="badge_handmade">' +
+          t("badge_handmade") +
+          "</span>" +
+          '<span class="product-badge__line" data-i18n="badge_limited">' +
+          t("badge_limited") +
+          "</span>" +
+          (item.stock
+            ? '<span class="product-badge__line product-badge__line--stock">' +
+              t("badge_stock").replace("{n}", String(item.stock)) +
+              "</span>"
+            : "");
+        visual.appendChild(badge);
+      }
 
       if (window.NostalgiaImages && typeof window.NostalgiaImages.create === "function") {
         visual.appendChild(

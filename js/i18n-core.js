@@ -100,6 +100,8 @@ window.NostalgiaI18nRegister = function (bundle) {
     else if (page === "payments") metaKey = "meta_title_payments";
     else if (page === "terms") metaKey = "meta_title_terms";
     else if (page === "journal") metaKey = "meta_title_journal";
+    else if (page === "scent-finder") metaKey = "meta_title_scent_finder";
+    else if (page === "gift") metaKey = "meta_title_gift";
     document.title = STRINGS[lang][metaKey];
 
     updateLocaleTrigger();

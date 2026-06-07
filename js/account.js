@@ -169,8 +169,8 @@
         NEWSLETTER_KEY,
         JSON.stringify({
           email: data.email.toLowerCase().trim(),
-          firstname: data.firstname.trim(),
-          lastname: data.lastname.trim(),
+          firstname: data.firstname ? data.firstname.trim() : "",
+          lastname: data.lastname ? data.lastname.trim() : "",
           at: Date.now(),
         })
       );
@@ -694,7 +694,7 @@
     bindNewsletter();
     ensurePanelRoot();
     setupHeaderAccount();
-    maybeShowNewsletterPopup();
+    /* Footer newsletter is primary — popup only via data-newsletter-open */
 
     window.addEventListener("load", ensureHeaderAccountVisible);
     document.addEventListener("nostalgia-side-nav-ready", ensureHeaderAccountVisible);
@@ -719,6 +719,7 @@
       openAccountPanel("login");
     },
     openNewsletter: openNewsletter,
+    saveNewsletter: saveNewsletter,
     getSession: getSession,
   };
 

@@ -102,6 +102,20 @@
       href: "contact.html",
       ctaKey: "nav_contact",
     },
+    scent: {
+      image: "product%20photo/liquid%20eternal/product%203.png",
+      titleKey: "nav_scent_finder",
+      descKey: "nav_scent_desc",
+      href: "scent-finder.html",
+      ctaKey: "nav_scent_cta",
+    },
+    gift: {
+      image: "product%20photo/Ni%20Terra/product%201.png",
+      titleKey: "nav_gift",
+      descKey: "nav_gift_desc",
+      href: "gift-experience.html",
+      ctaKey: "nav_gift_cta",
+    },
   };
 
   function t(key) {
@@ -135,7 +149,7 @@
     if (document.querySelector('link[href*="side-nav.css"]')) return;
     var link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "css/side-nav.css?v=wide-menu";
+    link.href = "css/side-nav.css?v=dark-theme";
     document.head.appendChild(link);
   }
 
@@ -154,6 +168,8 @@
       '          <ul class="side-nav__list side-nav__list--primary">' +
       '            <li><a class="side-nav__link" href="index.html" data-side-nav-preview="home" data-i18n="nav_home">Αρχική</a></li>' +
       '            <li><button type="button" class="side-nav__link side-nav__link--expand" data-side-panel="collection"><span class="side-nav__link-text" data-i18n="nav_collection">Συλλογή</span><span class="side-nav__chev" aria-hidden="true">›</span></button></li>' +
+      '            <li><a class="side-nav__link" href="scent-finder.html" data-side-nav-preview="scent" data-i18n="nav_scent_finder">Scent Finder</a></li>' +
+      '            <li><a class="side-nav__link" href="gift-experience.html" data-side-nav-preview="gift" data-i18n="nav_gift">Gift Experience</a></li>' +
       '            <li><button type="button" class="side-nav__link side-nav__link--expand" data-side-panel="about"><span class="side-nav__link-text" data-i18n="nav_about">Σχετικά</span><span class="side-nav__chev" aria-hidden="true">›</span></button></li>' +
       '            <li><a class="side-nav__link" href="contact.html" data-side-nav-preview="contact" data-i18n="nav_contact">Επικοινωνία</a></li>' +
       "          </ul>" +

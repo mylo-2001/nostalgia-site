@@ -170,10 +170,17 @@
   }
 
   function initSitePolish() {
+    if (!document.querySelector('link[data-experience-css="1"]')) {
+      var exp = document.createElement("link");
+      exp.rel = "stylesheet";
+      exp.href = "css/experience.css?v=4";
+      exp.setAttribute("data-experience-css", "1");
+      document.head.appendChild(exp);
+    }
     if (!document.querySelector('link[data-polish-css="1"]')) {
       var link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "css/polish.css?v=8";
+      link.href = "css/polish.css?v=10";
       link.setAttribute("data-polish-css", "1");
       document.head.appendChild(link);
     }

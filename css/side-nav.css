@@ -151,16 +151,16 @@ body.has-side-nav .side-nav-trigger {
 }
 
 .side-nav {
-  --sn-bg: #0f1318;
-  --sn-border: rgba(255, 255, 255, 0.07);
-  --sn-border-strong: rgba(255, 255, 255, 0.1);
-  --sn-fg: rgba(245, 240, 232, 0.94);
-  --sn-fg-muted: rgba(245, 240, 232, 0.58);
-  --sn-fg-faint: rgba(245, 240, 232, 0.42);
-  --sn-fg-hover: #fff;
-  --sn-close: rgba(245, 240, 232, 0.45);
-  --sn-backdrop: rgba(0, 0, 0, 0.52);
-  --sn-shadow: 28px 0 72px rgba(0, 0, 0, 0.48);
+  --sn-bg: var(--surface-paper);
+  --sn-border: var(--rule-hairline);
+  --sn-border-strong: var(--rule-strong);
+  --sn-fg: var(--ink);
+  --sn-fg-muted: var(--ink-muted);
+  --sn-fg-faint: color-mix(in srgb, var(--ink-muted) 75%, transparent);
+  --sn-fg-hover: var(--accent);
+  --sn-close: var(--ink-muted);
+  --sn-backdrop: rgba(0, 0, 0, 0.58);
+  --sn-shadow: 28px 0 72px rgba(0, 0, 0, 0.52);
 
   position: fixed;
   inset: 0;
@@ -169,14 +169,6 @@ body.has-side-nav .side-nav-trigger {
 }
 
 html[data-theme="light"] .side-nav {
-  --sn-bg: var(--surface-paper);
-  --sn-border: var(--rule-hairline);
-  --sn-border-strong: var(--rule-hairline);
-  --sn-fg: var(--ink);
-  --sn-fg-muted: var(--ink-muted);
-  --sn-fg-faint: color-mix(in srgb, var(--ink-muted) 78%, transparent);
-  --sn-fg-hover: var(--accent);
-  --sn-close: var(--ink-muted);
   --sn-backdrop: rgba(21, 17, 14, 0.26);
   --sn-shadow: 24px 0 64px rgba(47, 37, 27, 0.12);
 }
@@ -210,6 +202,21 @@ html[data-theme="light"] .side-nav {
   color: var(--sn-fg);
 }
 
+.side-nav__drawer::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(ellipse 70% 55% at 6% 14%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 58%);
+}
+
+html[data-theme="dark"] .side-nav__drawer::before {
+  opacity: 1;
+  background: radial-gradient(ellipse 75% 58% at 5% 12%, rgba(197, 160, 96, 0.13), transparent 60%);
+}
+
 .side-nav__drawer,
 .side-nav__drawer * {
   scrollbar-width: none;
@@ -227,6 +234,8 @@ html[data-theme="light"] .side-nav {
 }
 
 .side-nav__columns {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: minmax(15.5rem, 19.5rem) 0fr minmax(0, 1fr);
   width: 100%;
@@ -524,8 +533,17 @@ html[data-theme="light"] .side-nav {
 /* Visual column */
 .side-nav__visual {
   position: relative;
-  background: var(--surface-muted);
+  background: var(--surface-canvas);
   overflow: hidden;
+}
+
+html[data-theme="dark"] .side-nav__visual::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(ellipse 55% 48% at 64% 38%, rgba(197, 160, 96, 0.11), transparent 68%);
 }
 
 .side-nav__figure {
@@ -627,23 +645,25 @@ html[data-theme="light"] .side-nav {
 .side-nav__cta {
   display: inline-block;
   padding: 0.58rem 1.15rem;
-  border: 1px solid rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--rule-strong);
   background: transparent;
   font-family: var(--font-nav);
   font-size: 0.58rem;
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #fff;
+  color: var(--ink);
   text-decoration: none;
   transition:
     background 0.28s ease,
-    border-color 0.28s ease;
+    border-color 0.28s ease,
+    color 0.28s ease;
 }
 
 .side-nav__cta:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: #fff;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* Sub-panel featured image (mobile / narrow — Trudon-style below links) */
@@ -653,7 +673,7 @@ html[data-theme="light"] .side-nav {
   padding: 0;
   position: relative;
   overflow: hidden;
-  background: #1a1f26;
+  background: var(--surface-muted);
 }
 
 .side-nav__sub-feature-media {
@@ -662,7 +682,7 @@ html[data-theme="light"] .side-nav {
   min-height: 14rem;
   aspect-ratio: 5 / 4;
   overflow: hidden;
-  background: #1a1f26;
+  background: var(--surface-muted);
 }
 
 .side-nav__sub-feature-img {
@@ -728,12 +748,14 @@ html[data-theme="light"] .side-nav {
   text-decoration: none;
   transition:
     background 0.28s ease,
-    border-color 0.28s ease;
+    border-color 0.28s ease,
+    color 0.28s ease;
 }
 
 .side-nav__sub-feature-cta:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: #fff;
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 body.has-side-nav .site-header.is-mobile-nav-open::before {

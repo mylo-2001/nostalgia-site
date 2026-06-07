@@ -20,10 +20,121 @@
   mix-blend-mode: overlay;
 }
 
-/* Page transitions disabled — caused blank/stuck screens on navigation */
-html.page-is-entering .page-wrap,
+/* Subtle page enter — no blank screens */
+html.page-is-entering .page-wrap {
+  opacity: 0.98;
+  animation: pageEnterSoft 0.42s var(--polish-ease) forwards;
+}
+
 html.page-is-leaving .page-wrap {
   opacity: 1;
+}
+
+@keyframes pageEnterSoft {
+  from {
+    opacity: 0.94;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.page-is-entering .page-wrap {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* Photo zoom on hover */
+.photo-zoom img,
+.collection-product__visual img,
+.home-collections__cat-media img,
+.home-moment__img,
+.gift-hero__media img {
+  transition: transform 0.55s var(--polish-ease);
+}
+
+.photo-zoom:hover img,
+.collection-product__visual:hover img,
+.home-collections__cat-media:hover img,
+.home-moment__frame:hover .home-moment__img {
+  transform: scale(1.04);
+}
+
+/* Candle glow — warm radial light on hover (cards, products, quiz) */
+:is(
+  .candle-hover,
+  .home-experience__card,
+  .gift-card,
+  .home-ritual__step,
+  .checkout-gift__card,
+  .scent-finder__opt,
+  .home-about__card
+) {
+  position: relative;
+  overflow: hidden;
+}
+
+:is(
+  .candle-hover,
+  .home-experience__card,
+  .gift-card,
+  .home-ritual__step,
+  .checkout-gift__card,
+  .scent-finder__opt,
+  .home-about__card
+)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(circle at 50% 62%, rgba(226, 196, 141, 0.22), transparent 58%);
+  transition: opacity 0.45s ease;
+}
+
+:is(
+  .candle-hover,
+  .home-experience__card,
+  .gift-card,
+  .home-ritual__step,
+  .checkout-gift__card,
+  .scent-finder__opt,
+  .home-about__card
+):hover::after,
+:is(
+  .candle-hover,
+  .home-experience__card,
+  .gift-card,
+  .home-ritual__step,
+  .checkout-gift__card,
+  .scent-finder__opt,
+  .home-about__card
+):focus-within::after {
+  opacity: 1;
+}
+
+[data-theme="dark"]
+  :is(
+    .candle-hover,
+    .home-experience__card,
+    .gift-card,
+    .home-ritual__step,
+    .checkout-gift__card,
+    .scent-finder__opt,
+    .home-about__card
+  )::after {
+  background: radial-gradient(circle at 50% 58%, rgba(226, 196, 141, 0.3), transparent 62%);
+}
+
+/* Active menu — gold underline */
+.site-nav a[aria-current="page"]::after {
+  background: var(--accent) !important;
+  transform: scaleX(1) !important;
 }
 
 /* Contact — cards visible immediately (no scroll to see info) */

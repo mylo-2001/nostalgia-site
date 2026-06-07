@@ -55,6 +55,122 @@
     return selected ? selected.value : "receipt";
   }
 
+  function collectGiftData() {
+    var isGiftEl = document.getElementById("checkout-is-gift");
+    if (!isGiftEl || !isGiftEl.checked) {
+      return { isGift: false };
+    }
+    var messageToggle = document.getElementById("checkout-gift-message-toggle");
+    var boxToggle = document.getElementById("checkout-gift-box-toggle");
+    var boxSelected = document.querySelector('input[name="giftBoxType"]:checked');
+    return {
+      isGift: true,
+      wrap: !!(document.getElementById("checkout-gift-wrap") && document.getElementById("checkout-gift-wrap").checked),
+      message: !!(messageToggle && messageToggle.checked),
+      messageText: document.getElementById("checkout-gift-message")
+        ? document.getElementById("checkout-gift-message").value.trim()
+        : "",
+      box: !!(boxToggle && boxToggle.checked),
+      boxType: boxSelected ? boxSelected.value : "",
+      shipOther: !!(
+        document.getElementById("checkout-gift-ship-other") &&
+        document.getElementById("checkout-gift-ship-other").checked
+      ),
+      recipient: document.getElementById("checkout-gift-recipient")
+        ? document.getElementById("checkout-gift-recipient").value.trim()
+        : "",
+    };
+  }
+
+  function giftBoxLabel(type) {
+    if (type === "wood") return t("checkout_gift_box_wood");
+    if (type === "archive") return t("checkout_gift_box_archive");
+    return type;
+  }
+
+  function validateGiftOptions() {
+    var gift = collectGiftData();
+    if (!gift.isGift) return true;
+    if (gift.message && !gift.messageText) {
+      alert(t("checkout_gift_message_required"));
+      return false;
+    }
+    if (gift.box && !gift.boxType) {
+      alert(t("checkout_gift_box_required"));
+      return false;
+    }
+    return true;
+  }
+
+  function updateGiftUI() {
+    var isGift = document.getElementById("checkout-is-gift");
+    var options = document.getElementById("checkout-gift-options");
+    var messageWrap = document.getElementById("checkout-gift-message-wrap");
+    var boxWrap = document.getElementById("checkout-gift-box-wrap");
+    var recipientWrap = document.getElementById("checkout-gift-recipient-wrap");
+    var messageToggle = document.getElementById("checkout-gift-message-toggle");
+    var boxToggle = document.getElementById("checkout-gift-box-toggle");
+    var shipOther = document.getElementById("checkout-gift-ship-other");
+
+    if (options) options.hidden = !(isGift && isGift.checked);
+    if (messageWrap) messageWrap.hidden = !(messageToggle && messageToggle.checked && isGift && isGift.checked);
+    if (boxWrap) boxWrap.hidden = !(boxToggle && boxToggle.checked && isGift && isGift.checked);
+    if (recipientWrap) recipientWrap.hidden = !(shipOther && shipOther.checked && isGift && isGift.checked);
+
+    document.querySelectorAll(".checkout-gift__card").forEach(function (card) {
+      var input = card.querySelector('input[type="checkbox"]');
+      if (input) card.classList.toggle("is-selected", !!input.checked);
+    });
+  }
+
+  function appendGiftToOrder(parts, gift) {
+    parts.push("");
+    parts.push(t("checkout_gift_section") + ":");
+    parts.push(t("checkout_gift_is_gift") + ": " + (gift.isGift ? t("checkout_gift_yes") : t("checkout_gift_no")));
+    if (!gift.isGift) return;
+    parts.push(t("gift_wrap_title") + ": " + (gift.wrap ? t("checkout_gift_yes") : t("checkout_gift_no")));
+    parts.push(t("gift_message_title") + ": " + (gift.message ? t("checkout_gift_yes") : t("checkout_gift_no")));
+    if (gift.message && gift.messageText) {
+      parts.push(t("gift_message_title") + " — " + gift.messageText);
+    }
+    parts.push(t("gift_box_title") + ": " + (gift.box ? t("checkout_gift_yes") : t("checkout_gift_no")));
+    if (gift.box && gift.boxType) {
+      parts.push(t("gift_box_title") + " — " + giftBoxLabel(gift.boxType));
+    }
+    parts.push(t("gift_ship_title") + ": " + (gift.shipOther ? t("checkout_gift_yes") : t("checkout_gift_no")));
+    if (gift.shipOther && gift.recipient) {
+      parts.push(t("checkout_gift_recipient_label") + ": " + gift.recipient);
+    }
+  }
+
+  function giftSummaryHtml(gift) {
+    if (!gift || !gift.isGift) return "";
+    var items = [];
+    if (gift.wrap) items.push(t("gift_wrap_title"));
+    if (gift.message) {
+      items.push(
+        gift.messageText
+          ? t("gift_message_title") + ": «" + gift.messageText + "»"
+          : t("gift_message_title")
+      );
+    }
+    if (gift.box) items.push(t("gift_box_title") + (gift.boxType ? " · " + giftBoxLabel(gift.boxType) : ""));
+    if (gift.shipOther) items.push(t("gift_ship_title"));
+    if (!items.length) {
+      items.push(t("checkout_gift_is_gift"));
+    }
+    return (
+      '<div class="checkout-summary__gift">' +
+      '<span class="checkout-summary__gift-label" data-i18n="checkout_gift_summary">' +
+      escapeHtml(t("checkout_gift_summary")) +
+      "</span>" +
+      "<p>" +
+      escapeHtml(items.join(" · ")) +
+      "</p>" +
+      "</div>"
+    );
+  }
+
   function isGreeceCheckout() {
     return getCountryCode() === "GR";
   }
@@ -95,6 +211,7 @@
       afm: document.getElementById("checkout-afm").value.trim(),
       doy: document.getElementById("checkout-doy").value.trim(),
       activity: document.getElementById("checkout-activity").value.trim(),
+      gift: collectGiftData(),
     };
     if (
       !data.firstname ||
@@ -154,6 +271,7 @@
       if (data.activity) parts.push(t("checkout_activity_label") + ": " + data.activity);
     }
     if (data.notes) parts.push(t("checkout_notes_label") + ": " + data.notes);
+    appendGiftToOrder(parts, data.gift || { isGift: false });
     parts.push("");
     parts.push(t("checkout_payment_title") + ": " + (payment === "cod" ? t("checkout_pay_cod") : t("checkout_pay_stripe")));
     parts.push("");
@@ -195,8 +313,11 @@
         "</span></div>"
       : "";
 
+    var giftBlock = shippingData && step === 2 ? giftSummaryHtml(shippingData.gift) : "";
+
     el.innerHTML =
       addressBlock +
+      giftBlock +
       '<ul class="checkout-lines">' +
       lines
         .map(function (line) {
@@ -266,6 +387,7 @@
     var form = document.getElementById("checkout-shipping-form");
     if (!form) return false;
     if (!form.reportValidity()) return false;
+    if (!validateGiftOptions()) return false;
     var data = collectShippingData();
     if (!data) {
       if (getDocType() === "invoice") {
@@ -493,6 +615,28 @@
       radio.addEventListener("change", updateDocTypeUI);
     });
 
+    var isGift = document.getElementById("checkout-is-gift");
+    if (isGift) isGift.addEventListener("change", updateGiftUI);
+    [
+      "checkout-gift-wrap",
+      "checkout-gift-message-toggle",
+      "checkout-gift-box-toggle",
+      "checkout-gift-ship-other",
+    ].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener("change", updateGiftUI);
+    });
+    document.querySelectorAll('input[name="giftBoxType"]').forEach(function (radio) {
+      radio.addEventListener("change", updateGiftUI);
+    });
+    var giftMessage = document.getElementById("checkout-gift-message");
+    if (giftMessage) {
+      giftMessage.addEventListener("input", function () {
+        if (shippingData) shippingData.gift = collectGiftData();
+        renderSummary();
+      });
+    }
+
     document.querySelectorAll('input[name="pay_method"]').forEach(function (radio) {
       radio.addEventListener("change", function () {
         var note = document.getElementById("checkout-stripe-note");
@@ -580,6 +724,7 @@
       window.NostalgiaPlacesCheckout.registerOnFilled(updateGrFields);
     }
     updateDocTypeUI();
+    updateGiftUI();
     bindEvents();
     showStep(1);
   }

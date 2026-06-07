@@ -311,15 +311,32 @@ body[data-page="account"].account-view--register .account-page__split {
 body[data-page="account"] .account-page__panel {
   display: flex;
   flex-direction: column;
+  position: relative;
   background: var(--surface-paper);
   color: var(--ink);
   padding: clamp(1.75rem, 4vw, 2.75rem) clamp(1.25rem, 3.6vw, 2.5rem);
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
-[data-theme="dark"] body[data-page="account"] .account-page__panel {
-  background: #080f1d;
-  color: rgba(245, 240, 232, 0.92);
+body[data-page="account"] .account-page__panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(ellipse 80% 70% at 14% 24%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 58%);
+  transition: opacity 0.55s ease;
+}
+
+[data-theme="dark"] body[data-page="account"] .account-page__panel::before {
+  opacity: 1;
+  background: radial-gradient(ellipse 85% 72% at 12% 22%, rgba(197, 160, 96, 0.16), transparent 60%);
+}
+
+[data-theme="dark"] body[data-page="account"] .account-page__panel:hover::before {
+  background: radial-gradient(ellipse 90% 75% at 12% 22%, rgba(226, 196, 141, 0.22), transparent 62%);
 }
 
 body[data-page="account"] .account-page__panel .site-breadcrumb {
@@ -343,9 +360,22 @@ body[data-page="account"] .account-page__visual {
   position: relative;
   min-height: 100%;
   overflow: hidden;
-  background:
-    linear-gradient(160deg, rgba(6, 10, 16, 0.82), rgba(8, 12, 18, 0.76)),
-    #090d14;
+  background: var(--surface-canvas);
+}
+
+body[data-page="account"] .account-page__visual::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+}
+
+[data-theme="dark"] body[data-page="account"] .account-page__visual::before {
+  opacity: 1;
+  background: radial-gradient(ellipse 62% 52% at 70% 38%, rgba(197, 160, 96, 0.14), transparent 68%);
+  animation: accountVisualGlow 9s ease-in-out infinite alternate;
 }
 
 body[data-page="account"] .account-page__visual::after {
@@ -355,9 +385,25 @@ body[data-page="account"] .account-page__visual::after {
   z-index: 1;
   pointer-events: none;
   background:
-    linear-gradient(105deg, rgba(8, 15, 29, 0.42) 0%, transparent 42%),
-    linear-gradient(0deg, rgba(4, 6, 10, 0.55) 0%, transparent 38%),
+    linear-gradient(105deg, color-mix(in srgb, var(--surface-canvas) 55%, transparent) 0%, transparent 42%),
+    linear-gradient(0deg, color-mix(in srgb, var(--surface-canvas) 70%, transparent) 0%, transparent 38%),
     radial-gradient(ellipse 90% 80% at 58% 42%, transparent 35%, rgba(0, 0, 0, 0.28) 100%);
+}
+
+[data-theme="dark"] body[data-page="account"] .account-page__visual::after {
+  background:
+    linear-gradient(105deg, rgba(3, 6, 8, 0.48) 0%, transparent 42%),
+    linear-gradient(0deg, rgba(2, 2, 2, 0.52) 0%, transparent 38%),
+    radial-gradient(ellipse 90% 80% at 58% 42%, transparent 35%, rgba(0, 0, 0, 0.34) 100%);
+}
+
+@keyframes accountVisualGlow {
+  from {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes accountVisualZoom {
@@ -394,6 +440,8 @@ body[data-page="account"] .account-page__visual img {
 }
 
 body[data-page="account"] #account-panel-root {
+  position: relative;
+  z-index: 1;
   flex: 1;
   width: 100%;
   max-width: 40rem;
@@ -401,41 +449,20 @@ body[data-page="account"] #account-panel-root {
 }
 
 [data-theme="dark"] body[data-page="account"] .account-page__panel .site-breadcrumb {
-  color: rgba(245, 240, 232, 0.5);
+  color: var(--ink-muted);
 }
 
 [data-theme="dark"] body[data-page="account"] .account-page__panel .site-breadcrumb__current {
-  color: rgba(245, 240, 232, 0.82);
-}
-
-[data-theme="dark"] body[data-page="account"] .account-panel__title,
-[data-theme="dark"] body[data-page="account"] .account-panel__name {
-  color: rgba(245, 240, 232, 0.95);
-}
-
-[data-theme="dark"] body[data-page="account"] .account-panel__email,
-[data-theme="dark"] body[data-page="account"] .account-field span,
-[data-theme="dark"] body[data-page="account"] .account-panel__switch,
-[data-theme="dark"] body[data-page="account"] .account-form__hint {
-  color: rgba(245, 240, 232, 0.58);
+  color: var(--ink);
 }
 
 [data-theme="dark"] body[data-page="account"] .account-field input {
-  color: rgba(245, 240, 232, 0.95);
-  border-bottom-color: rgba(245, 240, 232, 0.28);
+  border-bottom-color: var(--rule-strong);
 }
 
 [data-theme="dark"] body[data-page="account"] .account-btn--outline {
-  border-color: rgba(245, 240, 232, 0.35);
-  color: rgba(245, 240, 232, 0.95);
-}
-
-[data-theme="dark"] body[data-page="account"] .account-link {
-  color: rgba(245, 240, 232, 0.75);
-}
-
-[data-theme="dark"] body[data-page="account"] .account-password-toggle {
-  color: rgba(245, 240, 232, 0.58);
+  border-color: var(--rule-strong);
+  color: var(--ink);
 }
 
 [data-theme="dark"] body[data-page="account"] .account-password-toggle:hover,
@@ -534,6 +561,11 @@ body[data-page="account"] #account-panel-root {
     animation: none;
     transform: scale(1.05);
     opacity: 1;
+  }
+
+  [data-theme="dark"] body[data-page="account"] .account-page__visual::before {
+    animation: none;
+    opacity: 0.75;
   }
 }
 
@@ -640,25 +672,8 @@ body[data-page="account"] #account-panel-root {
 }
 
 [data-theme="dark"] .account-register__why {
-  border-color: rgba(197, 160, 96, 0.32);
-  background: rgba(127, 92, 44, 0.18);
-}
-
-[data-theme="dark"] .account-register__why-title {
-  color: rgba(245, 240, 232, 0.92);
-}
-
-[data-theme="dark"] .account-register__why-text {
-  color: rgba(245, 240, 232, 0.75);
-}
-
-[data-theme="dark"] .account-form__section,
-[data-theme="dark"] .account-check {
-  color: rgba(245, 240, 232, 0.72);
-}
-
-[data-theme="dark"] .account-form--register .account-form__hint {
-  color: rgba(245, 240, 232, 0.48);
+  border-color: var(--rule-strong);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-muted));
 }
 
 body[data-page="account"] .account-form--register .account-form__row--actions {

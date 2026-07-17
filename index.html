@@ -19,7 +19,7 @@
   <link rel="stylesheet" href="css/base.css?v=header-top-1" />
   <link rel="stylesheet" href="css/side-nav.css?v=menu-visual3" />
   <link rel="stylesheet" href="css/smooth-scroll.css?v=1" />
-  <link rel="stylesheet" href="css/home.css?v=intro-logo-anim-1" />
+  <link rel="stylesheet" href="css/home.css?v=intro-logo-anim-2" />
   <link rel="stylesheet" href="css/home-bestsellers.css?v=15" />
   <link rel="stylesheet" href="css/home-gallery.css?v=5" />
   <link rel="stylesheet" href="css/home-ethos.css?v=5" />
@@ -47,21 +47,37 @@
         </picture>
       </div>
       <div class="site-intro__logos">
-        <picture>
-          <source type="image/webp" srcset="home-photo-beforemenu/photo3-logo-transparent-480w.webp?v=1 480w, home-photo-beforemenu/photo3-logo-transparent-960w.webp?v=1 960w, home-photo-beforemenu/photo3-logo-transparent-1440w.webp?v=1 1440w" sizes="min(72vw, 860px)" />
-          <img class="site-intro__logo site-intro__logo--light" src="home-photo-beforemenu/photo3-logo-transparent.webp?v=1" alt="Nostalgia Candle" width="1566" height="522" decoding="async" />
-        </picture>
-        <picture>
-          <source type="image/webp" srcset="home-photo-beforemenu/photo1-logo-transparent-480w.webp?v=1 480w, home-photo-beforemenu/photo1-logo-transparent-960w.webp?v=1 960w, home-photo-beforemenu/photo1-logo-transparent-1440w.webp?v=1 1440w" sizes="min(72vw, 860px)" />
-          <img class="site-intro__logo site-intro__logo--dark" src="home-photo-beforemenu/photo1-logo-transparent.webp?v=1" alt="Nostalgia Candle" width="1562" height="516" decoding="async" />
-        </picture>
+        <div class="site-intro__logo-layer site-intro__logo-layer--wordmark">
+          <picture>
+            <source type="image/webp" srcset="home-photo-beforemenu/photo3-logo-transparent-480w.webp?v=1 480w, home-photo-beforemenu/photo3-logo-transparent-960w.webp?v=1 960w, home-photo-beforemenu/photo3-logo-transparent-1440w.webp?v=1 1440w" sizes="min(72vw, 860px)" />
+            <img class="site-intro__logo site-intro__logo--light" src="home-photo-beforemenu/photo3-logo-transparent.webp?v=1" alt="Nostalgia Candle" width="1566" height="522" decoding="async" />
+          </picture>
+          <picture>
+            <source type="image/webp" srcset="home-photo-beforemenu/photo1-logo-transparent-480w.webp?v=1 480w, home-photo-beforemenu/photo1-logo-transparent-960w.webp?v=1 960w, home-photo-beforemenu/photo1-logo-transparent-1440w.webp?v=1 1440w" sizes="min(72vw, 860px)" />
+            <img class="site-intro__logo site-intro__logo--dark" src="home-photo-beforemenu/photo1-logo-transparent.webp?v=1" alt="Nostalgia Candle" width="1562" height="516" decoding="async" />
+          </picture>
+        </div>
+        <div class="site-intro__logo-layer site-intro__logo-layer--candle" aria-hidden="true">
+          <picture>
+            <source type="image/webp" srcset="home-photo-beforemenu/photo3-logo-transparent-480w.webp?v=1 480w, home-photo-beforemenu/photo3-logo-transparent-960w.webp?v=1 960w, home-photo-beforemenu/photo3-logo-transparent-1440w.webp?v=1 1440w" sizes="min(72vw, 860px)" />
+            <img class="site-intro__logo site-intro__logo--light" src="home-photo-beforemenu/photo3-logo-transparent.webp?v=1" alt="" width="1566" height="522" decoding="async" />
+          </picture>
+          <picture>
+            <source type="image/webp" srcset="home-photo-beforemenu/photo1-logo-transparent-480w.webp?v=1 480w, home-photo-beforemenu/photo1-logo-transparent-960w.webp?v=1 960w, home-photo-beforemenu/photo1-logo-transparent-1440w.webp?v=1 1440w" sizes="min(72vw, 860px)" />
+            <img class="site-intro__logo site-intro__logo--dark" src="home-photo-beforemenu/photo1-logo-transparent.webp?v=1" alt="" width="1562" height="516" decoding="async" />
+          </picture>
+        </div>
       </div>
-      <button type="button" class="site-intro__enter" id="site-intro-enter" data-i18n-aria="intro_enter_aria" aria-label="Είσοδος στο site">
-        <span class="site-intro__chev" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6" /></svg>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6" /></svg>
-        </span>
-      </button>
+      <div class="site-intro__enter-stage">
+        <div class="site-intro__enter-float">
+          <button type="button" class="site-intro__enter" id="site-intro-enter" data-i18n-aria="intro_enter_aria" aria-label="Είσοδος στο site">
+            <span class="site-intro__chev" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+            </span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1024,7 +1040,7 @@
   <script src="js/cookies.js" defer></script>
   <script src="js/tracking.js?v=1" defer></script>
   <script src="js/products.js?v=3" defer></script>
-  <script src="js/side-nav.js?v=cat9" defer></script>
+  <script src="js/side-nav.js?v=cat10" defer></script>
   <script src="js/cart.js" defer></script>
   <script src="js/account.js?v=7" defer></script>
   <script src="js/breadcrumbs.js?v=4" defer></script>

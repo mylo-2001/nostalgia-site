@@ -400,7 +400,19 @@
     var src = resolveVisualSrc(data.image);
     var imageChanged = activeVisual !== key;
     activeVisual = key;
-    if (imageChanged) swapVisualImage(src);
+    if (imageChanged) {
+      swapVisualImage(src);
+    } else {
+      // First paint: the currently visible <img> still has an empty src
+      // (activeVisual starts as "collection", so the initial setVisual call
+      // is a no-op change). Prime it directly so the image shows immediately.
+      var visibleImg = document.getElementById(
+        visibleImgIndex === 0 ? "side-nav-img-a" : "side-nav-img-b"
+      );
+      if (visibleImg && !visibleImg.getAttribute("src")) {
+        visibleImg.src = src;
+      }
+    }
     var altText = t(data.titleKey);
     ["side-nav-img-a", "side-nav-img-b"].forEach(function (id) {
       var img = document.getElementById(id);

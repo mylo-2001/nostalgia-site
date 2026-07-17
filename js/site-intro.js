@@ -7,7 +7,11 @@
   var hero = document.querySelector(".hero-home");
   var enterBtn = document.getElementById("site-intro-enter");
   var logos = intro && intro.querySelector(".site-intro__logos");
-  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var forceSiteMotion = true;
+  document.documentElement.classList.toggle("force-site-motion", forceSiteMotion);
+  var reduce =
+    !forceSiteMotion &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   if (!intro || !pageWrap) return;
 

@@ -5057,14 +5057,14 @@ html.intro-lock body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .site-intro__logos,
-  .site-intro__logos.is-ready {
+  html:not(.force-site-motion) .site-intro__logos,
+  html:not(.force-site-motion) .site-intro__logos.is-ready {
     animation: none;
     opacity: 1;
     transform: translate(-50%, -50%);
   }
-  .site-intro__chev { animation: none; }
-  .site-intro { transition: opacity 0.3s ease; }
+  html:not(.force-site-motion) .site-intro__chev { animation: none; }
+  html:not(.force-site-motion) .site-intro { transition: opacity 0.3s ease; }
 }
 
 /* Intro image logo restore: use the logo assets again now that the photos are clean. */
@@ -5084,8 +5084,8 @@ html.intro-lock body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .site-intro__logos,
-  .site-intro__logos.is-ready {
+  html:not(.force-site-motion) .site-intro__logos,
+  html:not(.force-site-motion) .site-intro__logos.is-ready {
     animation: none;
     opacity: 1;
     transform: translate(-50%, -50%);
@@ -5200,16 +5200,16 @@ html.intro-lock body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .site-intro__logo,
-  .site-intro__logos.is-ready .site-intro__logo {
+  html:not(.force-site-motion) .site-intro__logo,
+  html:not(.force-site-motion) .site-intro__logos.is-ready .site-intro__logo {
     animation: none;
     opacity: 1;
     transform: none;
     clip-path: none;
   }
 
-  .site-intro__logos::after,
-  .site-intro__logos.is-ready::after {
+  html:not(.force-site-motion) .site-intro__logos::after,
+  html:not(.force-site-motion) .site-intro__logos.is-ready::after {
     content: none;
     animation: none;
   }
@@ -5251,5 +5251,5 @@ html.intro-lock body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .site-intro__chev { animation: none; }
+  html:not(.force-site-motion) .site-intro__chev { animation: none; }
 }

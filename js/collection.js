@@ -1,5 +1,5 @@
 (function () {
-  var CAT_IDS = ["cat1", "cat2", "cat3", "cat4", "cat5", "cat6", "cat7", "cat8"];
+  var CAT_IDS = ["cat1", "cat2", "cat3", "cat4", "cat5", "cat6", "cat7", "cat8", "cat9"];
 
   function muranoImg(n) {
     return "product%20photo/art%20class%20murano%20candle/product%20" + n + ".png";
@@ -49,25 +49,27 @@
   };
 
   var CAT_HERO = {
-    cat1: "product%20photo/art%20class%20murano%20candle/product%20photo%20home%20page%20.png",
-    cat2: "product%20photo/driftwood%20beeswax%20flame/product%20photo%20home%20page%20.png",
-    cat3: "product%20photo/liquid%20eternal/product%203.png",
-    cat4: "product%20photo/unique%20art%20vessel/product%204.png",
-    cat5: "product%20photo/Ni%20Terra/product%20photo.png",
-    cat6: "home%20page%20photo/home%20collection.png",
-    cat7: "home%20page%20photo/home%20collection.png",
-    cat8: "home%20page%20photo/home%20collection.png",
+    cat1: "collections-hero/Art%20Class%20Murano%20Candle-hero-photo.png",
+    cat2: "collections-hero/Driftwood%20Beeswax%20Flame-hero-photo.png",
+    cat3: "collections-hero/Liquid%20Eternal-hero-photo.png",
+    cat4: "collections-hero/Unique%20Art%20Objects-hero-photo.png",
+    cat5: "collections-hero/NI%20Terra-hero-photo.png",
+    cat6: "collections-hero/Perfume-hero-photo.png",
+    cat7: "collections-hero/Diffusers-hero-photo.png",
+    cat8: "collections-hero/Gift%20Sets-hero-photo.png",
+    cat9: "collections-hero/Nostalgia%20Exclusive%20Mirror%20Candles-hero.png",
   };
 
   var CAT_HERO_META = {
-    cat1: { fit: "cover", position: "center 38%" },
+    cat1: { fit: "cover", position: "center center" },
     cat2: { fit: "cover", position: "center center" },
-    cat3: { fit: "cover", position: "center 45%" },
-    cat4: { fit: "contain", position: "center center" },
-    cat5: { fit: "cover", position: "center 45%" },
+    cat3: { fit: "cover", position: "center center" },
+    cat4: { fit: "cover", position: "center center" },
+    cat5: { fit: "cover", position: "center center" },
     cat6: { fit: "cover", position: "center center" },
     cat7: { fit: "cover", position: "center center" },
     cat8: { fit: "cover", position: "center center" },
+    cat9: { fit: "cover", position: "center center" },
   };
 
   var categoriesEl;
@@ -78,11 +80,42 @@
   var heroImgEl;
   var heroWrapEl;
   var heroZoomEl;
+  var heroContentEl;
   var backBtn;
   var productsLeadEl;
   var sortEl;
   var searchEl;
   var activeCategory = null;
+  var searchMode = false;
+
+  function normalizeSearchText(str) {
+    var s = String(str == null ? "" : str).toLowerCase();
+    if (s.normalize) {
+      s = s.normalize("NFD").replace(/[̀-ͯ]/g, "");
+    }
+    return s;
+  }
+
+  function filterProductsByQuery(query) {
+    if (!window.NostalgiaProducts || typeof window.NostalgiaProducts.getAll !== "function") {
+      return [];
+    }
+    var normQ = normalizeSearchText(query);
+    if (!normQ) return [];
+    return window.NostalgiaProducts.getAll().filter(function (p) {
+      return (
+        normalizeSearchText(
+          (p.title || "") + " " + (p.titleEn || "") + " " + (p.categoryName || "") + " " +
+          (p.description || "") + " " + (p.descriptionEn || "")
+        ).indexOf(normQ) !== -1
+      );
+    });
+  }
+
+  function formatSearchResultsCount(count) {
+    if (count === 1) return t("search_results_count_one");
+    return t("search_results_count").replace("{n}", String(count));
+  }
 
   function $(sel) {
     return document.querySelector(sel);
@@ -103,11 +136,22 @@
     return key;
   }
 
+  /* Product title with English fallback to Greek (matches product.js). */
+  function pickTitle(item) {
+    if (!item) return "";
+    var en = item.titleEn;
+    if (document.documentElement.lang === "en" && en != null && String(en).trim() !== "") {
+      return en;
+    }
+    return item.title || "";
+  }
+
   function getLeadKey(catId) {
     if (catId === "cat5") return "collection_lead_cat5";
     if (catId === "cat6") return "collection_lead_cat6";
     if (catId === "cat7") return "collection_lead_cat7";
     if (catId === "cat8") return "collection_lead_cat8";
+    if (catId === "cat9") return "collection_lead_cat9";
     return "collection_catalog_lead";
   }
 
@@ -127,10 +171,16 @@
   }
 
   function restartHeroAnimation() {
-    if (!heroZoomEl) return;
-    heroZoomEl.classList.remove("is-animating");
-    void heroZoomEl.offsetWidth;
-    heroZoomEl.classList.add("is-animating");
+    if (heroZoomEl) {
+      heroZoomEl.classList.remove("is-animating");
+      void heroZoomEl.offsetWidth;
+      heroZoomEl.classList.add("is-animating");
+    }
+    if (heroContentEl) {
+      heroContentEl.classList.remove("is-revealing");
+      void heroContentEl.offsetWidth;
+      heroContentEl.classList.add("is-revealing");
+    }
   }
 
   function updateCategoryHero(catId) {
@@ -168,28 +218,36 @@
     if (preload.complete) reveal();
   }
 
-  function renderProducts(catId) {
+  function renderProducts(catId, prefetchedProducts) {
     if (!productsGridEl) return;
     productsGridEl.innerHTML = "";
-    var images = (window.NostalgiaProducts && window.NostalgiaProducts.CAT_IMAGES[catId]) || [];
     var products = [];
-
-    for (var i = 1; i <= images.length; i++) {
-      products.push({
-        id: catId + "-" + i,
-        catId: catId,
-        index: i,
-        image: images[i - 1],
-        title: window.NostalgiaProducts
-          ? window.NostalgiaProducts.getTitle(catId, i)
-          : t("collection_" + catId) + " · " + i,
+    if (prefetchedProducts) {
+      products = prefetchedProducts.slice();
+    } else if (window.NostalgiaProducts && typeof window.NostalgiaProducts.getAll === "function") {
+      /* unified catalog: static products + products added from the admin panel */
+      products = window.NostalgiaProducts.getAll().filter(function (p) {
+        return p.catId === catId;
       });
+    } else {
+      var images = (window.NostalgiaProducts && window.NostalgiaProducts.CAT_IMAGES[catId]) || [];
+      for (var i = 1; i <= images.length; i++) {
+        products.push({
+          id: catId + "-" + i,
+          catId: catId,
+          index: i,
+          image: images[i - 1],
+          title: t("collection_" + catId) + " · " + i,
+        });
+      }
     }
 
     products = applyFilters(products);
 
     if (productsCountEl) {
-      productsCountEl.textContent = t("collection_items_count").replace("{n}", String(products.length));
+      productsCountEl.textContent = searchMode
+        ? formatSearchResultsCount(products.length)
+        : t("collection_items_count").replace("{n}", String(products.length));
     }
 
     if (!products.length) {
@@ -203,7 +261,8 @@
 
       var title = document.createElement("h3");
       title.className = "collection-coming__title";
-      title.textContent = t("collection_" + catId);
+      title.textContent =
+        searchMode || catId === "__search__" ? t("search_results_title") : t("collection_" + catId);
 
       var lead = document.createElement("p");
       lead.className = "collection-coming__lead";
@@ -218,14 +277,14 @@
 
     products.forEach(function (item, i) {
       var productId = item.id;
-      var titleText = item.title;
+      var titleText = pickTitle(item);
       var productUrl = window.NostalgiaProducts
         ? window.NostalgiaProducts.getProductUrl(productId)
-        : "product.html?id=" + encodeURIComponent(productId);
+        : "/product/" + encodeURIComponent(productId);
 
       var article = document.createElement("article");
       article.className = "collection-product site-reveal site-reveal--d" + ((i % 4) + 1);
-      article.setAttribute("data-category", catId);
+      article.setAttribute("data-category", item.catId || catId);
       article.setAttribute("data-product-id", productId);
       article.setAttribute("data-reveal-tagged", "1");
       article.setAttribute("role", "listitem");
@@ -238,6 +297,13 @@
 
       var visual = document.createElement("div");
       visual.className = "collection-product__visual candle-hover";
+
+      if (window.NostalgiaProducts && window.NostalgiaProducts.isOnSale(item)) {
+        var saleBadge = document.createElement("span");
+        saleBadge.className = "product-sale-badge";
+        saleBadge.textContent = "-" + window.NostalgiaProducts.discountPercent(item) + "%";
+        visual.appendChild(saleBadge);
+      }
 
       if (item.limited) {
         var badge = document.createElement("div");
@@ -282,6 +348,20 @@
       name.textContent = titleText;
 
       meta.appendChild(name);
+
+      if (item.price != null) {
+        var price = document.createElement("p");
+        price.className = "collection-product__price";
+        if (window.NostalgiaProducts && window.NostalgiaProducts.isOnSale(item)) {
+          price.className += " collection-product__price--sale";
+          price.innerHTML =
+            '<span class="collection-product__price-now">€' + Number(item.salePrice).toFixed(2) + "</span>" +
+            '<span class="collection-product__price-was">€' + Number(item.price).toFixed(2) + "</span>";
+        } else {
+          price.textContent = "€" + Number(item.price).toFixed(2);
+        }
+        meta.appendChild(price);
+      }
       link.appendChild(visual);
       link.appendChild(meta);
       article.appendChild(link);
@@ -302,7 +382,32 @@
     }
   }
 
+  function showSearchResults(query) {
+    searchMode = true;
+    activeCategory = "__search__";
+    document.body.classList.add("collection-products-open");
+    if (categoriesEl) {
+      categoriesEl.hidden = true;
+      categoriesEl.setAttribute("aria-hidden", "true");
+    }
+    if (productsEl) {
+      productsEl.hidden = false;
+      productsEl.setAttribute("aria-hidden", "false");
+    }
+    if (productsTitleEl) {
+      productsTitleEl.textContent = t("search_results_title");
+      productsTitleEl.setAttribute("data-active-cat", "__search__");
+    }
+    if (productsLeadEl) productsLeadEl.textContent = "";
+    if (searchEl) searchEl.value = query;
+    updateCategoryHero("cat1");
+    renderProducts("__search__", filterProductsByQuery(query));
+    if (window.NostalgiaBreadcrumbs) window.NostalgiaBreadcrumbs.refresh();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   function showProducts(catId) {
+    searchMode = false;
     activeCategory = catId;
     document.body.classList.add("collection-products-open");
     if (categoriesEl) {
@@ -339,6 +444,8 @@
 
   function showCategories(opts) {
     opts = opts || {};
+    var wasSearch = searchMode;
+    searchMode = false;
     document.body.classList.remove("collection-products-open");
     if (categoriesEl) {
       categoriesEl.hidden = false;
@@ -355,7 +462,7 @@
     if (!opts.keepHash) {
       try {
         if (history.replaceState) {
-          history.replaceState(null, "", location.pathname + location.search);
+          history.replaceState(null, "", location.pathname + (wasSearch ? "" : location.search));
         } else {
           location.hash = "";
         }
@@ -389,6 +496,7 @@
     heroImgEl = $("#collection-catalog-hero-img");
     heroWrapEl = $("#collection-catalog-hero");
     heroZoomEl = $("#collection-catalog-hero-zoom");
+    heroContentEl = $("#collection-catalog-hero-content");
     backBtn = $("#collection-back");
     sortEl = $("#collection-sort");
     searchEl = $("#collection-search");
@@ -409,17 +517,41 @@
 
     if (sortEl) {
       sortEl.addEventListener("change", function () {
-        if (activeCategory) renderProducts(activeCategory);
+        if (!activeCategory) return;
+        if (searchMode && searchEl) {
+          renderProducts("__search__", filterProductsByQuery(searchEl.value.trim()));
+        } else {
+          renderProducts(activeCategory);
+        }
       });
     }
 
     if (searchEl) {
       searchEl.addEventListener("input", function () {
-        if (activeCategory) renderProducts(activeCategory);
+        if (!activeCategory) return;
+        if (searchMode) {
+          renderProducts("__search__", filterProductsByQuery(searchEl.value.trim()));
+        } else {
+          renderProducts(activeCategory);
+        }
       });
     }
 
     window.addEventListener("hashchange", onHash);
+
+    /* re-render when admin-created products arrive from the backend */
+    function rerenderActive() {
+      if (activeCategory && productsEl && !productsEl.hidden) {
+        if (searchMode && searchEl) {
+          renderProducts("__search__", filterProductsByQuery(searchEl.value.trim()));
+        } else {
+          renderProducts(activeCategory);
+        }
+      }
+    }
+    document.addEventListener("nostalgia-products-updated", rerenderActive);
+    /* Swap product titles EL⇄EN when the visitor changes language. */
+    window.addEventListener("nostalgia-locale-updated", rerenderActive);
 
     document.addEventListener(
       "click",
@@ -442,6 +574,12 @@
     window.NostalgiaOnLangApplied = function () {
       var active = productsTitleEl && productsTitleEl.getAttribute("data-active-cat");
       if (active && productsEl && !productsEl.hidden) {
+        if (searchMode && searchEl) {
+          productsTitleEl.textContent = t("search_results_title");
+          renderProducts("__search__", filterProductsByQuery(searchEl.value.trim()));
+          if (window.NostalgiaBreadcrumbs) window.NostalgiaBreadcrumbs.refresh();
+          return;
+        }
         productsTitleEl.textContent = t("collection_" + active);
         updateLead(active);
         updateCategoryHero(active);
@@ -450,7 +588,17 @@
       }
     };
 
-    onHash();
+    function initFromUrl() {
+      var params = new URLSearchParams(location.search);
+      var q = (params.get("search") || "").trim();
+      if (q) {
+        showSearchResults(q);
+        return;
+      }
+      onHash();
+    }
+
+    initFromUrl();
   }
 
   function clearNavUiLock() {
@@ -496,12 +644,15 @@
 
     if (q) {
       out = out.filter(function (item) {
-        return item.title.toLowerCase().indexOf(q) !== -1;
+        return (
+          (item.title || "").toLowerCase().indexOf(q) !== -1 ||
+          (item.titleEn || "").toLowerCase().indexOf(q) !== -1
+        );
       });
     }
 
     if (sortVal === "name-asc") {
-      out.sort(function (a, b) { return a.title.localeCompare(b.title); });
+      out.sort(function (a, b) { return pickTitle(a).localeCompare(pickTitle(b)); });
     } else {
       out.sort(function (a, b) { return a.index - b.index; });
     }

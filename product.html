@@ -2,33 +2,21 @@
 <html lang="el">
 <head>
   <meta charset="UTF-8" />
+  <!-- Clean product URLs are two segments (/product/:id); this base ref keeps
+       all relative assets (css, js, logo, product images) resolving from root. -->
+  <base href="/" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" href="logo/logo.png" type="image/png" />
   <title>Nostalgia Collection · Προϊόν</title>
   <link rel="stylesheet" href="css/fonts.css?v=1" />
 <link rel="stylesheet" href="css/base.css?v=locale-drawer" />
-  <link rel="stylesheet" href="css/side-nav.css?v=dark-theme" />
-  <link rel="stylesheet" href="css/shop.css?v=pdp-btn-mobile" />
+  <link rel="stylesheet" href="css/side-nav.css?v=menu-visual3" />
+  <link rel="stylesheet" href="css/shop.css?v=pdp-icons" />
   <link rel="stylesheet" href="css/account.css" />
   <link rel="stylesheet" href="css/legal.css" />
   <link rel="stylesheet" href="css/polish.css?v=mobile-perf" />
-  <script>
-    document.documentElement.classList.remove("page-is-entering", "page-is-leaving");
-    document.body && document.body.classList.remove("has-quick-view-open");
-    if (document.body) document.body.style.overflow = "";
-    (function () {
-      try {
-        var t = localStorage.getItem("nostalgia-theme");
-        if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
-        else if (window.matchMedia("(prefers-color-scheme: dark)").matches) document.documentElement.setAttribute("data-theme", "dark");
-        else document.documentElement.setAttribute("data-theme", "light");
-      } catch (e) {}
-      try {
-        var l = localStorage.getItem("nostalgia-lang");
-        if (l === "en" || l === "el") document.documentElement.lang = l;
-      } catch (e) {}
-    })();
-  </script>
+  <link rel="stylesheet" href="css/experience.css?v=1" />
+  <script src="js/theme-boot.js"></script>
 </head>
 <body data-page="product">
   <div class="page-wrap">
@@ -36,21 +24,21 @@
       <nav class="site-header__bar" data-i18n-aria="nav_aria">
         <div class="mobile-nav-panel" id="mobile-nav-panel">
         <div class="site-nav site-nav--left">
-          <a href="index.html" data-i18n="nav_home">Αρχική</a>
-          <a href="collection.html" data-i18n="nav_collection">Συλλογή</a>
+          <a href="/" data-i18n="nav_home">Αρχική</a>
+          <a href="/collection" data-i18n="nav_collection">Συλλογή</a>
         </div>
-        <a class="site-header__logo site-header__logo--pulse" href="index.html" data-i18n-aria="logo_aria">
+        <a class="site-header__logo site-header__logo--pulse" href="/" data-i18n-aria="logo_aria">
           <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
           <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
         </a>
         <div class="site-nav site-nav--right">
-          <a href="about.html" data-i18n="nav_about">Σχετικά</a>
-          <a href="contact.html" data-i18n="nav_contact">Επικοινωνία</a>
+          <a href="/about" data-i18n="nav_about">Σχετικά</a>
+          <a href="/contact" data-i18n="nav_contact">Επικοινωνία</a>
           <button type="button" class="lang-toggle" id="lang-toggle" aria-live="polite">English</button>
           <button type="button" class="theme-toggle" id="theme-toggle" aria-live="polite"></button>
         </div>
         </div>
-        <a class="site-header__logo site-header__logo--topbar" href="index.html" data-i18n-aria="logo_aria">
+        <a class="site-header__logo site-header__logo--topbar" href="/" data-i18n-aria="logo_aria">
           <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
           <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
         </a>
@@ -60,11 +48,37 @@
 
     <main>
       <section class="product-page" id="product-page-root" aria-live="polite"></section>
+
+      <!-- Candle care ritual — moved here from the homepage (belongs with the product). -->
+      <section class="home-ritual site-reveal" id="product-ritual-section" aria-labelledby="product-ritual-title">
+        <div class="home-ritual__inner">
+          <p class="home-ritual__eyebrow" data-i18n="ritual_eyebrow">Η τελετουργία</p>
+          <h2 id="product-ritual-title" class="home-ritual__title" data-i18n="ritual_title">Πώς απολαμβάνεις το κερί σου</h2>
+          <p class="home-ritual__lead" data-i18n="ritual_lead">Τρία ήρεμα βήματα — όχι βιαστικά. Μια μικρή παύση για τον χώρο, το άρωμα και τη στιγμή σου.</p>
+          <div class="home-ritual__steps">
+            <article class="home-ritual__step home-reveal home-reveal--d1">
+              <span class="home-ritual__num">01</span>
+              <h3 class="home-ritual__step-title" data-i18n="ritual_step1_title">Άναψε</h3>
+              <p class="home-ritual__step-text" data-i18n="ritual_step1_text">Άναψε τη φλόγα και δώσε λίγα λεπτά στο άρωμα να ανοίξει στον χώρο.</p>
+            </article>
+            <article class="home-ritual__step home-reveal home-reveal--d2">
+              <span class="home-ritual__num">02</span>
+              <h3 class="home-ritual__step-title" data-i18n="ritual_step2_title">Περίμενε</h3>
+              <p class="home-ritual__step-text" data-i18n="ritual_step2_text">Άφησε το κερί να λιώσει ομοιόμορφα — έτσι διαχέεται καλύτερα το άρωμα και «ζει» περισσότερο.</p>
+            </article>
+            <article class="home-ritual__step home-reveal home-reveal--d3">
+              <span class="home-ritual__num">03</span>
+              <h3 class="home-ritual__step-title" data-i18n="ritual_step3_title">Σβήσε & κόψε</h3>
+              <p class="home-ritual__step-text" data-i18n="ritual_step3_text">Σβήσε τη φλόγα και κόψε το φιτίλι στα 5 mm — για καθαρή, ήρεμη επόμενη ανάφλεξη.</p>
+            </article>
+          </div>
+        </div>
+      </section>
     </main>
 
     <footer class="site-footer">
       <div class="site-footer__main">
-        <a class="site-footer__logo" href="index.html" data-i18n-aria="logo_aria">
+        <a class="site-footer__logo" href="/" data-i18n-aria="logo_aria">
           <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="180" height="52" alt="Nostalgia Collection" />
           <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="180" height="52" alt="Nostalgia Collection" />
         </a>
@@ -102,25 +116,29 @@
       </div>
       <div class="site-footer__bar">
         <nav class="site-footer__legal" data-i18n-aria="footer_legal_aria">
-          <a href="privacy.html" data-i18n="footer_privacy">Προστασία Δεδομένων</a>
+          <a href="/privacy" data-i18n="footer_privacy">Προστασία Δεδομένων</a>
         </nav>
         <p class="site-footer__copyright" data-i18n="footer_copyright">© 2026 Nostalgia. Με επιφύλαξη παντός δικαιώματος.</p>
       </div>
     </footer>
   </div>
+  <script defer src="js/api.js?v=1"></script>
   <script defer src="js/europe-countries.js"></script>
   <script defer src="js/images.js?v=4"></script>
     <script defer src="js/i18n-bundles/shared.js?v=1"></script>
-  <script defer src="js/i18n-bundles/catalog.js?v=1"></script>
+  <script defer src="js/i18n-bundles/catalog.js?v=cat9-pdp"></script>
+  <script defer src="js/i18n-bundles/shop.js?v=2"></script>
   <script defer src="js/i18n-core.js?v=1"></script>
   <script defer src="js/cookies.js"></script>
-  <script defer src="js/products.js"></script>
-  <script defer src="js/side-nav.js"></script>
+  <script src="js/tracking.js?v=1" defer></script>
+  <script defer src="js/products.js?v=pdp-icons"></script>
+  <script defer src="js/side-nav.js?v=8"></script>
   <script defer src="js/cart.js"></script>
   <script defer src="js/wishlist.js"></script>
   <script defer src="js/breadcrumbs.js?v=4"></script>
   <script defer src="js/site-polish.js?v=6"></script>
-  <script defer src="js/product.js?v=webp"></script>
+  <script defer src="js/product-icons.js?v=cat9-mirror"></script>
+  <script defer src="js/product.js?v=cat9-pdp"></script>
   <script defer src="js/account.js"></script>
   <script defer src="js/theme.js"></script>
   <script defer src="js/header-scroll.js"></script>

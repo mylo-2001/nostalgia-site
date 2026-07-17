@@ -43,6 +43,19 @@
       track.style.transform = "translateX(" + (-offset + drag) + "px)";
     }
 
+    function positionNav() {
+      // Align the arrows to the vertical centre of the card image (Trudon-style)
+      // instead of the centre of the whole card (image + title + CTA).
+      var media = slides[0] && slides[0].querySelector(".home-collections__cat-media");
+      if (!media) return;
+      var cardRect = slides[0].getBoundingClientRect();
+      var mediaRect = media.getBoundingClientRect();
+      if (!cardRect.height || !mediaRect.height) return;
+      var cardCenter = cardRect.top + cardRect.height / 2;
+      var mediaCenter = mediaRect.top + mediaRect.height / 2;
+      root.style.setProperty("--home-nav-shift", (mediaCenter - cardCenter).toFixed(1) + "px");
+    }
+
     function updateControls() {
       prevBtn.disabled = index <= 0;
       nextBtn.disabled = index >= maxIndex();
@@ -178,11 +191,20 @@
       resizeTimer = window.setTimeout(function () {
         rebuildDots();
         setTrackPosition();
+        positionNav();
       }, 120);
     });
 
     rebuildDots();
     setTrackPosition();
+    positionNav();
+
+    // Re-measure once the card images have loaded (their height feeds the offset).
+    var firstImg = slides[0] && slides[0].querySelector(".home-collections__cat-media img");
+    if (firstImg && !firstImg.complete) {
+      firstImg.addEventListener("load", positionNav, { once: true });
+    }
+    window.addEventListener("load", positionNav, { once: true });
   }
 
   if (document.readyState === "loading") {

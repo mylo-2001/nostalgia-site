@@ -7,21 +7,10 @@
   <title>Nostalgia Collection · Scent Finder</title>
   <link rel="stylesheet" href="css/fonts.css?v=1" />
   <link rel="stylesheet" href="css/base.css?v=locale-drawer" />
-  <link rel="stylesheet" href="css/side-nav.css?v=dark-theme" />
-  <link rel="stylesheet" href="css/experience.css?v=2" />
+  <link rel="stylesheet" href="css/side-nav.css?v=menu-visual3" />
+  <link rel="stylesheet" href="css/experience.css?v=scent-finder-v3" />
   <link rel="stylesheet" href="css/shop.css?v=cart-drawer" />
-  <script>
-    (function () {
-      try {
-        var t = localStorage.getItem("nostalgia-theme");
-        if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
-      } catch (e) {}
-      try {
-        var l = localStorage.getItem("nostalgia-lang");
-        if (l === "en" || l === "el") document.documentElement.lang = l;
-      } catch (e) {}
-    })();
-  </script>
+  <script src="js/theme-boot.js"></script>
 </head>
 <body data-page="scent-finder">
   <div class="page-wrap">
@@ -29,21 +18,21 @@
       <nav class="site-header__bar" data-i18n-aria="nav_aria">
         <div class="mobile-nav-panel" id="mobile-nav-panel">
           <div class="site-nav site-nav--left">
-            <a href="index.html" data-i18n="nav_home">Αρχική</a>
-            <a href="collection.html" data-i18n="nav_collection">Συλλογή</a>
+            <a href="/" data-i18n="nav_home">Αρχική</a>
+            <a href="/collection" data-i18n="nav_collection">Συλλογή</a>
           </div>
-          <a class="site-header__logo site-header__logo--pulse" href="index.html" data-i18n-aria="logo_aria">
+          <a class="site-header__logo site-header__logo--pulse" href="/" data-i18n-aria="logo_aria">
             <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
             <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
           </a>
           <div class="site-nav site-nav--right">
-            <a href="about.html" data-i18n="nav_about">Σχετικά</a>
-            <a href="contact.html" data-i18n="nav_contact">Επικοινωνία</a>
+            <a href="/about" data-i18n="nav_about">Σχετικά</a>
+            <a href="/contact" data-i18n="nav_contact">Επικοινωνία</a>
             <button type="button" class="lang-toggle" id="lang-toggle">English</button>
             <button type="button" class="theme-toggle" id="theme-toggle"></button>
           </div>
         </div>
-        <a class="site-header__logo site-header__logo--topbar" href="index.html" data-i18n-aria="logo_aria">
+        <a class="site-header__logo site-header__logo--topbar" href="/" data-i18n-aria="logo_aria">
           <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
           <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
         </a>
@@ -51,26 +40,52 @@
       </nav>
     </header>
     <main class="scent-finder-page">
-      <header class="page-intro site-reveal">
-        <h1 data-i18n="scent_finder_title">Scent Finder</h1>
-        <p data-i18n="scent_finder_intro">Μαζί, σε έξι ήσυχες ερωτήσεις, βρίσκουμε το προϊόν που ταιριάζει σε εσάς — κερί, άρωμα ή δώρο.</p>
-        <div class="section-rule" aria-hidden="true"></div>
-      </header>
-      <div id="scent-finder-root" class="site-reveal site-reveal--d1"></div>
+      <section class="editorial-hero">
+        <figure class="editorial-hero__figure">
+          <div class="editorial-hero__zoom is-animating">
+            <picture>
+              <source type="image/webp" srcset="collections-hero/%CE%95%CF%8D%CF%81%CE%B5%CF%83%CE%B7%20%CE%91%CF%81%CF%8E%CE%BC%CE%B1%CF%84%CE%BF%CF%82-hero-photo-480w.webp 480w, collections-hero/%CE%95%CF%8D%CF%81%CE%B5%CF%83%CE%B7%20%CE%91%CF%81%CF%8E%CE%BC%CE%B1%CF%84%CE%BF%CF%82-hero-photo-960w.webp 960w, collections-hero/%CE%95%CF%8D%CF%81%CE%B5%CF%83%CE%B7%20%CE%91%CF%81%CF%8E%CE%BC%CE%B1%CF%84%CE%BF%CF%82-hero-photo-1440w.webp 1440w" sizes="100vw" />
+              <img class="editorial-hero__img" src="collections-hero/%CE%95%CF%8D%CF%81%CE%B5%CF%83%CE%B7%20%CE%91%CF%81%CF%8E%CE%BC%CE%B1%CF%84%CE%BF%CF%82-hero-photo.png" alt="" width="1200" height="900" loading="eager" decoding="async" />
+            </picture>
+          </div>
+          <div class="editorial-hero__overlay" aria-hidden="true"></div>
+        </figure>
+        <div class="editorial-hero__inner">
+          <header class="editorial-hero__head">
+            <h1 class="editorial-hero__title" data-i18n="scent_finder_title">Scent Finder</h1>
+            <p class="editorial-hero__lead" data-i18n="scent_finder_intro">Μαζί, σε έξι ήσυχες ερωτήσεις, βρίσκουμε το προϊόν που ταιριάζει σε εσάς — κερί, άρωμα ή δώρο.</p>
+          </header>
+        </div>
+      </section>
+      <section class="scent-finder-shell site-reveal site-reveal--d1" aria-label="Scent Finder quiz">
+        <div class="scent-finder-shell__bg" aria-hidden="true">
+          <picture>
+            <source
+              type="image/webp"
+              srcset="home%20page%20photo/home-backround-photo1-480w.webp 480w, home%20page%20photo/home-backround-photo1-960w.webp 960w, home%20page%20photo/home-backround-photo1-1440w.webp 1440w"
+              sizes="100vw"
+            />
+            <img data-webp="1" src="home%20page%20photo/home-backround-photo1.png" alt="" loading="lazy" decoding="async" />
+          </picture>
+        </div>
+        <div id="scent-finder-root" class="scent-finder-shell__inner"></div>
+      </section>
     </main>
     <footer class="site-footer"></footer>
   </div>
+  <script defer src="js/api.js?v=1"></script>
   <script defer src="js/europe-countries.js"></script>
   <script defer src="js/images.js?v=4"></script>
   <script defer src="js/i18n-bundles/shared.js?v=3"></script>
-  <script defer src="js/i18n-bundles/content.js?v=5"></script>
-  <script defer src="js/i18n-core.js?v=1"></script>
+  <script defer src="js/i18n-bundles/content.js?v=6"></script>
+  <script defer src="js/i18n-core.js?v=2"></script>
   <script defer src="js/cookies.js"></script>
+  <script src="js/tracking.js?v=1" defer></script>
   <script defer src="js/products.js?v=3"></script>
   <script defer src="js/side-nav.js?v=wide-menu"></script>
   <script defer src="js/cart.js"></script>
   <script defer src="js/account.js?v=8"></script>
   <script defer src="js/theme.js"></script>
-  <script defer src="js/scent-finder.js?v=3"></script>
+  <script defer src="js/scent-finder.js?v=4"></script>
 </body>
 </html>

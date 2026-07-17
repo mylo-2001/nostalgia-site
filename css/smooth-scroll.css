@@ -1,0 +1,23 @@
+/* Lenis smooth scroll — recommended base styles.
+   All rules are scoped to the .lenis classes Lenis adds to <html> at runtime,
+   so they are completely inert when smooth scroll is off (reduced-motion). */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}

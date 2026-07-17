@@ -27,6 +27,7 @@
       section.paragraphs.forEach(function (p) {
         html += "<p>" + p + "</p>";
       });
+      if (section.html) html += section.html;
       html += "</section>";
     });
 
@@ -35,6 +36,14 @@
 
   function init() {
     render();
+
+    var cookieBtn = document.getElementById("privacy-cookie-settings");
+    if (cookieBtn) {
+      cookieBtn.addEventListener("click", function () {
+        if (window.NostalgiaCookies) window.NostalgiaCookies.openSettings();
+      });
+    }
+
     window.NostalgiaOnLangApplied = (function (prev) {
       return function () {
         render();

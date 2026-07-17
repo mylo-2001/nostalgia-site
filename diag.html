@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Διάγνωση κίνησης</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; background: #0c0a08; color: #f3e4c4; }
+    .wrap { max-width: 640px; margin: 0 auto; padding: 2rem 1.25rem 120vh; }
+    h1 { font-size: 1.1rem; letter-spacing: .1em; text-transform: uppercase; }
+    .row { display: flex; justify-content: space-between; gap: 1rem; padding: .8rem 1rem; border: 1px solid #3a3026; border-radius: 8px; margin: .5rem 0; font-size: .95rem; }
+    .k { opacity: .8; }
+    .v { font-weight: 700; }
+    .ok { color: #7fd18a; }
+    .bad { color: #ff7a7a; }
+    .note { margin-top: 1.5rem; font-size: .85rem; line-height: 1.6; opacity: .85; }
+    .scrollbox { position: fixed; top: 8px; right: 8px; background: #1a1410; border: 1px solid #5a4a32; border-radius: 8px; padding: .6rem .9rem; font-size: .8rem; }
+    .big { font-size: 1.4rem; }
+  </style>
+</head>
+<body>
+  <div class="scrollbox">
+    scrollY: <span id="sy" class="v big">0</span>
+  </div>
+  <div class="wrap">
+    <h1>Διάγνωση κίνησης</h1>
+    <div class="row"><span class="k">prefers-reduced-motion: reduce</span><span class="v" id="rm">…</span></div>
+    <div class="row"><span class="k">window.Lenis φορτώθηκε</span><span class="v" id="lenis">…</span></div>
+    <div class="row"><span class="k">Lenis instance ενεργό</span><span class="v" id="inst">…</span></div>
+    <div class="row"><span class="k">requestAnimationFrame</span><span class="v" id="raf">…</span></div>
+    <div class="row"><span class="k">IntersectionObserver</span><span class="v" id="io">…</span></div>
+    <div class="note">
+      Κάνε λίγο scroll προς τα κάτω και κοίτα το <b>scrollY</b> πάνω δεξιά.<br>
+      • Αν με τον τροχό το νούμερο <b>γλιστράει ομαλά</b> (συνεχίζει για λίγο αφού σταματήσεις) → Lenis δουλεύει.<br>
+      • Αν <b>πηδάει σκαλοπάτια</b> και σταματάει απότομα → smooth scroll <b>OFF</b>.<br><br>
+      Πες μου τι γράφει κάθε γραμμή (ΝΑΙ/ΟΧΙ) και τι κάνει το scrollY.
+    </div>
+  </div>
+
+  <script src="js/vendor/lenis.min.js?v=1.1.14"></script>
+  <script>
+    function set(id, ok, txt) {
+      var el = document.getElementById(id);
+      el.textContent = txt;
+      el.className = "v " + (ok ? "ok" : "bad");
+    }
+    var rm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    set("rm", !rm, rm ? "ΝΑΙ (μπλοκάρει τα animations!)" : "ΟΧΙ");
+    set("lenis", typeof window.Lenis !== "undefined", typeof window.Lenis !== "undefined" ? "ΝΑΙ" : "ΟΧΙ");
+    set("raf", typeof window.requestAnimationFrame === "function", typeof window.requestAnimationFrame === "function" ? "ΝΑΙ" : "ΟΧΙ");
+    set("io", typeof window.IntersectionObserver !== "undefined", typeof window.IntersectionObserver !== "undefined" ? "ΝΑΙ" : "ΟΧΙ");
+
+    var started = false;
+    if (!rm && typeof window.Lenis !== "undefined") {
+      var lenis = new window.Lenis({ lerp: 0.06 });
+      started = true;
+      function raf(t) { lenis.raf(t); requestAnimationFrame(raf); }
+      requestAnimationFrame(raf);
+    }
+    set("inst", started, started ? "ΝΑΙ (lerp 0.06)" : "ΟΧΙ (reduced-motion ή lib λείπει)");
+
+    var sy = document.getElementById("sy");
+    function tick() { sy.textContent = Math.round(window.scrollY); requestAnimationFrame(tick); }
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>

@@ -25,6 +25,17 @@
     return decodePath(url).replace(/\.(png|jpe?g|webp)$/i, "");
   }
 
+  /* Only the built-in catalog images have pre-generated -Nw.webp derivatives
+     (via tools/build-images.py). Admin uploads and absolute/CDN URLs do not,
+     so we must serve those originals as-is instead of a broken .webp. */
+  function hasDerivatives(src) {
+    var s = decodePath(src || "");
+    if (!s) return false;
+    if (/^https?:\/\//i.test(s)) return false;
+    if (/\/uploads\//.test(s)) return false;
+    return true;
+  }
+
   function webpUrl(src, width) {
     var base = stripExt(src);
     if (width) return encodePath(base + "-" + width + "w.webp");
@@ -50,6 +61,7 @@
   function buildPictureShell(img, pngSrc, options) {
     options = options || {};
     if (!img || !pngSrc || !/\.png$/i.test(decodePath(pngSrc))) return null;
+    if (!hasDerivatives(pngSrc)) return null;
     if (img.closest("picture")) return null;
 
     var sizes = options.sizes || img.getAttribute("sizes") || "100vw";
@@ -137,6 +149,7 @@
     upgrade: upgradeImg,
     create: createPicture,
     upgradeAll: upgradeAll,
+    hasDerivatives: hasDerivatives,
   };
 
   if (document.readyState === "loading") {

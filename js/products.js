@@ -1,5 +1,5 @@
 (function () {
-  var CAT_IDS = ["cat1", "cat2", "cat3", "cat4", "cat5", "cat6", "cat7", "cat8"];
+  var CAT_IDS = ["cat1", "cat2", "cat3", "cat4", "cat5", "cat6", "cat7", "cat8", "cat9"];
 
   function muranoImg(n) {
     return "product%20photo/art%20class%20murano%20candle/product%20" + n + ".png";
@@ -17,11 +17,60 @@
     return "product%20photo/Ni%20Terra/product%20" + n + ".png";
   }
 
+  /* A product folder with photo1..photoN.png → gallery array (first = main). */
+  function gallery(folder, n) {
+    var imgs = [];
+    for (var i = 1; i <= (n || 3); i++) imgs.push(folder + "/photo" + i + ".png");
+    return imgs;
+  }
+  var MURANO_DIR = "product%20photo/art%20class%20murano%20candle/";
+  var GIFT_DIR = "product%20photo/Gift%20Sets/";
+  var MIRROR_DIR = "product%20photo/Nostalgia%20Exclusive%20Mirror%20Candles/";
+  /* Each colour is its OWN product; they are linked as a variant group so the
+     product page shows swatches that navigate between the colour-products. */
+  var MIRROR_REGULAR = [
+    { folder: "Mirror%20Candles-asimi", label: "Ασημί", hex: "#c3c6c9" },
+    { folder: "Mirror%20Candles-aspro", label: "Λευκό", hex: "#f2efe9" },
+    { folder: "Mirror%20Candles-galazio", label: "Γαλάζιο", hex: "#a9cbe0" },
+    { folder: "Mirror%20Candles-kokkino", label: "Κόκκινο", hex: "#b0342c" },
+    { folder: "Mirror%20Candles-mauro", label: "Μαύρο", hex: "#2b2b2b" },
+    { folder: "Mirror%20Candles-prasino", label: "Πράσινο", hex: "#4a7a4e" },
+  ];
+  var MIRROR_LARGE = [
+    { folder: "Mirror%20Candles-asimi-Large", label: "Large Ασημί", hex: "#c3c6c9" },
+    { folder: "Mirror%20Candles-xriso-Large", label: "Large Χρυσό", hex: "#c9a24a" },
+  ];
+  var MIRROR_ALL = MIRROR_REGULAR.concat(MIRROR_LARGE);
+
+  /* Built-in colour variants: id -> { key, label, hex }. Products that share a
+     "key" are linked as colour siblings. The admin can also declare variants per
+     product via details (variantGroup/variantColor/variantColorHex), which then
+     take priority over these defaults — see variantInfoFor(). */
+  var VARIANT_META = {};
+  (function () {
+    MIRROR_REGULAR.forEach(function (v, i) {
+      VARIANT_META["cat9-" + (i + 1)] = { key: "mirror", label: v.label, hex: v.hex };
+    });
+    var off = MIRROR_REGULAR.length;
+    MIRROR_LARGE.forEach(function (v, i) {
+      VARIANT_META["cat9-" + (off + i + 1)] = { key: "mirror-large", label: v.label, hex: v.hex };
+    });
+  })();
+
   var CAT_IMAGES = {
     cat1: [
-      muranoImg(1), muranoImg(2), muranoImg(3),
-      muranoImg(4), muranoImg(5), muranoImg(6),
-      muranoImg(7), muranoImg(8), muranoImg(9),
+      gallery(MURANO_DIR + "murano-aspro"),
+      gallery(MURANO_DIR + "murano-aspro-mob"),
+      gallery(MURANO_DIR + "murano-mauro"),
+      gallery(MURANO_DIR + "murano%20kokkino"),
+      gallery(MURANO_DIR + "murano-kokkino-anoixto"),
+      gallery(MURANO_DIR + "murano-mple"),
+      gallery(MURANO_DIR + "murano-flut-mple"),
+      gallery(MURANO_DIR + "murano-flut-kitrino"),
+      gallery(MURANO_DIR + "murano-galazio"),
+      gallery(MURANO_DIR + "murano-pardalo"),
+      gallery(MURANO_DIR + "murano-pardalo-anoixto"),
+      gallery(MURANO_DIR + "murano-pardalo-skouro"),
     ],
     cat2: [
       driftwoodImg("product%201.png"),
@@ -52,7 +101,12 @@
     cat5: [terraImg(1), terraImg(2), terraImg(3), terraImg(4)],
     cat6: [],
     cat7: [],
-    cat8: [],
+    cat8: [
+      gallery(GIFT_DIR + "gift-set1"),
+      gallery(GIFT_DIR + "gift-set2"),
+      gallery(GIFT_DIR + "gift-set3"),
+    ],
+    cat9: MIRROR_ALL.map(function (v) { return gallery(MIRROR_DIR + v.folder); }),
   };
 
   function buildProductKey(catId, index, field) {
@@ -66,13 +120,66 @@
     return key;
   }
 
-  function getTitle(catId, index) {
+  function getTitle(catId, index, product) {
     var titleKey = buildProductKey(catId, index, "title");
     var raw = t(titleKey);
     if (raw && raw !== titleKey && raw.trim()) {
       return raw.trim();
     }
+    var label = product && product.variantLabel;
+    if (!label) {
+      var meta = VARIANT_META[catId + "-" + index];
+      if (meta) label = meta.label;
+    }
+    if (label) {
+      return t("collection_" + catId) + " · " + label;
+    }
     return t("collection_" + catId) + " · " + index;
+  }
+
+  /* Where a product's colour-variant info comes from: an admin declaration in
+     details (variantGroup/variantColor/variantColorHex) wins; otherwise the
+     built-in VARIANT_META defaults. Returns { key, label, hex } or null. */
+  function variantInfoFor(p) {
+    var d = p.details;
+    if (d && d.variantGroup && String(d.variantGroup).trim()) {
+      var enColor = document.documentElement.lang === "en" && d.variantColorEn && String(d.variantColorEn).trim();
+      return {
+        key: String(d.variantGroup).trim(),
+        label: (enColor && String(d.variantColorEn).trim()) ||
+          (d.variantColor && String(d.variantColor).trim()) || p.title || "",
+        hex: (d.variantColorHex && String(d.variantColorHex).trim()) || "#cccccc",
+      };
+    }
+    var m = VARIANT_META[p.id];
+    if (m) return { key: m.key, label: m.label, hex: m.hex };
+    return null;
+  }
+
+  /* Link every product that shares a variant key into a colour group, so the
+     product page can show swatches that navigate between the sibling colours. */
+  function rebuildVariantGroups() {
+    var groups = {};
+    catalog.forEach(function (p) {
+      var info = variantInfoFor(p);
+      p._variant = info;
+      p.variantLabel = info ? info.label : null;
+      if (info) {
+        (groups[info.key] = groups[info.key] || []).push({
+          id: p.id,
+          label: info.label,
+          hex: info.hex,
+        });
+      }
+    });
+    catalog.forEach(function (p) {
+      if (p._variant) {
+        var members = groups[p._variant.key];
+        p.variantGroup = members && members.length >= 2 ? members : null;
+      } else {
+        p.variantGroup = null;
+      }
+    });
   }
 
   var CAT_KIND = {
@@ -84,6 +191,7 @@
     cat6: "aroma",
     cat7: "aroma",
     cat8: "gift",
+    cat9: "candle",
   };
 
   var CAT_SCENT = {
@@ -95,6 +203,7 @@
     cat6: { temp: "warm", family: "floral", room: "living", mood: "romantic" },
     cat7: { temp: "fresh", family: "floral", room: "bathroom", mood: "calm" },
     cat8: { temp: "warm", family: "woody", room: "living", mood: "celebration" },
+    cat9: { temp: "warm", family: "floral", room: "living", mood: "romantic" },
   };
 
   var LIMITED_STOCK = {
@@ -110,11 +219,16 @@
       var images = CAT_IMAGES[catId] || [];
       for (var i = 1; i <= images.length; i++) {
         var id = catId + "-" + i;
+        var entry = images[i - 1];
+        var imgs = Array.isArray(entry) ? entry.slice() : [entry];
         list.push({
           id: id,
           catId: catId,
           index: i,
-          image: images[i - 1],
+          image: imgs[0],
+          images: imgs,
+          variantGroup: null,
+          variantLabel: null,
           titleKey: buildProductKey(catId, i, "title"),
           scent: CAT_SCENT[catId] || null,
           limited: LIMITED_STOCK[id] != null,
@@ -146,14 +260,265 @@
     byId[p.id] = p;
   });
 
-  function refreshTitles() {
+  /* Colour variants from the backend (product_variants table). Each base
+     product id maps to a list of variant objects; each variant is an
+     independently purchasable unit resolved through getById(variantId). */
+  var variantsByBase = {};
+  var variantById = {};
+
+  function variantColorLabel(v) {
+    if (document.documentElement.lang === "en" && v.colorEn && String(v.colorEn).trim()) {
+      return v.colorEn;
+    }
+    return v.color || "";
+  }
+
+  /* Build a purchasable product object = base content + one variant's own
+     image / price / stock / sku. The colour is appended to the title so it
+     shows through cart, checkout and orders; product.js uses baseTitle for the
+     page heading and renders a colour selector. */
+  function composeVariantProduct(base, v) {
+    if (!base || !v) return null;
+    var imgs = v.images && v.images.length
+      ? v.images.slice()
+      : (base.images && base.images.length ? base.images.slice() : (base.image ? [base.image] : []));
+    var price = v.price != null ? v.price : (base.price != null ? base.price : null);
+    var salePrice = v.price != null
+      ? (v.salePrice != null ? v.salePrice : null)
+      : (base.salePrice != null ? base.salePrice : null);
+    var label = variantColorLabel(v);
+    return Object.assign({}, base, {
+      id: v.id,
+      variantOf: base.id,
+      baseId: base.id,
+      baseTitle: base.title,
+      baseTitleEn: base.titleEn || "",
+      title: base.title + (label ? " — " + label : ""),
+      titleEn: base.titleEn ? base.titleEn + (label ? " — " + label : "") : "",
+      image: imgs[0] || base.image || "",
+      images: imgs,
+      price: price,
+      salePrice: salePrice,
+      stock: v.stock != null ? v.stock : null,
+      limited: v.stock != null,
+      sku: v.sku || "",
+      variantColorHex: v.colorHex || "",
+      variantColorLabel: label,
+      variants: base.variants || null,
+      activeVariantId: v.id,
+    });
+  }
+
+  /* Attach each base product's variant list + reflect the default (first
+     available) variant's image/price on the base card. */
+  function attachVariants() {
     catalog.forEach(function (p) {
-      p.title = getTitle(p.catId, p.index);
+      var list = variantsByBase[p.id];
+      if (list && list.length) {
+        p.variants = list;
+        var def = null;
+        for (var i = 0; i < list.length; i++) {
+          if (list[i].available !== false) { def = list[i]; break; }
+        }
+        if (!def) def = list[0];
+        p._defaultVariant = def;
+        if (def) {
+          if (def.images && def.images.length) {
+            p.image = def.images[0];
+            p.images = def.images.slice();
+          }
+          if (def.price != null) p.price = def.price;
+          if (def.salePrice != null) p.salePrice = def.salePrice;
+          if (def.stock != null) { p.stock = def.stock; p.limited = true; }
+        }
+      } else {
+        p.variants = null;
+        p._defaultVariant = null;
+      }
+    });
+  }
+
+  function applyServerVariants(map) {
+    variantsByBase = {};
+    variantById = {};
+    if (map && typeof map === "object") {
+      Object.keys(map).forEach(function (pid) {
+        var arr = Array.isArray(map[pid]) ? map[pid] : [];
+        variantsByBase[pid] = arr;
+        arr.forEach(function (v) {
+          variantById[v.id] = { baseId: pid, variant: v };
+        });
+      });
+    }
+    attachVariants();
+    document.dispatchEvent(new CustomEvent("nostalgia-products-updated"));
+  }
+
+  function getDescription(catId, index) {
+    var descKey = buildProductKey(catId, index, "desc");
+    var raw = t(descKey);
+    if (raw && raw !== descKey && raw.trim()) {
+      return raw.trim();
+    }
+    return "";
+  }
+
+  function refreshTitles() {
+    rebuildVariantGroups();
+    catalog.forEach(function (p) {
+      if (!p.custom) {
+        p.title = getTitle(p.catId, p.index, p);
+        p.description = getDescription(p.catId, p.index);
+      }
       p.categoryName = t("collection_" + p.catId);
     });
   }
 
+  /* Single entry point for backend data: custom products, prices, stock. */
+  function applyServerCatalog(data) {
+    if (!data) return;
+    if (Array.isArray(data.products)) {
+      applyServerProducts(data.products);
+    }
+    if (data.details) {
+      applyProductDetails(data.details);
+    }
+    if (data.prices) {
+      catalog.forEach(function (p) {
+        if (!p.custom && data.prices[p.id] != null) {
+          p.price = data.prices[p.id];
+        }
+      });
+    }
+    if (data.salePrices) {
+      catalog.forEach(function (p) {
+        if (!p.custom) {
+          p.salePrice =
+            data.salePrices[p.id] != null ? data.salePrices[p.id] : null;
+        }
+      });
+    }
+    if (data.stock) {
+      applyServerStock(data.stock);
+    }
+    /* variants last: they reflect their base's freshly-applied price/stock */
+    applyServerVariants(data.variants || {});
+    document.dispatchEvent(new CustomEvent("nostalgia-products-updated"));
+  }
+
+  function applyProductDetails(detailsMap) {
+    if (!detailsMap || typeof detailsMap !== "object") return;
+    catalog.forEach(function (p) {
+      if (detailsMap[p.id]) {
+        p.details = detailsMap[p.id];
+      }
+    });
+    document.dispatchEvent(new CustomEvent("nostalgia-products-updated"));
+  }
+
+  /* Merge products created from the admin panel into the catalog. */
+  function applyServerProducts(list) {
+    if (!Array.isArray(list)) return;
+    /* drop previously merged custom products, then re-add */
+    catalog = catalog.filter(function (p) {
+      return !p.custom;
+    });
+    list.forEach(function (sp) {
+      if (!sp || !sp.id || byId[sp.id] && !byId[sp.id].custom) return;
+      var item = {
+        id: sp.id,
+        catId: sp.catId,
+        index: catalog.filter(function (p) {
+          return p.catId === sp.catId;
+        }).length + 1,
+        image: sp.image || (Array.isArray(sp.images) && sp.images[0]) || "",
+        images: Array.isArray(sp.images) && sp.images.length ? sp.images : (sp.image ? [sp.image] : []),
+        title: sp.title || sp.id,
+        titleEn: sp.titleEn || "",
+        description: sp.description || "",
+        descriptionEn: sp.descriptionEn || "",
+        price: sp.price != null ? sp.price : null,
+        salePrice: sp.salePrice != null ? sp.salePrice : null,
+        createdAt: sp.createdAt || null,
+        scent: CAT_SCENT[sp.catId] || null,
+        custom: true,
+        limited: false,
+        stock: null,
+        details: sp.details || null,
+      };
+      catalog.push(item);
+    });
+    byId = {};
+    catalog.forEach(function (p) {
+      byId[p.id] = p;
+    });
+    refreshTitles();
+    /* re-link variants onto the rebuilt catalog objects */
+    attachVariants();
+    document.dispatchEvent(new CustomEvent("nostalgia-products-updated"));
+  }
+
   refreshTitles();
+
+  /* Live stock from the backend (api.js) overrides the static defaults. */
+  function applyServerStock(stockMap) {
+    if (!stockMap) return;
+    catalog.forEach(function (p) {
+      if (Object.prototype.hasOwnProperty.call(stockMap, p.id)) {
+        var value = stockMap[p.id];
+        p.limited = value != null;
+        p.stock = value != null ? value : null;
+      }
+    });
+    document.dispatchEvent(new CustomEvent("nostalgia-stock-updated"));
+  }
+
+  /* A product counts as "new" while it is within NEW_WINDOW_DAYS of its
+     createdAt. Only admin-created products carry a createdAt, so the static
+     catalog never shows up here — exactly what we want. */
+  var NEW_WINDOW_DAYS = 30;
+  var NEW_WINDOW_MS = NEW_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+
+  function isNew(p) {
+    if (!p || !p.createdAt) return false;
+    var created = new Date(p.createdAt).getTime();
+    if (isNaN(created)) return false;
+    return Date.now() - created <= NEW_WINDOW_MS;
+  }
+
+  /* On sale when a valid sale price is set below the regular price. */
+  function isOnSale(p) {
+    if (!p || p.salePrice == null || p.price == null) return false;
+    return Number(p.salePrice) > 0 && Number(p.salePrice) < Number(p.price);
+  }
+
+  function discountPercent(p) {
+    if (!isOnSale(p)) return 0;
+    return Math.round((1 - Number(p.salePrice) / Number(p.price)) * 100);
+  }
+
+  /* The price actually charged: sale price when on sale, else regular. */
+  function getEffectivePrice(p) {
+    if (!p) return null;
+    if (isOnSale(p)) return Number(p.salePrice);
+    return p.price != null ? Number(p.price) : null;
+  }
+
+  function getNewArrivals() {
+    refreshTitles();
+    return catalog
+      .filter(isNew)
+      .sort(function (a, b) {
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      });
+  }
+
+  function getOnSale() {
+    refreshTitles();
+    return catalog.filter(isOnSale).sort(function (a, b) {
+      return discountPercent(b) - discountPercent(a);
+    });
+  }
 
   function getCountByCategory(catId) {
     return (CAT_IMAGES[catId] || []).length;
@@ -170,7 +535,7 @@
     CAT_SCENT: CAT_SCENT,
     getCategoryKind: getCategoryKind,
     getCategoryUrl: function (catId) {
-      return "collection.html#" + encodeURIComponent(catId);
+      return "/collection#" + encodeURIComponent(catId);
     },
     getAll: function () {
       refreshTitles();
@@ -178,16 +543,38 @@
     },
     getById: function (id) {
       refreshTitles();
-      return byId[id] || null;
+      /* a variant id → compose it against its base */
+      if (variantById[id]) {
+        var base = byId[variantById[id].baseId];
+        return base ? composeVariantProduct(base, variantById[id].variant) : null;
+      }
+      var p = byId[id];
+      /* a base product that has colours → return its default variant so the
+         page always has an active colour and add-to-cart uses a variant id */
+      if (p && p.variants && p.variants.length) {
+        return composeVariantProduct(p, p._defaultVariant || p.variants[0]);
+      }
+      return p || null;
     },
     getCountByCategory: getCountByCategory,
     getTotalCount: getTotalCount,
     getTitle: getTitle,
+    isNew: isNew,
+    isOnSale: isOnSale,
+    discountPercent: discountPercent,
+    getEffectivePrice: getEffectivePrice,
+    getNewArrivals: getNewArrivals,
+    getOnSale: getOnSale,
     getProductUrl: function (id) {
-      return "product.html?id=" + encodeURIComponent(id);
+      return "/product/" + encodeURIComponent(id);
     },
     getMeta: getMeta,
     refresh: refreshTitles,
+    applyServerStock: applyServerStock,
+    applyServerProducts: applyServerProducts,
+    applyServerCatalog: applyServerCatalog,
+    applyServerVariants: applyServerVariants,
+    getVariants: function (baseId) { return variantsByBase[baseId] || []; },
   };
 
   window.NostalgiaOnLangApplied = (function (prev) {

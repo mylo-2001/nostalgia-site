@@ -2,7 +2,18 @@
   "name": "nostalgia-site",
   "private": true,
   "scripts": {
-    "start": "npx --yes serve . -l 5173 --no-request-logging",
-    "preview": "npm run start"
+    "start": "node server/server.js",
+    "dev": "node server/server.js",
+    "static": "npx --yes serve . -l 5173 --no-request-logging",
+    "preview": "npm run start",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "argon2": "^0.44.0",
+    "cloudinary": "^2.10.0",
+    "express": "^5.2.1",
+    "nodemailer": "^9.0.1",
+    "pg": "^8.21.0",
+    "stripe": "^22.2.0"
   }
 }

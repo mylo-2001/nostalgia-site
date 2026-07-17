@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hero slider test</title>
+  <style>
+    * { margin: 0; box-sizing: border-box; }
+    body { background: #0c0a08; font-family: Georgia, serif; }
+    .hero { position: relative; width: 100%; height: 86vh; overflow: hidden; background: #16110b; }
+    .slider { position: absolute; inset: 0; overflow: hidden; cursor: pointer; }
+    .track { display: flex; width: 100%; height: 100%;
+      transition: transform 1.5s cubic-bezier(0.5, 0, 0, 1); will-change: transform; }
+    .slide { position: relative; flex: 0 0 100%; width: 100%; height: 100%; overflow: hidden; background: #0c0a08; }
+    .slide img { width: 100%; height: 100%; object-fit: cover; object-position: var(--hero-pos, 50% 50%);
+      transform: scale(1.06); -webkit-user-drag: none; user-select: none; }
+    .slide.is-active img { animation: heroZoomOut 7s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    @keyframes heroZoomOut { from { transform: scale(1.06); } to { transform: scale(1); } }
+    .dots { position: absolute; right: 2rem; bottom: 1.6rem; display: flex; gap: 0.5rem; z-index: 3; }
+    .dot { position: relative; width: 24px; height: 24px; padding: 0; border: 0; background: transparent;
+      cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+    .dot::before { content: ""; width: 7px; height: 7px; border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.8); transition: background .3s, border-color .3s; }
+    .dot.is-active::before { background: #d4af55; border-color: #d4af55; }
+    .ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); pointer-events: none; }
+    .ring circle { fill: none; stroke: #d4af55; stroke-width: 1.6; stroke-linecap: round;
+      stroke-dasharray: 69.1; stroke-dashoffset: 69.1; opacity: 0; }
+    .dot.is-active .ring circle { opacity: 1; animation: prog 6s linear forwards; }
+    .dots.is-paused .dot.is-active .ring circle { animation-play-state: paused; }
+    @keyframes prog { from { stroke-dashoffset: 69.1; } to { stroke-dashoffset: 0; } }
+    .status { position: absolute; left: 1rem; top: 1rem; z-index: 5; color: #d4af55;
+      font: 14px monospace; background: rgba(0,0,0,.6); padding: 6px 10px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <div class="slider" id="hero-slider">
+      <div class="track" data-hero-track>
+        <div class="slide" style="--hero-pos: 50% 50%"><img src="home%20page%20photo/home%20page%202%20photo%20.webp" alt="" /></div>
+        <div class="slide" style="--hero-pos: 50% 50%"><img src="home%20page%20photo/nostalgia%20home%20hero%20.webp" alt="" /></div>
+        <div class="slide" style="--hero-pos: 50% 50%"><img src="home%20page%20photo/home%20page%2034.webp" alt="" /></div>
+        <div class="slide" style="--hero-pos: 50% 50%"><img src="home%20page%20photo/home%20page%20photo%2035.webp" alt="" /></div>
+        <div class="slide" style="--hero-pos: 50% 50%"><img src="home%20page%20photo/home%20photo%2033.webp" alt="" /></div>
+      </div>
+      <div class="status" id="status">init…</div>
+    </div>
+    <div class="dots" data-hero-dots></div>
+  </div>
+
+  <script>
+    (function () {
+      var status = document.getElementById("status");
+      function log(m) { if (status) status.textContent = m; }
+      var root = document.getElementById("hero-slider");
+      var track = root.querySelector("[data-hero-track]");
+      var slides = [].slice.call(track.children);
+      var dotsWrap = document.querySelector("[data-hero-dots]");
+      log("slides=" + slides.length + " flex=" + getComputedStyle(track).display);
+
+      var index = 0, timer = null, hovering = false, rel = 0, PEEK = 55;
+      var RING = '<svg class="ring" viewBox="0 0 28 28"><circle cx="14" cy="14" r="11"></circle></svg>';
+      var dots = slides.map(function (_, i) {
+        var b = document.createElement("button");
+        b.className = "dot"; b.type = "button"; b.innerHTML = RING;
+        b.addEventListener("click", function (e) { e.stopPropagation(); goTo(i, true); });
+        dotsWrap.appendChild(b); return b;
+      });
+      function apply(p, a) { track.style.transition = a ? "" : "none"; track.style.transform = "translate3d(" + p + "%,0,0)"; }
+      function restartRing() { var r = dots[index].querySelector(".ring circle"); r.style.animation = "none"; void r.getBoundingClientRect(); r.style.animation = ""; }
+      function render(a) { apply(-index*100, a !== false); dots.forEach(function (d, i) { d.classList.toggle("is-active", i === index); }); slides.forEach(function (s, i) { s.classList.toggle("is-active", i === index); }); restartRing(); log("slide " + (index + 1) + "/" + slides.length + "  (hover to peek, click to change)"); }
+      function goTo(i, m) { index = (i + slides.length) % slides.length; rel = 0; render(true); if (m) restart(); }
+      function next() { goTo(index + 1); }
+      function start() { dotsWrap.classList.remove("is-paused"); if (timer || hovering) return; timer = setInterval(next, 6000); }
+      function stop() { dotsWrap.classList.add("is-paused"); if (timer) { clearInterval(timer); timer = null; } }
+      function restart() { stop(); start(); }
+
+      function onMove(e) {
+        if (!hovering) return;
+        var r = root.getBoundingClientRect(); if (!r.width) return;
+        var x = (e.clientX - r.left) / r.width;
+        rel = Math.max(-1, Math.min(1, x * 2 - 1));
+        var reveal = -rel * PEEK;
+        if (index === 0 && rel < 0) reveal *= 0.22;
+        if (index === slides.length - 1 && rel > 0) reveal *= 0.22;
+        track.style.transition = "transform 1.1s cubic-bezier(0.16, 1, 0.3, 1)";
+        track.style.transform = "translate3d(" + (-index*100 + reveal) + "%,0,0)";
+      }
+      root.addEventListener("mouseenter", function () { hovering = true; stop(); });
+      root.addEventListener("mousemove", onMove);
+      root.addEventListener("mouseleave", function () { hovering = false; rel = 0; render(true); start(); });
+      root.addEventListener("click", function () { if (rel < -0.12 && index > 0) goTo(index - 1, true); else goTo(index + 1, true); });
+      track.addEventListener("dragstart", function (e) { e.preventDefault(); });
+
+      render(false); start();
+    })();
+  </script>
+</body>
+</html>

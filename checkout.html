@@ -7,25 +7,12 @@
   <title>Nostalgia Collection · Ολοκλήρωση παραγγελίας</title>
   <link rel="stylesheet" href="css/fonts.css?v=1" />
 <link rel="stylesheet" href="css/base.css?v=locale-drawer" />
-  <link rel="stylesheet" href="css/side-nav.css?v=dark-theme" />
+  <link rel="stylesheet" href="css/side-nav.css?v=menu-visual3" />
   <link rel="stylesheet" href="css/shop.css?v=places-checkout" />
   <link rel="stylesheet" href="css/experience.css?v=3" />
   <link rel="stylesheet" href="css/account.css" />
   <link rel="stylesheet" href="css/legal.css" />
-  <script>
-    (function () {
-      try {
-        var t = localStorage.getItem("nostalgia-theme");
-        if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
-        else if (window.matchMedia("(prefers-color-scheme: dark)").matches) document.documentElement.setAttribute("data-theme", "dark");
-        else document.documentElement.setAttribute("data-theme", "light");
-      } catch (e) {}
-      try {
-        var l = localStorage.getItem("nostalgia-lang");
-        if (l === "en" || l === "el") document.documentElement.lang = l;
-      } catch (e) {}
-    })();
-  </script>
+  <script src="js/theme-boot.js"></script>
 </head>
 <body data-page="checkout">
   <div class="page-wrap">
@@ -33,21 +20,21 @@
       <nav class="site-header__bar" data-i18n-aria="nav_aria">
         <div class="mobile-nav-panel" id="mobile-nav-panel">
         <div class="site-nav site-nav--left">
-          <a href="index.html" data-i18n="nav_home">Αρχική</a>
-          <a href="collection.html" data-i18n="nav_collection">Συλλογή</a>
+          <a href="/" data-i18n="nav_home">Αρχική</a>
+          <a href="/collection" data-i18n="nav_collection">Συλλογή</a>
         </div>
-        <a class="site-header__logo site-header__logo--pulse" href="index.html" data-i18n-aria="logo_aria">
+        <a class="site-header__logo site-header__logo--pulse" href="/" data-i18n-aria="logo_aria">
           <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
           <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
         </a>
         <div class="site-nav site-nav--right">
-          <a href="about.html" data-i18n="nav_about">Σχετικά</a>
-          <a href="contact.html" data-i18n="nav_contact">Επικοινωνία</a>
+          <a href="/about" data-i18n="nav_about">Σχετικά</a>
+          <a href="/contact" data-i18n="nav_contact">Επικοινωνία</a>
           <button type="button" class="lang-toggle" id="lang-toggle" aria-live="polite">English</button>
           <button type="button" class="theme-toggle" id="theme-toggle" aria-live="polite"></button>
         </div>
         </div>
-        <a class="site-header__logo site-header__logo--topbar" href="index.html" data-i18n-aria="logo_aria">
+        <a class="site-header__logo site-header__logo--topbar" href="/" data-i18n-aria="logo_aria">
           <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
           <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
         </a>
@@ -70,7 +57,7 @@
           <div class="checkout-main">
             <div class="checkout-step" id="checkout-step-shipping">
               <div class="checkout-step__head">
-                <a class="checkout-back" id="checkout-back" href="cart.html" data-i18n="checkout_back">← Επιστροφή</a>
+                <a class="checkout-back" id="checkout-back" href="/cart" data-i18n="checkout_back">← Επιστροφή</a>
                 <h2 class="checkout-step__section-title" data-i18n="checkout_section_address">Διεύθυνση αποστολής</h2>
               </div>
 
@@ -159,83 +146,77 @@
                   <h2 class="checkout-step__subtitle checkout-gift__heading" id="checkout-gift-heading" data-i18n="checkout_gift_title">Δώρο</h2>
                   <label class="checkout-gift__master">
                     <input type="checkbox" id="checkout-is-gift" name="isGift" />
-                    <span class="checkout-gift__master-box">
-                      <span class="checkout-gift__master-title" data-i18n="checkout_gift_is_gift">Η παραγγελία είναι δώρο</span>
-                      <span class="checkout-gift__master-desc" data-i18n="checkout_gift_is_gift_desc">Ενεργοποιεί τις επιλογές συσκευασίας και αποστολής δώρου.</span>
-                    </span>
+                    <span class="checkout-gift__master-title" data-i18n="checkout_gift_is_gift">Η παραγγελία είναι δώρο</span>
                   </label>
 
-                  <div class="checkout-gift__options" id="checkout-gift-options" hidden>
-                    <label class="checkout-gift__card">
-                      <input type="checkbox" id="checkout-gift-wrap" name="giftWrap" />
-                      <span class="checkout-gift__card-inner">
-                        <span class="checkout-gift__icon" aria-hidden="true">◈</span>
-                        <span class="checkout-gift__card-title" data-i18n="gift_wrap_title">Gift wrapping</span>
-                        <span class="checkout-gift__card-text" data-i18n="gift_wrap_text">Χειροποίητη συσκευασία με ριζόχαρτο, κορδέλα και κερί σφραγίδα.</span>
-                      </span>
+                  <div class="checkout-gift__options" id="checkout-gift-options" aria-hidden="true">
+                    <fieldset class="checkout-gift__packaging">
+                      <legend class="checkout-gift__packaging-label" data-i18n="checkout_gift_packaging">Επιλογή συσκευασίας</legend>
+                      <div class="checkout-gift__packaging-options" role="radiogroup" aria-labelledby="checkout-gift-packaging-label">
+                        <span class="visually-hidden" id="checkout-gift-packaging-label" data-i18n="checkout_gift_packaging">Επιλογή συσκευασίας</span>
+                        <label class="checkout-gift__packaging-opt">
+                          <input type="radio" name="giftBoxType" value="premium" />
+                          <span class="checkout-gift__packaging-name" data-i18n="checkout_gift_box_premium">Premium κουτί</span>
+                          <span class="checkout-gift__packaging-price">+€4,00</span>
+                        </label>
+                        <label class="checkout-gift__packaging-opt">
+                          <input type="radio" name="giftBoxType" value="wood" />
+                          <span class="checkout-gift__packaging-name" data-i18n="checkout_gift_box_wood">Ξύλινο κουτί</span>
+                          <span class="checkout-gift__packaging-price">+€8,00</span>
+                        </label>
+                      </div>
+                    </fieldset>
+
+                    <div class="checkout-gift__message">
+                      <label class="checkout-gift__message-label" for="checkout-gift-message" data-i18n="gift_message_title">Προσωπικό μήνυμα</label>
+                      <textarea id="checkout-gift-message" name="giftMessageText" rows="3" maxlength="280" data-i18n-placeholder="checkout_gift_message_short_placeholder" placeholder="Γράψτε το μήνυμά σας…"></textarea>
+                    </div>
+
+                    <label class="checkout-gift__ship-direct">
+                      <input type="checkbox" id="checkout-gift-ship-other" name="giftShipOther" />
+                      <span data-i18n="checkout_gift_ship_direct">Αποστολή απευθείας στον παραλήπτη</span>
                     </label>
 
-                    <div class="checkout-gift__card checkout-gift__card--expandable">
-                      <label class="checkout-gift__card-toggle">
-                        <input type="checkbox" id="checkout-gift-message-toggle" name="giftMessage" />
-                        <span class="checkout-gift__card-inner">
-                          <span class="checkout-gift__icon" aria-hidden="true">✉</span>
-                          <span class="checkout-gift__card-title" data-i18n="gift_message_title">Προσωπικό μήνυμα</span>
-                          <span class="checkout-gift__card-text" data-i18n="gift_message_text">Χειρόγραφη κάρτα με το μήνυμά σας — διακριτικά, ποιητικά.</span>
-                        </span>
-                      </label>
-                      <div class="checkout-gift__expand" id="checkout-gift-message-wrap" hidden>
-                        <label class="checkout-gift__field-label" for="checkout-gift-message" data-i18n="checkout_gift_message_label">Το κείμενο της κάρτας</label>
-                        <textarea id="checkout-gift-message" name="giftMessageText" rows="4" maxlength="280" data-i18n-placeholder="checkout_gift_message_placeholder" placeholder="Γράψτε εδώ το μήνυμα που θέλετε στην χειρόγραφη κάρτα…"></textarea>
-                        <p class="checkout-gift__field-hint" data-i18n="checkout_gift_message_hint">Θα γραφτεί χειρόγραφα στην κάρτα — όπως ακριβώς το γράφετε εδώ.</p>
-                      </div>
-                    </div>
-
-                    <div class="checkout-gift__card checkout-gift__card--expandable">
-                      <label class="checkout-gift__card-toggle">
-                        <input type="checkbox" id="checkout-gift-box-toggle" name="giftBox" />
-                        <span class="checkout-gift__card-inner">
-                          <span class="checkout-gift__icon" aria-hidden="true">▣</span>
-                          <span class="checkout-gift__card-title" data-i18n="gift_box_title">Επιλογή κουτιού</span>
-                          <span class="checkout-gift__card-text" data-i18n="gift_box_text">Ξύλινο ή χαρτί αρχειοθέτησης — ανάλογα τη συλλογή.</span>
-                        </span>
-                      </label>
-                      <div class="checkout-gift__expand checkout-gift__box-options" id="checkout-gift-box-wrap" hidden role="radiogroup" aria-labelledby="checkout-gift-box-label">
-                        <span class="visually-hidden" id="checkout-gift-box-label" data-i18n="gift_box_title">Επιλογή κουτιού</span>
-                        <label class="checkout-gift__box-opt">
-                          <input type="radio" name="giftBoxType" value="wood" />
-                          <span data-i18n="checkout_gift_box_wood">Ξύλινο κουτί</span>
-                        </label>
-                        <label class="checkout-gift__box-opt">
-                          <input type="radio" name="giftBoxType" value="archive" />
-                          <span data-i18n="checkout_gift_box_archive">Χαρτί αρχειοθέτησης</span>
-                        </label>
-                      </div>
-                    </div>
-
-                    <div class="checkout-gift__card checkout-gift__card--expandable">
-                      <label class="checkout-gift__card-toggle">
-                        <input type="checkbox" id="checkout-gift-ship-other" name="giftShipOther" />
-                        <span class="checkout-gift__card-inner">
-                          <span class="checkout-gift__icon" aria-hidden="true">↗</span>
-                          <span class="checkout-gift__card-title" data-i18n="gift_ship_title">Αποστολή σε άλλο πρόσωπο</span>
-                          <span class="checkout-gift__card-text" data-i18n="gift_ship_text">Στέλνουμε απευθείας στον παραλήπτη — χωρίς τιμή στο δέμα.</span>
-                        </span>
-                      </label>
-                      <div class="checkout-gift__expand" id="checkout-gift-recipient-wrap" hidden>
-                        <p class="checkout-gift__hint" data-i18n="checkout_gift_ship_hint">Η διεύθυνση αποστολής παραπάνω είναι του παραλήπτη.</p>
-                        <div class="checkout-form__group">
-                          <label for="checkout-gift-recipient" data-i18n="checkout_gift_recipient_label">Όνομα παραλήπτη (προαιρετικά)</label>
-                          <input type="text" id="checkout-gift-recipient" name="giftRecipient" autocomplete="name" />
-                        </div>
+                    <div class="checkout-gift__recipient" id="checkout-gift-recipient-wrap" hidden>
+                      <div class="checkout-form__group">
+                        <label for="checkout-gift-recipient" data-i18n="checkout_gift_recipient_label">Όνομα παραλήπτη (προαιρετικά)</label>
+                        <input type="text" id="checkout-gift-recipient" name="giftRecipient" autocomplete="name" />
                       </div>
                     </div>
                   </div>
                 </section>
 
                 <div class="checkout-shipping-method">
-                  <h3 class="checkout-shipping-method__title" data-i18n="checkout_shipping_method_title">Τρόπος αποστολής</h3>
-                  <p class="checkout-shipping-method__note" data-i18n="checkout_shipping_method_note">Ο χρόνος παράδοσης εξαρτάται από τον προορισμό.</p>
+                  <h3 class="checkout-shipping-method__title" data-i18n="checkout_courier_title">Εταιρεία courier</h3>
+                  <div class="checkout-couriers" role="radiogroup" aria-labelledby="checkout-courier-label">
+                    <span class="visually-hidden" id="checkout-courier-label" data-i18n="checkout_courier_title">Εταιρεία courier</span>
+                    <label class="checkout-courier">
+                      <input type="radio" name="courier" value="acs" required />
+                      <span class="checkout-courier__box">
+                        <span class="checkout-courier__check" aria-hidden="true">
+                          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8.5l3.5 3.5 6.5-7"/></svg>
+                        </span>
+                        <span class="checkout-courier__main">
+                          <span class="checkout-courier__title" data-i18n="checkout_courier_acs_full">ACS Courier</span>
+                          <span class="checkout-courier__time" data-i18n="checkout_courier_acs_time">Παράδοση 1–3 εργάσιμες</span>
+                        </span>
+                        <span class="checkout-courier__price">€3,50</span>
+                      </span>
+                    </label>
+                    <label class="checkout-courier">
+                      <input type="radio" name="courier" value="elta" />
+                      <span class="checkout-courier__box">
+                        <span class="checkout-courier__check" aria-hidden="true">
+                          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8.5l3.5 3.5 6.5-7"/></svg>
+                        </span>
+                        <span class="checkout-courier__main">
+                          <span class="checkout-courier__title" data-i18n="checkout_courier_elta_full">ΕΛΤΑ Courier</span>
+                          <span class="checkout-courier__time" data-i18n="checkout_courier_elta_time">Παράδοση 2–4 εργάσιμες</span>
+                        </span>
+                        <span class="checkout-courier__price">€3,50</span>
+                      </span>
+                    </label>
+                  </div>
                 </div>
 
                 <h2 class="checkout-step__subtitle checkout-step__title--spaced" data-i18n="checkout_doc_title">Χρειάζεσαι απόδειξη ή τιμολόγιο;</h2>
@@ -258,7 +239,7 @@
 
                 <div class="checkout-invoice" id="checkout-invoice-fields" hidden>
                   <div class="checkout-form__group">
-                    <label for="checkout-company" data-i18n="checkout_company_label">Επωνυμία επιχείρησης</label>
+                    <label for="checkout-company" data-i18n="checkout_company_label">Επωνυμία</label>
                     <input type="text" id="checkout-company" name="company" autocomplete="organization" />
                   </div>
                   <div class="checkout-form__row">
@@ -274,6 +255,10 @@
                   <div class="checkout-form__group">
                     <label for="checkout-activity" data-i18n="checkout_activity_label">Επάγγελμα</label>
                     <input type="text" id="checkout-activity" name="activity" />
+                  </div>
+                  <div class="checkout-form__group">
+                    <label for="checkout-company-address" data-i18n="checkout_company_hq_label">Διεύθυνση έδρας</label>
+                    <input type="text" id="checkout-company-address" name="companyAddress" autocomplete="street-address" />
                   </div>
                 </div>
 
@@ -308,8 +293,10 @@
               </div>
 
               <p class="checkout-stripe-note" id="checkout-stripe-note" data-i18n="checkout_stripe_note">
-                Η πληρωμή με κάρτα θα ολοκληρωθεί μέσω Stripe. Θα επικοινωνήσουμε μαζί σου για επιβεβαίωση της παραγγελίας.
+                Η πληρωμή με κάρτα θα ολοκληρωθεί μέσω Stripe.
               </p>
+
+              <div class="checkout-captcha" id="checkout-captcha"></div>
             </div>
           </div>
 
@@ -318,7 +305,10 @@
               <h2 class="checkout-sidebar__title" id="checkout-summary-heading" data-i18n="checkout_order_summary">Σύνοψη παραγγελίας</h2>
               <div id="checkout-summary"></div>
               <button type="button" class="btn-shop btn-shop--primary checkout-sidebar__cta" id="checkout-cta" data-i18n="checkout_to_payment">Στοιχεία πληρωμής</button>
-              <p class="checkout-sidebar__note" data-i18n="checkout_order_note">Θα επικοινωνήσουμε μαζί σου για επιβεβαίωση και τιμολόγηση.</p>
+              <p class="checkout-sidebar__note">
+                <svg class="checkout-sidebar__note-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M3 7l9 6 9-6"/></svg>
+                <span data-i18n="checkout_order_note">Η παραγγελία επιβεβαιώνεται μέσω email.</span>
+              </p>
               <div class="checkout-trust" aria-label="Trust">
                 <div class="checkout-trust__item">
                   <svg class="checkout-trust__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 3l7 3v6c0 4.2-2.8 7.6-7 9-4.2-1.4-7-4.8-7-9V6l7-3z"/></svg>
@@ -369,6 +359,10 @@
               <p class="order-success__eyebrow" data-i18n="checkout_success_eyebrow">Επιτυχής παραγγελία</p>
               <h2 class="order-success__title" data-i18n="checkout_success_title">Η παραγγελία σου καταχωρήθηκε</h2>
               <p class="order-success__lead" data-i18n="checkout_success">Θα επικοινωνήσουμε μαζί σου σύντομα για επιβεβαίωση.</p>
+              <p class="order-success__order-number" id="order-success-number" hidden>
+                <span data-i18n="checkout_success_order_code">Κωδικός παραγγελίας</span>
+                <strong id="order-success-number-value"></strong>
+              </p>
               <p class="order-success__payment" id="order-success-payment"></p>
             </div>
 
@@ -380,8 +374,8 @@
             <p class="order-success__email-note" data-i18n="checkout_success_email_note">Θα ανοίξει το email σας για αποστολή της παραγγελίας.</p>
 
             <div class="order-success__actions">
-              <a class="btn-shop btn-shop--primary" href="collection.html" data-i18n="cart_continue">Συνέχεια αγορών</a>
-              <a class="btn-shop btn-shop--ghost" href="index.html" data-i18n="nav_home">Αρχική</a>
+              <a class="btn-shop btn-shop--primary" href="/collection" data-i18n="cart_continue">Συνέχεια αγορών</a>
+              <a class="btn-shop btn-shop--ghost" href="/" data-i18n="nav_home">Αρχική</a>
             </div>
           </div>
         </div>
@@ -390,7 +384,7 @@
 
     <footer class="site-footer">
       <div class="site-footer__main">
-        <a class="site-footer__logo" href="index.html" data-i18n-aria="logo_aria">
+        <a class="site-footer__logo" href="/" data-i18n-aria="logo_aria">
           <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="180" height="52" alt="Nostalgia Collection" />
           <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="180" height="52" alt="Nostalgia Collection" />
         </a>
@@ -430,27 +424,31 @@
       </div>
       <div class="site-footer__bar">
         <nav class="site-footer__legal" data-i18n-aria="footer_legal_aria">
-          <a href="privacy.html" data-i18n="footer_privacy">Προστασία Δεδομένων</a>
+          <a href="/privacy" data-i18n="footer_privacy">Προστασία Δεδομένων</a>
         </nav>
         <p class="site-footer__copyright" data-i18n="footer_copyright">© 2026 Nostalgia. Με επιφύλαξη παντός δικαιώματος.</p>
       </div>
     </footer>
   </div>
+  <script defer src="js/api.js?v=1"></script>
+  <script defer src="js/captcha.js?v=2"></script>
   <script defer src="js/site-config.js"></script>
   <script defer src="js/europe-countries.js"></script>
   <script defer src="js/images.js?v=4"></script>
     <script defer src="js/i18n-bundles/shared.js?v=1"></script>
-  <script defer src="js/i18n-bundles/shop.js?v=2"></script>
+  <script defer src="js/i18n-bundles/shop.js?v=3"></script>
   <script defer src="js/i18n-bundles/content.js?v=4"></script>
   <script defer src="js/i18n-core.js?v=1"></script>
   <script defer src="js/cookies.js"></script>
+  <script src="js/tracking.js?v=1" defer></script>
   <script defer src="js/products.js"></script>
-  <script defer src="js/side-nav.js"></script>
+  <script defer src="js/side-nav.js?v=8"></script>
   <script defer src="js/cart.js"></script>
+  <script defer src="js/order-fees.js"></script>
   <script defer src="js/greek-prefectures.js"></script>
   <script defer src="js/address-options.js"></script>
   <script defer src="js/google-places-checkout.js?v=geo-checkout"></script>
-  <script defer src="js/checkout.js?v=gift-options"></script>
+  <script defer src="js/checkout.js?v=summary-prices"></script>
   <script defer src="js/account.js"></script>
   <script defer src="js/breadcrumbs.js?v=4"></script>
 

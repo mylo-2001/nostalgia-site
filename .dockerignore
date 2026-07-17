@@ -1,0 +1,15 @@
+# Build context excludes — keep secrets and host junk out of the image.
+node_modules
+npm-debug.log*
+.git
+.gitignore
+
+# Never bake local secrets into the image; compose provides env at runtime.
+.env
+.env.*
+
+# Already-imported legacy data + local docker compose plumbing
+server/data/*.imported
+Dockerfile
+docker-compose.yml
+.dockerignore

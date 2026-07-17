@@ -17,104 +17,156 @@
     return hoverCapable && hoverMenuMq.matches;
   }
 
+  var MENU_HOVER_DIR = "collections-hero/menu-hover-photo/";
+
+  function menuHoverImage(filename) {
+    return MENU_HOVER_DIR + filename;
+  }
+
+  function menuHoverImageWidth() {
+    var visual = document.querySelector(".side-nav__visual");
+    var colW = visual && visual.getBoundingClientRect().width > 0 ? visual.getBoundingClientRect().width : 320;
+    var need = Math.ceil(colW * (window.devicePixelRatio || 1));
+    if (need <= 520) return 480;
+    if (need <= 980) return 960;
+    return 1440;
+  }
+
+  function resolveVisualSrc(pngSrc, width) {
+    var w = width || menuHoverImageWidth();
+    if (window.NostalgiaImages && typeof window.NostalgiaImages.webp === "function") {
+      return window.NostalgiaImages.webp(pngSrc, w);
+    }
+    var base = pngSrc.replace(/\.png$/i, "");
+    return base + "-" + w + "w.webp";
+  }
+
   var VISUALS = {
     home: {
-      image: "home%20page%20photo/home%20photo.png",
+      image: menuHoverImage("menu-arxiki-photo.png"),
       titleKey: "side_nav_visual_home_title",
       descKey: "side_nav_visual_home_desc",
-      href: "index.html",
+      href: "/",
       ctaKey: "side_nav_discover",
     },
     collection: {
-      image: "home%20page%20photo/home%20collection.png",
+      image: menuHoverImage("collection-menu-hover-photo.png"),
       titleKey: "nav_mega_title",
       descKey: "nav_mega_desc",
-      href: "collection.html",
+      href: "/collection",
       ctaKey: "nav_mega_cta",
     },
     cat1: {
-      image: "product%20photo/art%20class%20murano%20candle/product%201.png",
+      image: menuHoverImage("Art Class Murano Candle-menu-hover.png"),
       titleKey: "collection_cat1",
       descKey: "side_nav_visual_cat_desc",
-      href: "collection.html#cat1",
+      href: "/collection#cat1",
       ctaKey: "side_nav_discover",
     },
     cat2: {
-      image: "product%20photo/driftwood%20beeswax%20flame/product%201.png",
+      image: menuHoverImage("Driftwood Beeswax Flame-menu-hover-photo.png"),
       titleKey: "collection_cat2",
       descKey: "side_nav_visual_cat_desc",
-      href: "collection.html#cat2",
+      href: "/collection#cat2",
       ctaKey: "side_nav_discover",
     },
     cat3: {
-      image: "product%20photo/liquid%20eternal/product%201.png",
+      image: menuHoverImage("Liquid Eternal-menu-hover-photo.png"),
       titleKey: "collection_cat3",
       descKey: "side_nav_visual_cat_desc",
-      href: "collection.html#cat3",
+      href: "/collection#cat3",
       ctaKey: "side_nav_discover",
     },
     cat4: {
-      image: "product%20photo/unique%20art%20vessel/product%201.png",
+      image: menuHoverImage("Unique Art Objects-menu-hover-photo.png"),
       titleKey: "collection_cat4",
       descKey: "side_nav_visual_cat_desc",
-      href: "collection.html#cat4",
+      href: "/collection#cat4",
       ctaKey: "side_nav_discover",
     },
     cat5: {
-      image: "product%20photo/Ni%20Terra/product%20photo.png",
+      image: menuHoverImage("NI Terra-menu-hover-photo.png"),
       titleKey: "collection_cat5",
       descKey: "side_nav_visual_cat_desc",
-      href: "collection.html#cat5",
+      href: "/collection#cat5",
+      ctaKey: "side_nav_discover",
+    },
+    cat9: {
+      image: "collections-hero/collection-photo/Nostalgia Exclusive Mirror Candles-photo.png",
+      titleKey: "collection_cat9",
+      descKey: "side_nav_visual_cat_desc",
+      href: "/collection#cat9",
       ctaKey: "side_nav_discover",
     },
     cat6: {
-      image: "home%20page%20photo/home%20collection.png",
+      image: menuHoverImage("Perfume-menu-hover-photo.png"),
       titleKey: "collection_cat6",
       descKey: "side_nav_visual_cat_desc",
-      href: "collection.html#cat6",
+      href: "/collection#cat6",
       ctaKey: "side_nav_discover",
     },
     cat7: {
-      image: "home%20page%20photo/home%20collection.png",
+      image: menuHoverImage("Diffusers-menu-hover-photo.png"),
       titleKey: "collection_cat7",
       descKey: "side_nav_visual_cat_desc",
-      href: "collection.html#cat7",
+      href: "/collection#cat7",
       ctaKey: "side_nav_discover",
     },
     cat8: {
-      image: "home%20page%20photo/home%20collection.png",
+      image: menuHoverImage("Gift Sets-menu-hover-photo.png"),
       titleKey: "collection_cat8",
       descKey: "side_nav_visual_cat_desc",
-      href: "collection.html#cat8",
+      href: "/collection#cat8",
       ctaKey: "side_nav_discover",
     },
     about: {
-      image: "home%20page%20photo/about%20photo%20.png",
+      image: menuHoverImage("Σχετικά-menu-hover-photo.png"),
       titleKey: "nav_about_mega_title",
       descKey: "nav_about_mega_desc",
-      href: "about.html",
+      href: "/about",
       ctaKey: "nav_about_mega_cta",
     },
     contact: {
-      image: "home%20page%20photo/home%20photo.png",
+      image: menuHoverImage("Επικοινωνία-menu-hover-photo.png"),
       titleKey: "side_nav_visual_contact_title",
       descKey: "side_nav_visual_contact_desc",
-      href: "contact.html",
+      href: "/contact",
       ctaKey: "nav_contact",
     },
     scent: {
-      image: "product%20photo/liquid%20eternal/product%203.png",
+      image: menuHoverImage("Εύρεση Αρώματος-menu-hover-photo.png"),
       titleKey: "nav_scent_finder",
       descKey: "nav_scent_desc",
-      href: "scent-finder.html",
+      href: "/scent-finder",
       ctaKey: "nav_scent_cta",
     },
     gift: {
-      image: "product%20photo/Ni%20Terra/product%201.png",
+      image: menuHoverImage("Εμπειρία Δώρου-menu-hover-photo.png"),
       titleKey: "nav_gift",
       descKey: "nav_gift_desc",
-      href: "gift-experience.html",
+      href: "/gift-experience",
       ctaKey: "nav_gift_cta",
+    },
+    new: {
+      image: menuHoverImage("new-product-menu-hover-photo.png"),
+      titleKey: "new_arrivals_title",
+      descKey: "new_arrivals_lead",
+      href: "/new-arrivals",
+      ctaKey: "side_nav_discover",
+    },
+    sale: {
+      image: menuHoverImage("offer-menu-hover-photo.png"),
+      titleKey: "sale_title",
+      descKey: "sale_lead",
+      href: "/sale",
+      ctaKey: "side_nav_discover",
+    },
+    seasonal: {
+      image: menuHoverImage("Seasonal-menu-hover.png"),
+      titleKey: "side_nav_visual_seasonal_title",
+      descKey: "side_nav_visual_seasonal_desc",
+      href: "/seasonal",
+      ctaKey: "side_nav_discover",
     },
   };
 
@@ -166,22 +218,25 @@
       '        <button type="button" class="side-nav__close" data-side-nav-close aria-label="Close">×</button>' +
       '        <div class="side-nav__panel side-nav__panel--main">' +
       '          <ul class="side-nav__list side-nav__list--primary">' +
-      '            <li><a class="side-nav__link" href="index.html" data-side-nav-preview="home" data-i18n="nav_home">Αρχική</a></li>' +
+      '            <li><a class="side-nav__link" href="/" data-side-nav-preview="home" data-i18n="nav_home">Αρχική</a></li>' +
       '            <li><button type="button" class="side-nav__link side-nav__link--expand" data-side-panel="collection"><span class="side-nav__link-text" data-i18n="nav_collection">Συλλογή</span><span class="side-nav__chev" aria-hidden="true">›</span></button></li>' +
-      '            <li><a class="side-nav__link" href="scent-finder.html" data-side-nav-preview="scent" data-i18n="nav_scent_finder">Scent Finder</a></li>' +
-      '            <li><a class="side-nav__link" href="gift-experience.html" data-side-nav-preview="gift" data-i18n="nav_gift">Gift Experience</a></li>' +
+      '            <li><a class="side-nav__link" href="/new-arrivals" data-side-nav-preview="new" data-i18n="nav_new_arrivals">Νέα Προϊόντα</a></li>' +
+      '            <li><a class="side-nav__link" href="/sale" data-side-nav-preview="sale" data-i18n="nav_sale">Εκπτώσεις</a></li>' +
+      '            <li><a class="side-nav__link" href="/scent-finder" data-side-nav-preview="scent" data-i18n="nav_scent_finder">Scent Finder</a></li>' +
+      '            <li><a class="side-nav__link" href="/gift-experience" data-side-nav-preview="gift" data-i18n="nav_gift">Gift Experience</a></li>' +
+      '            <li><a class="side-nav__link" href="/seasonal" data-side-nav-preview="seasonal">Seasonal Editions</a></li>' +
       '            <li><button type="button" class="side-nav__link side-nav__link--expand" data-side-panel="about"><span class="side-nav__link-text" data-i18n="nav_about">Σχετικά</span><span class="side-nav__chev" aria-hidden="true">›</span></button></li>' +
-      '            <li><a class="side-nav__link" href="contact.html" data-side-nav-preview="contact" data-i18n="nav_contact">Επικοινωνία</a></li>' +
+      '            <li><a class="side-nav__link" href="/contact" data-side-nav-preview="contact" data-i18n="nav_contact">Επικοινωνία</a></li>' +
       "          </ul>" +
       "        </div>" +
       '        <div class="side-nav__divider" aria-hidden="true"></div>' +
       '        <ul class="side-nav__list side-nav__list--secondary">' +
-      '          <li><a class="side-nav__link side-nav__link--small" href="account.html?mode=login"><span class="side-nav__link-text" data-i18n="account_my_account">Ο λογαριασμός μου</span></a></li>' +
-      '          <li><a class="side-nav__link side-nav__link--small" href="account.html?mode=register"><span class="side-nav__link-text" data-i18n="account_create_prompt">Δημιουργία λογαριασμού</span></a></li>' +
+      '          <li><a class="side-nav__link side-nav__link--small" href="/account"><span class="side-nav__link-text" data-i18n="account_my_account">Ο λογαριασμός μου</span></a></li>' +
+      '          <li><a class="side-nav__link side-nav__link--small" href="/account/register"><span class="side-nav__link-text" data-i18n="account_create_prompt">Δημιουργία λογαριασμού</span></a></li>' +
       '          <li><button type="button" class="side-nav__link side-nav__link--small" data-newsletter-open><span class="side-nav__link-text" data-i18n="newsletter_title">Newsletter</span></button></li>' +
-      '          <li><a class="side-nav__link side-nav__link--small" href="cart.html"><span class="side-nav__link-text" data-i18n="cart_heading">Το καλάθι σου</span></a></li>' +
-      '          <li><a class="side-nav__link side-nav__link--small" href="wishlist.html"><span class="side-nav__link-text" data-i18n="wishlist_heading">Αγαπημένα</span></a></li>' +
-      '          <li><a class="side-nav__link side-nav__link--small" href="privacy.html"><span class="side-nav__link-text" data-i18n="footer_privacy">Προστασία Δεδομένων</span></a></li>' +
+      '          <li><a class="side-nav__link side-nav__link--small" href="/cart"><span class="side-nav__link-text" data-i18n="cart_heading">Το καλάθι σου</span></a></li>' +
+      '          <li><a class="side-nav__link side-nav__link--small" href="/wishlist"><span class="side-nav__link-text" data-i18n="wishlist_heading">Αγαπημένα</span></a></li>' +
+      '          <li><a class="side-nav__link side-nav__link--small" href="/privacy"><span class="side-nav__link-text" data-i18n="footer_privacy">Προστασία Δεδομένων</span></a></li>' +
       "        </ul>" +
       '        <div class="side-nav__utils" id="side-nav-utils" hidden>' +
       '          <div class="side-nav__utils-row" id="side-nav-utils-row">' +
@@ -198,17 +253,18 @@
       "          </div>" +
       '          <ul class="side-nav__list side-nav__list--sub">' +
       '            <li class="side-nav__subgroup-label" data-i18n="side_nav_group_candles">Κεριά</li>' +
-      '            <li><a class="side-nav__sublink" href="collection.html#cat1" data-visual="cat1"><span class="side-nav__sublink-text"><span data-i18n="collection_cat1">Art Class Murano Candle</span><span class="side-nav__sublink-count" data-cat-count="cat1" aria-hidden="true"></span></span></a></li>' +
-      '            <li><a class="side-nav__sublink" href="collection.html#cat2" data-visual="cat2"><span class="side-nav__sublink-text"><span data-i18n="collection_cat2">Driftwood Beeswax Flame</span><span class="side-nav__sublink-count" data-cat-count="cat2" aria-hidden="true"></span></span></a></li>' +
-      '            <li><a class="side-nav__sublink" href="collection.html#cat3" data-visual="cat3"><span class="side-nav__sublink-text"><span data-i18n="collection_cat3">Liquid Eternal</span><span class="side-nav__sublink-count" data-cat-count="cat3" aria-hidden="true"></span></span></a></li>' +
-      '            <li><a class="side-nav__sublink" href="collection.html#cat4" data-visual="cat4"><span class="side-nav__sublink-text"><span data-i18n="collection_cat4">Unique Art Objects</span><span class="side-nav__sublink-count" data-cat-count="cat4" aria-hidden="true"></span></span></a></li>' +
-      '            <li><a class="side-nav__sublink" href="collection.html#cat5" data-visual="cat5"><span class="side-nav__sublink-text"><span data-i18n="collection_cat5">NI Terra</span><span class="side-nav__sublink-count" data-cat-count="cat5" aria-hidden="true"></span></span></a></li>' +
+      '            <li><a class="side-nav__sublink" href="/collection#cat1" data-visual="cat1"><span class="side-nav__sublink-text"><span data-i18n="collection_cat1">Art Class Murano Candle</span><span class="side-nav__sublink-count" data-cat-count="cat1" aria-hidden="true"></span></span></a></li>' +
+      '            <li><a class="side-nav__sublink" href="/collection#cat2" data-visual="cat2"><span class="side-nav__sublink-text"><span data-i18n="collection_cat2">Driftwood Beeswax Flame</span><span class="side-nav__sublink-count" data-cat-count="cat2" aria-hidden="true"></span></span></a></li>' +
+      '            <li><a class="side-nav__sublink" href="/collection#cat3" data-visual="cat3"><span class="side-nav__sublink-text"><span data-i18n="collection_cat3">Liquid Eternal</span><span class="side-nav__sublink-count" data-cat-count="cat3" aria-hidden="true"></span></span></a></li>' +
+      '            <li><a class="side-nav__sublink" href="/collection#cat4" data-visual="cat4"><span class="side-nav__sublink-text"><span data-i18n="collection_cat4">Unique Art Objects</span><span class="side-nav__sublink-count" data-cat-count="cat4" aria-hidden="true"></span></span></a></li>' +
+      '            <li><a class="side-nav__sublink" href="/collection#cat5" data-visual="cat5"><span class="side-nav__sublink-text"><span data-i18n="collection_cat5">NI Terra</span><span class="side-nav__sublink-count" data-cat-count="cat5" aria-hidden="true"></span></span></a></li>' +
+      '            <li><a class="side-nav__sublink" href="/collection#cat9" data-visual="cat9"><span class="side-nav__sublink-text"><span data-i18n="collection_cat9">Nostalgia Exclusive Mirror Candles</span><span class="side-nav__sublink-count" data-cat-count="cat9" aria-hidden="true"></span></span></a></li>' +
       '            <li class="side-nav__subgroup-divider" aria-hidden="true"></li>' +
       '            <li class="side-nav__subgroup-label" data-i18n="side_nav_group_non_candles">Άλλα προϊόντα</li>' +
-      '            <li><a class="side-nav__sublink" href="collection.html#cat6" data-visual="cat6"><span class="side-nav__sublink-text"><span data-i18n="collection_cat6">Perfume</span><span class="side-nav__sublink-count" data-cat-count="cat6" aria-hidden="true"></span></span></a></li>' +
-      '            <li><a class="side-nav__sublink" href="collection.html#cat7" data-visual="cat7"><span class="side-nav__sublink-text"><span data-i18n="collection_cat7">Diffusers</span><span class="side-nav__sublink-count" data-cat-count="cat7" aria-hidden="true"></span></span></a></li>' +
-      '            <li><a class="side-nav__sublink" href="collection.html#cat8" data-visual="cat8"><span class="side-nav__sublink-text"><span data-i18n="collection_cat8">Gift Sets</span><span class="side-nav__sublink-count" data-cat-count="cat8" aria-hidden="true"></span></span></a></li>' +
-      '            <li><a class="side-nav__sublink side-nav__sublink--all" href="collection.html" data-visual="collection" data-i18n="side_nav_all_collections">Όλες οι συλλογές</a></li>' +
+      '            <li><a class="side-nav__sublink" href="/collection#cat6" data-visual="cat6"><span class="side-nav__sublink-text"><span data-i18n="collection_cat6">Perfume</span><span class="side-nav__sublink-count" data-cat-count="cat6" aria-hidden="true"></span></span></a></li>' +
+      '            <li><a class="side-nav__sublink" href="/collection#cat7" data-visual="cat7"><span class="side-nav__sublink-text"><span data-i18n="collection_cat7">Diffusers</span><span class="side-nav__sublink-count" data-cat-count="cat7" aria-hidden="true"></span></span></a></li>' +
+      '            <li><a class="side-nav__sublink" href="/collection#cat8" data-visual="cat8"><span class="side-nav__sublink-text"><span data-i18n="collection_cat8">Gift Sets</span><span class="side-nav__sublink-count" data-cat-count="cat8" aria-hidden="true"></span></span></a></li>' +
+      '            <li><a class="side-nav__sublink side-nav__sublink--all" href="/collection" data-visual="collection" data-i18n="side_nav_all_collections">Όλες οι συλλογές</a></li>' +
       "          </ul>" +
       "        </div>" +
       '        <div class="side-nav__panel side-nav__panel--sub" data-side-sub="about">' +
@@ -217,11 +273,11 @@
       '            <p class="side-nav__sub-label" data-i18n="nav_about">Σχετικά</p>' +
       "          </div>" +
       '          <ul class="side-nav__list side-nav__list--sub">' +
-      '            <li><a class="side-nav__sublink" href="about.html" data-visual="about" data-i18n="side_nav_about_all">Η Nostalgia</a></li>' +
-      '            <li><a class="side-nav__sublink" href="about.html#story" data-visual="about"><span data-i18n="about_tab_story">Η Ιστορία NI</span></a></li>' +
-      '            <li><a class="side-nav__sublink" href="about.html#soul" data-visual="about"><span data-i18n="about_tab_soul">The Soul of Nostalgia</span></a></li>' +
-      '            <li><a class="side-nav__sublink" href="about.html#vision" data-visual="about"><span data-i18n="about_tab_vision">Our Vision</span></a></li>' +
-      '            <li><a class="side-nav__sublink side-nav__sublink--all" href="about.html" data-visual="about" data-i18n="side_nav_see_all">Δείτε όλα</a></li>' +
+      '            <li><a class="side-nav__sublink" href="/about" data-visual="about" data-i18n="side_nav_about_all">Η Nostalgia</a></li>' +
+      '            <li><a class="side-nav__sublink" href="/about#story" data-visual="about"><span data-i18n="about_tab_story">Η Ιστορία NI</span></a></li>' +
+      '            <li><a class="side-nav__sublink" href="/about#soul" data-visual="about"><span data-i18n="about_tab_soul">The Soul of Nostalgia</span></a></li>' +
+      '            <li><a class="side-nav__sublink" href="/about#vision" data-visual="about"><span data-i18n="about_tab_vision">Our Vision</span></a></li>' +
+      '            <li><a class="side-nav__sublink side-nav__sublink--all" href="/about" data-visual="about" data-i18n="side_nav_see_all">Δείτε όλα</a></li>' +
       "          </ul>" +
       "        </div>" +
       '        <figure class="side-nav__sub-feature" id="side-nav-sub-feature" hidden aria-hidden="true">' +
@@ -241,7 +297,7 @@
       '          <figcaption class="side-nav__caption">' +
       '            <p class="side-nav__visual-title" id="side-nav-visual-title"></p>' +
       '            <p class="side-nav__visual-desc" id="side-nav-visual-desc"></p>' +
-      '            <a class="side-nav__cta" id="side-nav-visual-cta" href="collection.html"></a>' +
+      '            <a class="side-nav__cta" id="side-nav-visual-cta" href="/collection"></a>' +
       "          </figcaption>" +
       "        </figure>" +
       "      </aside>" +
@@ -253,7 +309,7 @@
 
   function preloadImages() {
     Object.keys(VISUALS).forEach(function (key) {
-      var src = VISUALS[key].image;
+      var src = resolveVisualSrc(VISUALS[key].image);
       if (imageCache[src]) return;
       var img = new Image();
       img.decoding = "async";
@@ -316,7 +372,7 @@
     var subCta = document.getElementById("side-nav-sub-feature-cta");
     if (!subFeature || !subImg) return;
 
-    subImg.src = data.image;
+    subImg.src = resolveVisualSrc(data.image);
     subImg.alt = t(data.titleKey);
     if (subTitle) subTitle.textContent = t(data.titleKey);
     if (subCta) {
@@ -341,9 +397,15 @@
 
   function setVisual(key) {
     var data = VISUALS[key] || VISUALS.collection;
+    var src = resolveVisualSrc(data.image);
     var imageChanged = activeVisual !== key;
     activeVisual = key;
-    if (imageChanged) swapVisualImage(data.image);
+    if (imageChanged) swapVisualImage(src);
+    var altText = t(data.titleKey);
+    ["side-nav-img-a", "side-nav-img-b"].forEach(function (id) {
+      var img = document.getElementById(id);
+      if (img) img.alt = altText;
+    });
     var title = document.getElementById("side-nav-visual-title");
     var desc = document.getElementById("side-nav-visual-desc");
     var cta = document.getElementById("side-nav-visual-cta");
@@ -461,7 +523,7 @@
   }
 
   function openForAccount() {
-    window.location.href = "account.html?mode=login";
+    window.location.href = "/account";
   }
 
   function closeDrawer(opts) {
@@ -631,7 +693,7 @@
       btn.addEventListener("click", function () {
         var panel = btn.getAttribute("data-side-panel");
         if (panel === "account") {
-          window.location.href = "account.html?mode=login";
+          window.location.href = "/account";
           return;
         }
         openSubPanel(panel);

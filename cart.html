@@ -8,24 +8,11 @@
   <title>Nostalgia Collection · Καλάθι</title>
   <link rel="stylesheet" href="css/fonts.css?v=1" />
 <link rel="stylesheet" href="css/base.css?v=locale-drawer" />
-  <link rel="stylesheet" href="css/side-nav.css?v=dark-theme" />
+  <link rel="stylesheet" href="css/side-nav.css?v=menu-visual3" />
   <link rel="stylesheet" href="css/shop.css?v=mobile-cart" />
   <link rel="stylesheet" href="css/account.css" />
   <link rel="stylesheet" href="css/legal.css" />
-  <script>
-    (function () {
-      try {
-        var t = localStorage.getItem("nostalgia-theme");
-        if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
-        else if (window.matchMedia("(prefers-color-scheme: dark)").matches) document.documentElement.setAttribute("data-theme", "dark");
-        else document.documentElement.setAttribute("data-theme", "light");
-      } catch (e) {}
-      try {
-        var l = localStorage.getItem("nostalgia-lang");
-        if (l === "en" || l === "el") document.documentElement.lang = l;
-      } catch (e) {}
-    })();
-  </script>
+  <script src="js/theme-boot.js"></script>
 </head>
 <body data-page="cart">
   <div class="page-wrap">
@@ -33,67 +20,68 @@
       <nav class="site-header__bar" data-i18n-aria="nav_aria">
         <div class="mobile-nav-panel" id="mobile-nav-panel">
         <div class="site-nav site-nav--left">
-          <a href="index.html" data-i18n="nav_home">Αρχική</a>
+          <a href="/" data-i18n="nav_home">Αρχική</a>
           <div class="site-nav__item site-nav__item--mega">
-            <a href="collection.html" class="site-nav__mega-trigger" data-i18n="nav_collection" aria-haspopup="true" aria-expanded="false" aria-controls="nav-mega-collection">Συλλογή</a>
+            <a href="/collection" class="site-nav__mega-trigger" data-i18n="nav_collection" aria-haspopup="true" aria-expanded="false" aria-controls="nav-mega-collection">Συλλογή</a>
             <div class="nav-mega" id="nav-mega-collection" data-i18n-aria="nav_mega_aria">
               <div class="nav-mega__panel">
                 <ul class="nav-mega__cats">
                   <li class="nav-mega__cat nav-mega__cat--group" style="--mega-i: 0" data-i18n="side_nav_group_candles">Κεριά</li>
-                  <li class="nav-mega__cat" style="--mega-i: 1"><a href="collection.html#cat1"><span data-i18n="collection_cat1">Art Class Murano Candle</span></a></li>
-                  <li class="nav-mega__cat" style="--mega-i: 2"><a href="collection.html#cat2"><span data-i18n="collection_cat2">Driftwood Beeswax Flame</span></a></li>
-                  <li class="nav-mega__cat" style="--mega-i: 3"><a href="collection.html#cat3"><span data-i18n="collection_cat3">Liquid Eternal</span></a></li>
-                  <li class="nav-mega__cat" style="--mega-i: 4"><a href="collection.html#cat4"><span data-i18n="collection_cat4">Unique Art Objects</span></a></li>
-                  <li class="nav-mega__cat" style="--mega-i: 5"><a href="collection.html#cat5"><span data-i18n="collection_cat5">NI Terra</span></a></li>
-                  <li class="nav-mega__cat nav-mega__cat--divider" style="--mega-i: 6" aria-hidden="true"></li>
-                  <li class="nav-mega__cat nav-mega__cat--group" style="--mega-i: 7" data-i18n="side_nav_group_non_candles">Άλλα προϊόντα</li>
-                  <li class="nav-mega__cat" style="--mega-i: 8"><a href="collection.html#cat6"><span data-i18n="collection_cat6">Perfume</span></a></li>
-                  <li class="nav-mega__cat" style="--mega-i: 9"><a href="collection.html#cat7"><span data-i18n="collection_cat7">Diffusers</span></a></li>
-                  <li class="nav-mega__cat" style="--mega-i: 10"><a href="collection.html#cat8"><span data-i18n="collection_cat8">Gift Sets</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 1"><a href="/collection#cat1"><span data-i18n="collection_cat1">Art Class Murano Candle</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 2"><a href="/collection#cat2"><span data-i18n="collection_cat2">Driftwood Beeswax Flame</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 3"><a href="/collection#cat3"><span data-i18n="collection_cat3">Liquid Eternal</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 4"><a href="/collection#cat4"><span data-i18n="collection_cat4">Unique Art Objects</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 5"><a href="/collection#cat5"><span data-i18n="collection_cat5">NI Terra</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 6"><a href="/collection#cat9"><span data-i18n="collection_cat9">Nostalgia Exclusive Mirror Candles</span></a></li>
+                  <li class="nav-mega__cat nav-mega__cat--divider" style="--mega-i: 7" aria-hidden="true"></li>
+                  <li class="nav-mega__cat nav-mega__cat--group" style="--mega-i: 8" data-i18n="side_nav_group_non_candles">Άλλα προϊόντα</li>
+                  <li class="nav-mega__cat" style="--mega-i: 9"><a href="/collection#cat6"><span data-i18n="collection_cat6">Perfume</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 10"><a href="/collection#cat7"><span data-i18n="collection_cat7">Diffusers</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 11"><a href="/collection#cat8"><span data-i18n="collection_cat8">Gift Sets</span></a></li>
                 </ul>
                 <div class="nav-mega__feature">
                   <figure class="nav-mega__media"><img src="home%20page%20photo/home%20collection.png" alt="" width="640" height="420" loading="lazy" decoding="async" /></figure>
                   <div class="nav-mega__copy">
                     <h3 class="nav-mega__title" data-i18n="nav_mega_title">Σφραγισμένες Μνήμες</h3>
                     <p class="nav-mega__desc" data-i18n="nav_mega_desc">Τέσσερις συλλογές χειροποίητων κεριών — τέχνη, φως και ανάμνηση.</p>
-                    <a class="nav-mega__cta" href="collection.html" data-i18n="nav_mega_cta">Δείτε τη συλλογή</a>
+                    <a class="nav-mega__cta" href="/collection" data-i18n="nav_mega_cta">Δείτε τη συλλογή</a>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <a class="site-header__logo site-header__logo--pulse" href="index.html" data-i18n-aria="logo_aria">
+        <a class="site-header__logo site-header__logo--pulse" href="/" data-i18n-aria="logo_aria">
           <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
           <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
         </a>
         <div class="site-nav site-nav--right">
           <div class="site-nav__item site-nav__item--mega site-nav__item--mega-right">
-            <a href="about.html" class="site-nav__mega-trigger" data-i18n="nav_about" aria-haspopup="true" aria-expanded="false" aria-controls="nav-mega-about">Σχετικά</a>
+            <a href="/about" class="site-nav__mega-trigger" data-i18n="nav_about" aria-haspopup="true" aria-expanded="false" aria-controls="nav-mega-about">Σχετικά</a>
             <div class="nav-mega" id="nav-mega-about" data-i18n-aria="nav_about_mega_aria">
               <div class="nav-mega__panel">
                 <ul class="nav-mega__cats">
-                  <li class="nav-mega__cat" style="--mega-i: 0"><a href="about.html#story"><span data-i18n="about_tab_story">Η Ιστορία NI</span></a></li>
-                  <li class="nav-mega__cat" style="--mega-i: 1"><a href="about.html#soul"><span data-i18n="about_tab_soul">The Soul of Nostalgia</span></a></li>
-                  <li class="nav-mega__cat" style="--mega-i: 2"><a href="about.html#vision"><span data-i18n="about_tab_vision">Our Vision</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 0"><a href="/about#story"><span data-i18n="about_tab_story">Η Ιστορία NI</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 1"><a href="/about#soul"><span data-i18n="about_tab_soul">The Soul of Nostalgia</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 2"><a href="/about#vision"><span data-i18n="about_tab_vision">Our Vision</span></a></li>
                 </ul>
                 <div class="nav-mega__feature">
                   <figure class="nav-mega__media"><img src="home%20page%20photo/about%20photo%20.png" alt="" width="640" height="420" loading="lazy" decoding="async" /></figure>
                   <div class="nav-mega__copy">
                     <h3 class="nav-mega__title" data-i18n="nav_about_mega_title">Σχετικά με τη Nostalgia</h3>
                     <p class="nav-mega__desc" data-i18n="nav_about_mega_desc">Η ιστορία NI και η ψυχή πίσω από κάθε φλόγα — μνήμη, τέχνη και αγάπη.</p>
-                    <a class="nav-mega__cta" href="about.html" data-i18n="nav_about_mega_cta">Διαβάστε περισσότερα</a>
+                    <a class="nav-mega__cta" href="/about" data-i18n="nav_about_mega_cta">Διαβάστε περισσότερα</a>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          <a href="contact.html" data-i18n="nav_contact">Επικοινωνία</a>
+          <a href="/contact" data-i18n="nav_contact">Επικοινωνία</a>
           <button type="button" class="lang-toggle" id="lang-toggle" aria-live="polite">English</button>
           <button type="button" class="theme-toggle" id="theme-toggle" aria-live="polite"></button>
         </div>
         </div>
-        <a class="site-header__logo site-header__logo--topbar" href="index.html" data-i18n-aria="logo_aria">
+        <a class="site-header__logo site-header__logo--topbar" href="/" data-i18n-aria="logo_aria">
           <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
           <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
         </a>
@@ -106,8 +94,8 @@
         <header class="cart-page__hero">
           <h1 class="cart-page__title" id="cart-page-title" data-i18n="cart_page_title">ΚΑΛΑΘΙ</h1>
           <div class="cart-page__hero-actions" id="cart-page-hero-actions" hidden>
-            <a class="cart-page__link" href="collection.html" data-i18n="cart_continue_shopping">Συνέχεια αγορών</a>
-            <a class="cart-page__checkout btn-shop btn-shop--primary" href="checkout.html" data-i18n="cart_proceed_checkout">Ολοκλήρωση παραγγελίας</a>
+            <a class="cart-page__link" href="/collection" data-i18n="cart_continue_shopping">Συνέχεια αγορών</a>
+            <a class="cart-page__checkout btn-shop btn-shop--primary" href="/checkout" data-i18n="cart_proceed_checkout">Ολοκλήρωση παραγγελίας</a>
           </div>
         </header>
 
@@ -117,7 +105,7 @@
               <img class="empty-state-visual" src="home%20page%20photo/home%20photo.png" alt="" width="200" height="200" decoding="async" />
               <h2 class="cart-empty__title" data-i18n="cart_empty_title">Το καλάθι σου είναι άδειο</h2>
               <p class="cart-empty__text" data-i18n="cart_empty_text">Πρόσθεσε προϊόντα από τη συλλογή για να ξεκινήσεις.</p>
-              <a class="btn-shop btn-shop--primary cart-empty__cta" href="collection.html" data-i18n="cart_continue">Συνέχεια αγορών</a>
+              <a class="btn-shop btn-shop--primary cart-empty__cta" href="/collection" data-i18n="cart_continue">Συνέχεια αγορών</a>
             </div>
 
             <ul class="cart-lines" id="cart-items" hidden></ul>
@@ -157,8 +145,8 @@
 
             <footer class="cart-page__foot" id="cart-page-foot" hidden>
               <div class="cart-page__foot-actions">
-                <a class="cart-page__link" href="collection.html" data-i18n="cart_continue_shopping">Συνέχεια αγορών</a>
-                <a class="cart-page__checkout btn-shop btn-shop--primary" href="checkout.html" data-i18n="cart_proceed_checkout">Ολοκλήρωση παραγγελίας</a>
+                <a class="cart-page__link" href="/collection" data-i18n="cart_continue_shopping">Συνέχεια αγορών</a>
+                <a class="cart-page__checkout btn-shop btn-shop--primary" href="/checkout" data-i18n="cart_proceed_checkout">Ολοκλήρωση παραγγελίας</a>
               </div>
               <p class="cart-page__foot-note" data-i18n="cart_foot_note">Η Nostalgia επιβεβαιώνει κάθε παραγγελία προσωπικά — με προσοχή στη λεπτομέρεια και στην εμπειρία σας.</p>
             </footer>
@@ -169,7 +157,7 @@
 
     <footer class="site-footer">
       <div class="site-footer__main">
-        <a class="site-footer__logo" href="index.html" data-i18n-aria="logo_aria">
+        <a class="site-footer__logo" href="/" data-i18n-aria="logo_aria">
           <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="180" height="52" alt="Nostalgia Collection" />
           <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="180" height="52" alt="Nostalgia Collection" />
         </a>
@@ -204,7 +192,7 @@
       </div>
       <div class="site-footer__bar">
         <nav class="site-footer__legal" data-i18n-aria="footer_legal_aria">
-          <a href="privacy.html" data-i18n="footer_privacy">Προστασία Δεδομένων</a>
+          <a href="/privacy" data-i18n="footer_privacy">Προστασία Δεδομένων</a>
         </nav>
         <p class="site-footer__copyright" data-i18n="footer_copyright">© 2026 Nostalgia. Με επιφύλαξη παντός δικαιώματος.</p>
         <p class="site-footer__hosting"><span data-i18n="footer_hosting">Hosting by</span> <a href="https://www.hostinger.com/" target="_blank" rel="noopener noreferrer">Hostinger</a></p>
@@ -212,6 +200,7 @@
     </footer>
     <button class="back-to-top" type="button" aria-label="Back to top"><span aria-hidden="true">↑</span></button>
   </div>
+  <script defer src="js/api.js?v=1"></script>
   <script defer src="js/europe-countries.js"></script>
   <script defer src="js/images.js?v=4"></script>
     <script defer src="js/i18n-bundles/shared.js?v=1"></script>
@@ -219,9 +208,11 @@
   <script defer src="js/i18n-bundles/catalog.js?v=1"></script>
   <script defer src="js/i18n-core.js?v=1"></script>
   <script defer src="js/cookies.js"></script>
+  <script src="js/tracking.js?v=1" defer></script>
   <script defer src="js/products.js"></script>
-  <script defer src="js/side-nav.js"></script>
+  <script defer src="js/side-nav.js?v=8"></script>
   <script defer src="js/cart.js"></script>
+  <script defer src="js/order-fees.js"></script>
   <script defer src="js/cart-page.js?v=mobile-cart"></script>
   <script defer src="js/account.js"></script>
   <script defer src="js/breadcrumbs.js?v=4"></script>

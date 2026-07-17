@@ -164,9 +164,41 @@
 
     initMobileNav();
     initBackToTop();
+    initSeo();
+    initAnalytics();
     initSiteChrome();
     initBreadcrumbs();
     initSitePolish();
+  }
+
+  function loadScriptOnce(src, attr, attrVal) {
+    if (document.querySelector("script[" + attr + '="' + attrVal + '"]')) return;
+    var script = document.createElement("script");
+    script.src = src;
+    script.defer = true;
+    script.setAttribute(attr, attrVal);
+    document.head.appendChild(script);
+  }
+
+  function initSeo() {
+    loadScriptOnce("js/seo.js?v=1", "data-seo", "1");
+  }
+
+  function initAnalytics() {
+    loadScriptOnce("js/analytics.js?v=1", "data-analytics", "1");
+  }
+
+  function initBreadcrumbs() {
+    if (window.NostalgiaBreadcrumbs && typeof window.NostalgiaBreadcrumbs.refresh === "function") {
+      window.NostalgiaBreadcrumbs.refresh();
+      return;
+    }
+    if (document.querySelector('script[data-breadcrumbs="1"]')) return;
+    var script = document.createElement("script");
+    script.src = "js/breadcrumbs.js?v=7";
+    script.async = false;
+    script.setAttribute("data-breadcrumbs", "1");
+    document.body.appendChild(script);
   }
 
   function initSitePolish() {
@@ -180,7 +212,7 @@
     if (!document.querySelector('link[data-polish-css="1"]')) {
       var link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "css/polish.css?v=10";
+      link.href = "css/polish.css?v=11";
       link.setAttribute("data-polish-css", "1");
       document.head.appendChild(link);
     }
@@ -193,19 +225,6 @@
     document.body.appendChild(script);
   }
 
-  function initBreadcrumbs() {
-    if (window.NostalgiaBreadcrumbs && typeof window.NostalgiaBreadcrumbs.refresh === "function") {
-      window.NostalgiaBreadcrumbs.refresh();
-      return;
-    }
-    if (document.querySelector('script[data-breadcrumbs="1"]')) return;
-    var script = document.createElement("script");
-    script.src = "js/breadcrumbs.js?v=5";
-    script.async = false;
-    script.setAttribute("data-breadcrumbs", "1");
-    document.body.appendChild(script);
-  }
-
   function initSiteChrome() {
     if (window.NostalgiaSiteChrome && typeof window.NostalgiaSiteChrome.init === "function") {
       window.NostalgiaSiteChrome.init();
@@ -213,7 +232,7 @@
     }
     if (document.querySelector('script[data-site-chrome="1"]')) return;
     var script = document.createElement("script");
-    script.src = "js/site-chrome.js?v=search-mobile";
+    script.src = "js/site-chrome.js?v=announce-insert-fix";
     script.async = false;
     script.setAttribute("data-site-chrome", "1");
     script.onload = function () {

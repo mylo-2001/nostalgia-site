@@ -1,0 +1,276 @@
+/*
+ * Nostalgia — home merge (scroll-linked statement → image)
+ * Base layout is a simple readable stack. When JS is active it adds
+ * .home-merge--scrub: the section grows tall, the inner pins, and a scroll
+ * progress (--merge-p 0→1) drives the text DOWN and the image UP so they meet
+ * and overlap — fully reversible as you scroll back up.
+ */
+
+.home-merge {
+  position: relative;
+  background: var(--surface-canvas);
+  border-top: 1px solid var(--rule-hairline);
+  padding: clamp(3.5rem, 9vw, 7rem) clamp(1.25rem, 5vw, 4rem);
+}
+
+[data-theme="dark"] .home-merge {
+  background: var(--surface-paper);
+  border-top-color: rgba(197, 160, 96, 0.14);
+}
+
+.home-merge__inner {
+  position: relative;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+/* Faint brand-collage background — softened by a theme-aware wash so the dark
+   text stays readable over it. */
+.home-merge__bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.home-merge__bg img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.home-merge__bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* Softer wash so the collage reads clearer in light mode (less washed-out). */
+  background: rgba(247, 243, 235, 0.36);
+}
+
+[data-theme="dark"] .home-merge__bg::after {
+  background: rgba(12, 10, 8, 0.82);
+}
+
+/* The statement */
+.home-merge__statement {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  font-family: var(--font-hero);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(2rem, 6.4vw, 5.4rem);
+  line-height: 1.07;
+  letter-spacing: 0.005em;
+  color: var(--ink);
+}
+
+[data-theme="dark"] .home-merge__statement {
+  color: rgba(244, 236, 222, 0.97);
+}
+
+.home-merge__word {
+  display: block;
+}
+.home-merge__word:nth-child(2) {
+  padding-left: 1.1em;
+}
+.home-merge__word--accent {
+  padding-left: 0.5em;
+  color: var(--accent);
+}
+
+/* The image */
+.home-merge__media {
+  position: relative;
+  z-index: 1;
+  margin-top: clamp(1.5rem, 4vw, 2.75rem);
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: 4px;
+  box-shadow:
+    0 40px 90px -32px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(197, 160, 96, 0.12);
+}
+
+[data-theme="light"] .home-merge__media {
+  box-shadow:
+    0 28px 64px -28px rgba(47, 37, 27, 0.32),
+    0 0 0 1px var(--rule-hairline);
+}
+
+.home-merge__media-pic {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+.home-merge__media-pic img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.home-merge__media-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(8, 6, 4, 0.26) 0%,
+    transparent 32%,
+    transparent 64%,
+    rgba(8, 6, 4, 0.6) 100%
+  );
+}
+
+.home-merge__caption {
+  position: absolute;
+  z-index: 2;
+  left: clamp(1.1rem, 3vw, 2.25rem);
+  bottom: clamp(0.9rem, 2.2vw, 1.6rem);
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(0.6rem, 0.9vw, 0.7rem);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #f3e4c4;
+  text-shadow: 0 1px 14px rgba(0, 0, 0, 0.6);
+}
+
+/* Side image (logo-on-candles) — fills the space beside the text up front */
+.home-merge__aside {
+  position: relative;
+  z-index: 1;
+  margin: clamp(1.5rem, 4vw, 2.5rem) 0 0;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: 4px;
+  box-shadow:
+    0 30px 70px -30px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(197, 160, 96, 0.14);
+}
+
+.home-merge__aside img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ===================== Scroll-scrub mode (JS active) ===================== */
+.home-merge--scrub {
+  height: 240vh;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* The collage background drifts a touch as the scene scrubs (parallax depth). */
+.home-merge--scrub .home-merge__bg {
+  transform: translateY(calc(var(--merge-p, 0) * -5vh)) scale(1.06);
+  will-change: transform;
+}
+
+.home-merge--scrub .home-merge__inner {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  max-width: none;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: 0 clamp(1.25rem, 5vw, 4rem);
+}
+
+/* Both occupy the same centred cell and slide past each other on scroll. */
+.home-merge--scrub .home-merge__statement {
+  grid-area: 1 / 1;
+  justify-self: start;
+  width: 100%;
+  max-width: min(56%, 640px);
+  margin-left: clamp(1.5rem, 7vw, 7rem);
+  transform: translateY(calc((var(--merge-p, 0) * 24 - 10) * 1vh));
+  will-change: transform;
+}
+
+/* The side image sits to the right at the start, then fades/drifts away as the
+   merge begins so it never clashes with the rising photo. */
+.home-merge--scrub .home-merge__aside {
+  grid-area: 1 / 1;
+  justify-self: end;
+  align-self: center;
+  margin: 0 clamp(1rem, 4vw, 3rem) 0 0;
+  width: min(28%, 320px);
+  aspect-ratio: 4 / 5;
+  z-index: 2;
+  opacity: calc(1 - var(--merge-p, 0) * 2.4);
+  transform: translateX(calc(var(--merge-p, 0) * 8vw));
+  will-change: transform, opacity;
+}
+
+.home-merge--scrub .home-merge__media {
+  grid-area: 1 / 1;
+  margin-top: 0;
+  width: min(92%, 920px);
+  transform: translateY(calc((1 - var(--merge-p, 0)) * 96vh))
+    scale(calc(1.08 - var(--merge-p, 0) * 0.08));
+  will-change: transform;
+}
+
+@media (max-width: 700px) {
+  .home-merge__statement {
+    font-size: clamp(1.9rem, 9vw, 3rem);
+  }
+  .home-merge__word:nth-child(2) {
+    padding-left: 0.6em;
+  }
+  .home-merge--scrub {
+    height: 200vh;
+  }
+  .home-merge--scrub .home-merge__statement {
+    justify-self: center;
+    max-width: 100%;
+  }
+  .home-merge--scrub .home-merge__aside {
+    display: none;
+  }
+  .home-merge--scrub .home-merge__media {
+    width: 96%;
+    aspect-ratio: 4 / 5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-merge--scrub {
+    height: auto;
+    padding: clamp(3.5rem, 9vw, 7rem) clamp(1.25rem, 5vw, 4rem);
+  }
+  .home-merge--scrub .home-merge__inner {
+    position: static;
+    height: auto;
+    display: block;
+    overflow: visible;
+  }
+  .home-merge--scrub .home-merge__statement,
+  .home-merge--scrub .home-merge__media,
+  .home-merge--scrub .home-merge__aside {
+    transform: none;
+    opacity: 1;
+  }
+  .home-merge--scrub .home-merge__statement {
+    justify-self: stretch;
+    max-width: none;
+  }
+  .home-merge--scrub .home-merge__media,
+  .home-merge--scrub .home-merge__aside {
+    margin-top: clamp(1.5rem, 4vw, 2.75rem);
+    width: 100%;
+  }
+}

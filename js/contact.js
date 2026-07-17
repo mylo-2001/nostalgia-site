@@ -11,6 +11,15 @@
     var form = document.getElementById("contact-email-form");
     if (!form) return;
     var statusEl = document.getElementById("contact-form-status");
+    var captcha = window.NostalgiaCaptcha
+      ? window.NostalgiaCaptcha.mount(document.getElementById("contact-captcha"))
+      : null;
+
+    var subjectParam = new URLSearchParams(window.location.search).get("subject");
+    if (subjectParam && form.subject) {
+      var match = form.subject.querySelector('option[value="' + subjectParam + '"]');
+      if (match) form.subject.value = subjectParam;
+    }
 
     form.addEventListener("submit", function (e) {
       e.preventDefault();
@@ -58,15 +67,54 @@
         labels.subject + ": " + subject + "\n\n" +
         labels.message + ":\n" + message;
 
-      var mailto =
-        "mailto:mgerostathi@gmail.com" +
-        "?subject=" + encodeURIComponent("[Nostalgia Contact] " + subject) +
-        "&body=" + encodeURIComponent(body);
+      function sendViaMailto() {
+        var mailto =
+          "mailto:mgerostathi@gmail.com" +
+          "?subject=" + encodeURIComponent("[Nostalgia Contact] " + subject) +
+          "&body=" + encodeURIComponent(body);
 
-      window.location.href = mailto;
-      if (statusEl) {
-        statusEl.textContent = getLocalizedStatus();
+        window.location.href = mailto;
+        if (statusEl) {
+          statusEl.textContent = getLocalizedStatus();
+        }
       }
+
+      /* Backend running → store the message there; otherwise email fallback. */
+      if (window.NostalgiaAPI && window.NostalgiaAPI.isAvailable()) {
+        window.NostalgiaAPI.post("/api/contact", {
+          name: name,
+          firstName: firstName,
+          email: email,
+          phone: phone,
+          country: country,
+          subject: subject,
+          message: message,
+          lang: lang,
+          captchaToken: window.NostalgiaCaptcha ? window.NostalgiaCaptcha.getToken(captcha) : "",
+        }).then(function (res) {
+          if (res.ok) {
+            form.reset();
+            if (window.NostalgiaCaptcha) window.NostalgiaCaptcha.reset(captcha);
+            if (statusEl) {
+              statusEl.textContent =
+                lang === "en"
+                  ? "Thank you! Your message has been sent."
+                  : "Ευχαριστούμε! Το μήνυμά σας εστάλη.";
+            }
+          } else if (res.error === "captcha_failed") {
+            if (window.NostalgiaCaptcha) window.NostalgiaCaptcha.reset(captcha);
+            if (statusEl) {
+              statusEl.textContent =
+                lang === "en" ? "Please complete the verification." : "Ολοκληρώστε την επαλήθευση.";
+            }
+          } else {
+            sendViaMailto();
+          }
+        }).catch(sendViaMailto);
+        return;
+      }
+
+      sendViaMailto();
     });
   }
 

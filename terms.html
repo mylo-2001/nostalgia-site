@@ -7,7 +7,7 @@
   <title>Nostalgia Collection · Όροι Χρήσης</title>
   <link rel="stylesheet" href="css/fonts.css?v=1" />
 <link rel="stylesheet" href="css/base.css?v=locale-drawer" />
-  <link rel="stylesheet" href="css/side-nav.css?v=dark-theme" />
+  <link rel="stylesheet" href="css/side-nav.css?v=menu-visual3" />
   <link rel="stylesheet" href="css/legal.css" />
   <link rel="stylesheet" href="css/shop.css?v=cart-drawer" />
 </head>
@@ -17,21 +17,21 @@
       <nav class="site-header__bar" data-i18n-aria="nav_aria">
         <div class="mobile-nav-panel" id="mobile-nav-panel">
           <div class="site-nav site-nav--left">
-            <a href="index.html" data-i18n="nav_home">Αρχική</a>
-            <a href="collection.html" data-i18n="nav_collection">Συλλογή</a>
+            <a href="/" data-i18n="nav_home">Αρχική</a>
+            <a href="/collection" data-i18n="nav_collection">Συλλογή</a>
           </div>
-          <a class="site-header__logo site-header__logo--pulse" href="index.html" data-i18n-aria="logo_aria">
+          <a class="site-header__logo site-header__logo--pulse" href="/" data-i18n-aria="logo_aria">
             <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
             <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
           </a>
           <div class="site-nav site-nav--right">
-            <a href="about.html" data-i18n="nav_about">Σχετικά</a>
-            <a href="contact.html" data-i18n="nav_contact">Επικοινωνία</a>
+            <a href="/about" data-i18n="nav_about">Σχετικά</a>
+            <a href="/contact" data-i18n="nav_contact">Επικοινωνία</a>
             <button type="button" class="lang-toggle" id="lang-toggle">English</button>
             <button type="button" class="theme-toggle" id="theme-toggle"></button>
           </div>
         </div>
-        <a class="site-header__logo site-header__logo--topbar" href="index.html" data-i18n-aria="logo_aria">
+        <a class="site-header__logo site-header__logo--topbar" href="/" data-i18n-aria="logo_aria">
           <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
           <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
         </a>
@@ -39,11 +39,23 @@
       </nav>
     </header>
     <main>
+      <section class="editorial-hero">
+        <figure class="editorial-hero__figure">
+          <div class="editorial-hero__zoom is-animating">
+            <picture>
+              <source type="image/webp" srcset="collections-hero/%CE%8C%CF%81%CE%BF%CE%B9%20%CF%87%CF%81%CE%AE%CF%83%CE%B7%CF%82-hero-photo-480w.webp 480w, collections-hero/%CE%8C%CF%81%CE%BF%CE%B9%20%CF%87%CF%81%CE%AE%CF%83%CE%B7%CF%82-hero-photo-960w.webp 960w, collections-hero/%CE%8C%CF%81%CE%BF%CE%B9%20%CF%87%CF%81%CE%AE%CF%83%CE%B7%CF%82-hero-photo-1440w.webp 1440w" sizes="100vw" />
+              <img class="editorial-hero__img" src="collections-hero/%CE%8C%CF%81%CE%BF%CE%B9%20%CF%87%CF%81%CE%AE%CF%83%CE%B7%CF%82-hero-photo.png" alt="" width="1200" height="900" loading="eager" decoding="async" />
+            </picture>
+          </div>
+          <div class="editorial-hero__overlay" aria-hidden="true"></div>
+        </figure>
+        <div class="editorial-hero__inner">
+          <header class="editorial-hero__head">
+            <h1 class="editorial-hero__title" data-i18n="footer_terms">Όροι Χρήσης</h1>
+          </header>
+        </div>
+      </section>
       <section class="legal-page">
-        <header class="page-intro page-intro--legal">
-          <h1>Όροι Χρήσης</h1>
-          <div class="section-rule" aria-hidden="true"></div>
-        </header>
         <article class="legal-content">
           <h2>Χρήση ιστοτόπου</h2>
           <p>Η χρήση του ιστοτόπου συνεπάγεται αποδοχή των παρόντων όρων. Το περιεχόμενο προορίζεται για ενημερωτικούς και εμπορικούς σκοπούς.</p>
@@ -56,14 +68,16 @@
     </main>
     <footer class="site-footer"></footer>
   </div>
+  <script defer src="js/api.js?v=1"></script>
   <script defer src="js/europe-countries.js"></script>
   <script defer src="js/images.js?v=4"></script>
     <script defer src="js/i18n-bundles/shared.js?v=1"></script>
   <script defer src="js/i18n-bundles/content.js?v=1"></script>
   <script defer src="js/i18n-core.js?v=1"></script>
   <script defer src="js/cookies.js"></script>
+  <script src="js/tracking.js?v=1" defer></script>
   <script defer src="js/products.js"></script>
-  <script defer src="js/side-nav.js"></script>
+  <script defer src="js/side-nav.js?v=8"></script>
   <script defer src="js/cart.js"></script>
   <script defer src="js/account.js"></script>
   <script defer src="js/breadcrumbs.js?v=4"></script>

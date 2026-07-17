@@ -1,0 +1,58 @@
+# Nostalgia Collection — local Docker stack (app + PostgreSQL).
+#
+#   docker compose up -d --build      → start (build app image, run db + app)
+#   open http://localhost:8000        → storefront   (/admin → admin panel)
+#   docker compose logs -f app        → app logs (password-reset codes print here
+#                                        until email is configured in .env.docker)
+#   docker compose down               → stop  (add -v to also wipe the database)
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: nostalgia
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nostalgia"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: "8000"
+      # Local run over http — keep development so the app does not force HTTPS
+      # redirects / secure-only cookies. Switch to production behind a proxy.
+      NODE_ENV: development
+      # App reaches the "db" service over the compose network (no SSL).
+      # PG_* are used because DATABASE_URL is intentionally NOT set here.
+      PGHOST: db
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: nostalgia
+    # Optional secrets (email, Stripe, Cloudinary, custom session secret).
+    # The file exists with everything commented out, so this is a no-op until
+    # you fill it in. Do NOT put DATABASE_URL here (it would override PG_* above).
+    env_file:
+      - .env.docker
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persist admin product-image uploads across container rebuilds.
+      - type: volume
+        source: uploads
+        target: /app/product photo/uploads
+
+volumes:
+  pgdata:
+  uploads:

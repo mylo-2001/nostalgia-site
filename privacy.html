@@ -7,23 +7,10 @@
   <title>Nostalgia Collection · Προστασία Δεδομένων</title>
   <link rel="stylesheet" href="css/fonts.css?v=1" />
 <link rel="stylesheet" href="css/base.css?v=locale-drawer" />
-  <link rel="stylesheet" href="css/side-nav.css?v=dark-theme" />
+  <link rel="stylesheet" href="css/side-nav.css?v=menu-visual3" />
   <link rel="stylesheet" href="css/legal.css" />
   <link rel="stylesheet" href="css/shop.css?v=cart-drawer" />
-  <script>
-    (function () {
-      try {
-        var t = localStorage.getItem("nostalgia-theme");
-        if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
-        else if (window.matchMedia("(prefers-color-scheme: dark)").matches) document.documentElement.setAttribute("data-theme", "dark");
-        else document.documentElement.setAttribute("data-theme", "light");
-      } catch (e) {}
-      try {
-        var l = localStorage.getItem("nostalgia-lang");
-        if (l === "en" || l === "el") document.documentElement.lang = l;
-      } catch (e) {}
-    })();
-  </script>
+  <script src="js/theme-boot.js"></script>
 </head>
 <body data-page="privacy">
   <div class="page-wrap">
@@ -31,21 +18,21 @@
       <nav class="site-header__bar" data-i18n-aria="nav_aria">
         <div class="mobile-nav-panel" id="mobile-nav-panel">
         <div class="site-nav site-nav--left">
-          <a href="index.html" data-i18n="nav_home">Αρχική</a>
-          <a href="collection.html" data-i18n="nav_collection">Συλλογή</a>
+          <a href="/" data-i18n="nav_home">Αρχική</a>
+          <a href="/collection" data-i18n="nav_collection">Συλλογή</a>
         </div>
-        <a class="site-header__logo site-header__logo--pulse" href="index.html" data-i18n-aria="logo_aria">
+        <a class="site-header__logo site-header__logo--pulse" href="/" data-i18n-aria="logo_aria">
           <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
           <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
         </a>
         <div class="site-nav site-nav--right">
-          <a href="about.html" data-i18n="nav_about">Σχετικά</a>
-          <a href="contact.html" data-i18n="nav_contact">Επικοινωνία</a>
+          <a href="/about" data-i18n="nav_about">Σχετικά</a>
+          <a href="/contact" data-i18n="nav_contact">Επικοινωνία</a>
           <button type="button" class="lang-toggle" id="lang-toggle" aria-live="polite">English</button>
           <button type="button" class="theme-toggle" id="theme-toggle" aria-live="polite"></button>
         </div>
         </div>
-        <a class="site-header__logo site-header__logo--topbar" href="index.html" data-i18n-aria="logo_aria">
+        <a class="site-header__logo site-header__logo--topbar" href="/" data-i18n-aria="logo_aria">
           <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
           <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
         </a>
@@ -54,12 +41,24 @@
     </header>
 
     <main>
-      <section class="legal-page">
+      <section class="editorial-hero">
+        <figure class="editorial-hero__figure">
+          <div class="editorial-hero__zoom is-animating">
+            <picture>
+              <source type="image/webp" srcset="collections-hero/%CE%A0%CF%81%CE%BF%CF%83%CF%84%CE%B1%CF%83%CE%AF%CE%B1%20%CE%94%CE%B5%CE%B4%CE%BF%CE%BC%CE%AD%CE%BD%CF%89%CE%BD-photo-hero-480w.webp 480w, collections-hero/%CE%A0%CF%81%CE%BF%CF%83%CF%84%CE%B1%CF%83%CE%AF%CE%B1%20%CE%94%CE%B5%CE%B4%CE%BF%CE%BC%CE%AD%CE%BD%CF%89%CE%BD-photo-hero-960w.webp 960w, collections-hero/%CE%A0%CF%81%CE%BF%CF%83%CF%84%CE%B1%CF%83%CE%AF%CE%B1%20%CE%94%CE%B5%CE%B4%CE%BF%CE%BC%CE%AD%CE%BD%CF%89%CE%BD-photo-hero-1440w.webp 1440w" sizes="100vw" />
+              <img class="editorial-hero__img" src="collections-hero/%CE%A0%CF%81%CE%BF%CF%83%CF%84%CE%B1%CF%83%CE%AF%CE%B1%20%CE%94%CE%B5%CE%B4%CE%BF%CE%BC%CE%AD%CE%BD%CF%89%CE%BD-photo-hero.png" alt="" width="1200" height="900" loading="eager" decoding="async" />
+            </picture>
+          </div>
+          <div class="editorial-hero__overlay" aria-hidden="true"></div>
+        </figure>
+        <div class="editorial-hero__inner">
+          <header class="editorial-hero__head">
+            <h1 class="editorial-hero__title" data-i18n="privacy_title">Προστασία Δεδομένων</h1>
+          </header>
+        </div>
+      </section>
 
-        <header class="page-intro page-intro--legal">
-          <h1 data-i18n="privacy_title">Προστασία Δεδομένων</h1>
-          <div class="section-rule" aria-hidden="true"></div>
-        </header>
+      <section class="legal-page">
 
         <article class="legal-content" id="privacy-content"></article>
 
@@ -71,7 +70,7 @@
 
     <footer class="site-footer">
       <div class="site-footer__main">
-        <a class="site-footer__logo" href="index.html" data-i18n-aria="logo_aria">
+        <a class="site-footer__logo" href="/" data-i18n-aria="logo_aria">
           <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="180" height="52" alt="Nostalgia Collection" />
           <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="180" height="52" alt="Nostalgia Collection" />
         </a>
@@ -111,12 +110,13 @@
       </div>
       <div class="site-footer__bar">
         <nav class="site-footer__legal" data-i18n-aria="footer_legal_aria">
-          <a href="privacy.html" data-i18n="footer_privacy">Προστασία Δεδομένων</a>
+          <a href="/privacy" data-i18n="footer_privacy">Προστασία Δεδομένων</a>
         </nav>
         <p class="site-footer__copyright" data-i18n="footer_copyright">© 2026 Nostalgia. Με επιφύλαξη παντός δικαιώματος.</p>
       </div>
     </footer>
   </div>
+  <script defer src="js/api.js?v=1"></script>
   <script defer src="js/europe-countries.js"></script>
   <script defer src="js/images.js?v=4"></script>
     <script defer src="js/i18n-bundles/shared.js?v=1"></script>
@@ -126,17 +126,13 @@
   <script defer src="js/privacy-content.js"></script>
   <script defer src="js/privacy.js"></script>
   <script defer src="js/cookies.js"></script>
+  <script src="js/tracking.js?v=1" defer></script>
   <script defer src="js/products.js"></script>
-  <script defer src="js/side-nav.js"></script>
+  <script defer src="js/side-nav.js?v=8"></script>
   <script defer src="js/account.js"></script>
   <script defer src="js/breadcrumbs.js?v=4"></script>
 
   <script defer src="js/theme.js"></script>
   <script defer src="js/header-scroll.js"></script>
-  <script>
-    document.getElementById("privacy-cookie-settings").addEventListener("click", function () {
-      if (window.NostalgiaCookies) window.NostalgiaCookies.openSettings();
-    });
-  </script>
 </body>
 </html>

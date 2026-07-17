@@ -8,32 +8,13 @@
   <title>Nostalgia Collection · Συλλογή</title>
   <link rel="stylesheet" href="css/fonts.css?v=1" />
 <link rel="stylesheet" href="css/base.css?v=locale-drawer" />
-  <link rel="stylesheet" href="css/side-nav.css?v=dark-theme" />
+  <link rel="stylesheet" href="css/side-nav.css?v=menu-visual3" />
   <link rel="stylesheet" href="css/collection.css?v=light2" />
   <link rel="stylesheet" href="css/legal.css" />
   <link rel="stylesheet" href="css/shop.css?v=cart-drawer" />
   <link rel="stylesheet" href="css/polish.css?v=mobile-perf" />
   <link rel="stylesheet" href="css/account.css" />
-  <script>
-    (function () {
-      try {
-        var t = localStorage.getItem("nostalgia-theme");
-        if (t === "light" || t === "dark") {
-          document.documentElement.setAttribute("data-theme", t);
-        } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-          document.documentElement.setAttribute("data-theme", "dark");
-        } else {
-          document.documentElement.setAttribute("data-theme", "light");
-        }
-      } catch (e) {}
-      try {
-        var l = localStorage.getItem("nostalgia-lang");
-        if (l === "en" || l === "el") {
-          document.documentElement.lang = l;
-        }
-      } catch (e) {}
-    })();
-  </script>
+  <script src="js/theme-boot.js"></script>
 </head>
 <body data-page="collection">
   <div class="page-wrap">
@@ -41,10 +22,10 @@
       <nav class="site-header__bar" data-i18n-aria="nav_aria">
         <div class="mobile-nav-panel" id="mobile-nav-panel">
         <div class="site-nav site-nav--left">
-          <a href="index.html" data-i18n="nav_home">Αρχική</a>
+          <a href="/" data-i18n="nav_home">Αρχική</a>
           <div class="site-nav__item site-nav__item--mega">
             <a
-              href="collection.html"
+              href="/collection"
               class="site-nav__mega-trigger"
               aria-current="page"
               data-i18n="nav_collection"
@@ -56,16 +37,17 @@
               <div class="nav-mega__panel">
                 <ul class="nav-mega__cats">
                   <li class="nav-mega__cat nav-mega__cat--group" style="--mega-i: 0" data-i18n="side_nav_group_candles">Κεριά</li>
-                  <li class="nav-mega__cat" style="--mega-i: 1"><a href="collection.html#cat1"><span data-i18n="collection_cat1">Art Class Murano Candle</span></a></li>
-                  <li class="nav-mega__cat" style="--mega-i: 2"><a href="collection.html#cat2"><span data-i18n="collection_cat2">Driftwood Beeswax Flame</span></a></li>
-                  <li class="nav-mega__cat" style="--mega-i: 3"><a href="collection.html#cat3"><span data-i18n="collection_cat3">Liquid Eternal</span></a></li>
-                  <li class="nav-mega__cat" style="--mega-i: 4"><a href="collection.html#cat4"><span data-i18n="collection_cat4">Unique Art Objects</span></a></li>
-                  <li class="nav-mega__cat" style="--mega-i: 5"><a href="collection.html#cat5"><span data-i18n="collection_cat5">NI Terra</span></a></li>
-                  <li class="nav-mega__cat nav-mega__cat--divider" style="--mega-i: 6" aria-hidden="true"></li>
-                  <li class="nav-mega__cat nav-mega__cat--group" style="--mega-i: 7" data-i18n="side_nav_group_non_candles">Άλλα προϊόντα</li>
-                  <li class="nav-mega__cat" style="--mega-i: 8"><a href="collection.html#cat6"><span data-i18n="collection_cat6">Perfume</span></a></li>
-                  <li class="nav-mega__cat" style="--mega-i: 9"><a href="collection.html#cat7"><span data-i18n="collection_cat7">Diffusers</span></a></li>
-                  <li class="nav-mega__cat" style="--mega-i: 10"><a href="collection.html#cat8"><span data-i18n="collection_cat8">Gift Sets</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 1"><a href="/collection#cat1"><span data-i18n="collection_cat1">Art Class Murano Candle</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 2"><a href="/collection#cat2"><span data-i18n="collection_cat2">Driftwood Beeswax Flame</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 3"><a href="/collection#cat3"><span data-i18n="collection_cat3">Liquid Eternal</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 4"><a href="/collection#cat4"><span data-i18n="collection_cat4">Unique Art Objects</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 5"><a href="/collection#cat5"><span data-i18n="collection_cat5">NI Terra</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 6"><a href="/collection#cat9"><span data-i18n="collection_cat9">Nostalgia Exclusive Mirror Candles</span></a></li>
+                  <li class="nav-mega__cat nav-mega__cat--divider" style="--mega-i: 7" aria-hidden="true"></li>
+                  <li class="nav-mega__cat nav-mega__cat--group" style="--mega-i: 8" data-i18n="side_nav_group_non_candles">Άλλα προϊόντα</li>
+                  <li class="nav-mega__cat" style="--mega-i: 9"><a href="/collection#cat6"><span data-i18n="collection_cat6">Perfume</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 10"><a href="/collection#cat7"><span data-i18n="collection_cat7">Diffusers</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 11"><a href="/collection#cat8"><span data-i18n="collection_cat8">Gift Sets</span></a></li>
                 </ul>
                 <div class="nav-mega__feature">
                   <figure class="nav-mega__media">
@@ -81,21 +63,21 @@
                   <div class="nav-mega__copy">
                     <h3 class="nav-mega__title" data-i18n="nav_mega_title">Σφραγισμένες Μνήμες</h3>
                     <p class="nav-mega__desc" data-i18n="nav_mega_desc">Τέσσερις συλλογές χειροποίητων κεριών — τέχνη, φως και ανάμνηση.</p>
-                    <a class="nav-mega__cta" href="collection.html" data-i18n="nav_mega_cta">Δείτε τη συλλογή</a>
+                    <a class="nav-mega__cta" href="/collection" data-i18n="nav_mega_cta">Δείτε τη συλλογή</a>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <a class="site-header__logo site-header__logo--pulse" href="index.html" data-i18n-aria="logo_aria">
+        <a class="site-header__logo site-header__logo--pulse" href="/" data-i18n-aria="logo_aria">
           <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
           <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
         </a>
         <div class="site-nav site-nav--right">
           <div class="site-nav__item site-nav__item--mega site-nav__item--mega-right">
             <a
-              href="about.html"
+              href="/about"
               class="site-nav__mega-trigger"
               data-i18n="nav_about"
               aria-haspopup="true"
@@ -105,9 +87,9 @@
             <div class="nav-mega" id="nav-mega-about" data-i18n-aria="nav_about_mega_aria">
               <div class="nav-mega__panel">
                 <ul class="nav-mega__cats">
-                  <li class="nav-mega__cat" style="--mega-i: 0"><a href="about.html#story"><span data-i18n="about_tab_story">Η Ιστορία NI</span></a></li>
-                  <li class="nav-mega__cat" style="--mega-i: 1"><a href="about.html#soul"><span data-i18n="about_tab_soul">The Soul of Nostalgia</span></a></li>
-                  <li class="nav-mega__cat" style="--mega-i: 2"><a href="about.html#vision"><span data-i18n="about_tab_vision">Our Vision</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 0"><a href="/about#story"><span data-i18n="about_tab_story">Η Ιστορία NI</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 1"><a href="/about#soul"><span data-i18n="about_tab_soul">The Soul of Nostalgia</span></a></li>
+                  <li class="nav-mega__cat" style="--mega-i: 2"><a href="/about#vision"><span data-i18n="about_tab_vision">Our Vision</span></a></li>
                 </ul>
                 <div class="nav-mega__feature">
                   <figure class="nav-mega__media">
@@ -123,18 +105,18 @@
                   <div class="nav-mega__copy">
                     <h3 class="nav-mega__title" data-i18n="nav_about_mega_title">Σχετικά με τη Nostalgia</h3>
                     <p class="nav-mega__desc" data-i18n="nav_about_mega_desc">Η ιστορία NI και η ψυχή πίσω από κάθε φλόγα — μνήμη, τέχνη και αγάπη.</p>
-                    <a class="nav-mega__cta" href="about.html" data-i18n="nav_about_mega_cta">Διαβάστε περισσότερα</a>
+                    <a class="nav-mega__cta" href="/about" data-i18n="nav_about_mega_cta">Διαβάστε περισσότερα</a>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          <a href="contact.html" data-i18n="nav_contact">Επικοινωνία</a>
+          <a href="/contact" data-i18n="nav_contact">Επικοινωνία</a>
           <button type="button" class="lang-toggle" id="lang-toggle" aria-live="polite">English</button>
           <button type="button" class="theme-toggle" id="theme-toggle" aria-live="polite"></button>
         </div>
         </div>
-        <a class="site-header__logo site-header__logo--topbar" href="index.html" data-i18n-aria="logo_aria">
+        <a class="site-header__logo site-header__logo--topbar" href="/" data-i18n-aria="logo_aria">
           <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
           <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
         </a>
@@ -145,10 +127,29 @@
     </header>
 
     <main>
-      <header class="page-intro page-intro--collection" id="collection-page-intro">
-        <h1 data-i18n="collection_heading">Η συλλογή</h1>
-        <div class="section-rule" aria-hidden="true"></div>
-      </header>
+      <section class="editorial-hero">
+        <figure class="editorial-hero__figure">
+          <div class="editorial-hero__zoom is-animating">
+            <picture>
+              <source type="image/webp" srcset="collections-hero/collections-hero-480w.webp 480w, collections-hero/collections-hero-960w.webp 960w, collections-hero/collections-hero-1440w.webp 1440w" sizes="100vw" />
+              <img class="editorial-hero__img" src="collections-hero/collections-hero.png" alt="" width="1600" height="900" loading="eager" decoding="async" />
+            </picture>
+          </div>
+          <div class="editorial-hero__overlay" aria-hidden="true"></div>
+        </figure>
+        <div class="editorial-hero__inner">
+          <header class="editorial-hero__head">
+            <h1 class="editorial-hero__title" data-i18n="collection_heading">Η συλλογή</h1>
+          </header>
+        </div>
+      </section>
+
+      <section class="collection-intro site-reveal" aria-labelledby="collection-intro-heading">
+        <span class="collection-intro__eyebrow" data-i18n="collection_intro_eyebrow">The Collection</span>
+        <h2 id="collection-intro-heading" class="collection-intro__title" data-i18n="collection_intro_title">Nostalgia Candles Collections</h2>
+        <span class="collection-intro__rule" aria-hidden="true"></span>
+        <p class="collection-intro__text" data-i18n="collection_intro_text">Αρωματικά κεριά και diffusers που ανανεώνουν την ατμόσφαιρα και τη διάθεσή σας, καθώς και πολυτελή gift boxes για να προσφέρετε σε αγαπημένα σας πρόσωπα. Η Nostalgia Candles σας προσφέρει απαράμιλλη ποιότητα, εκλεπτυσμένα αρώματα και εντυπωσιακές συσκευασίες δώρου που μαγνητίζουν.</p>
+      </section>
 
       <section class="collection-section" data-i18n-aria="collection_aria">
         <div id="collection-categories" class="collection-panel collection-panel--categories">
@@ -156,7 +157,7 @@
             <article class="collection-card collection-card--category">
               <div class="collection-card__visual" aria-hidden="true">
                 <img
-                  src="product%20photo/art%20class%20murano%20candle/product%20photo%20home%20page%20.png"
+                  src="collections-hero/collection-photo/Art%20Class%20Murano%20Candle-photo.png"
                   alt=""
                   loading="lazy"
                   decoding="async"
@@ -172,7 +173,7 @@
             <article class="collection-card collection-card--category">
               <div class="collection-card__visual" aria-hidden="true">
                 <img
-                  src="product%20photo/driftwood%20beeswax%20flame/product%20photo%20home%20page%20.png"
+                  src="collections-hero/collection-photo/Driftwood%20Beeswax%20Flame-photo.png"
                   alt=""
                   loading="lazy"
                   decoding="async"
@@ -188,7 +189,7 @@
             <article class="collection-card collection-card--category">
               <div class="collection-card__visual" aria-hidden="true">
                 <img
-                  src="product%20photo/liquid%20eternal/product%203.png"
+                  src="collections-hero/collection-photo/Liquid%20Eternal-photo.png"
                   alt=""
                   loading="lazy"
                   decoding="async"
@@ -204,7 +205,7 @@
             <article class="collection-card collection-card--category">
               <div class="collection-card__visual" aria-hidden="true">
                 <img
-                  src="product%20photo/unique%20art%20vessel/product%204.png"
+                  src="collections-hero/collection-photo/Unique%20Art%20Objects-photo.png"
                   alt=""
                   loading="lazy"
                   decoding="async"
@@ -220,7 +221,7 @@
             <article class="collection-card collection-card--category">
               <div class="collection-card__visual" aria-hidden="true">
                 <img
-                  src="product%20photo/Ni%20Terra/product%20photo.png"
+                  src="collections-hero/collection-photo/NI%20Terra-photo.png"
                   alt=""
                   loading="lazy"
                   decoding="async"
@@ -236,7 +237,23 @@
             <article class="collection-card collection-card--category">
               <div class="collection-card__visual" aria-hidden="true">
                 <img
-                  src="home%20page%20photo/home%20collection.png"
+                  src="collections-hero/collection-photo/Nostalgia%20Exclusive%20Mirror%20Candles-photo.png"
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+              <div class="collection-card__copy">
+                <h2 class="collection-card__title" data-i18n="collection_cat9">Nostalgia Exclusive Mirror Candles</h2>
+                <div class="collection-card__footer">
+                  <button type="button" class="btn-ghost btn-ghost--select collection-card__open" data-category="cat9" data-i18n="collection_select">Επιλογή</button>
+                </div>
+              </div>
+            </article>
+            <article class="collection-card collection-card--category">
+              <div class="collection-card__visual" aria-hidden="true">
+                <img
+                  src="collections-hero/collection-photo/Perfume-photo.png"
                   alt=""
                   loading="lazy"
                   decoding="async"
@@ -253,7 +270,7 @@
             <article class="collection-card collection-card--category">
               <div class="collection-card__visual" aria-hidden="true">
                 <img
-                  src="home%20page%20photo/home%20collection.png"
+                  src="collections-hero/collection-photo/Diffusers-photo.png"
                   alt=""
                   loading="lazy"
                   decoding="async"
@@ -270,7 +287,7 @@
             <article class="collection-card collection-card--category">
               <div class="collection-card__visual" aria-hidden="true">
                 <img
-                  src="home%20page%20photo/home%20collection.png"
+                  src="collections-hero/collection-photo/Gift%20Sets-photo.png"
                   alt=""
                   loading="lazy"
                   decoding="async"
@@ -292,13 +309,20 @@
               <span class="collection-stories__rule" aria-hidden="true"></span>
             </header>
 
-            <article class="collection-story" id="story-cat1" data-cat="cat1">
+            <article class="collection-story collection-story--feature" id="story-cat1" data-cat="cat1">
               <div class="collection-story__head">
                 <span class="collection-story__eyebrow home-reveal home-reveal--d1" data-i18n="collection_cat1">Art Class Murano Candle</span>
                 <h3 class="collection-story__title home-reveal home-reveal--d2" data-i18n="collection_cat1_story_title">Murano Art Glass Collection</h3>
                 <span class="collection-story__title-rule home-reveal home-reveal--d3" aria-hidden="true"></span>
               </div>
-              <div class="collection-story__body">
+              <div class="collection-story__split">
+                <figure class="collection-story__media home-reveal home-reveal--d1">
+                  <picture>
+                    <source type="image/webp" srcset="product%20photo/art%20class%20murano%20candle/murano-aspro/photo1-480w.webp 480w, product%20photo/art%20class%20murano%20candle/murano-aspro/photo1-960w.webp 960w, product%20photo/art%20class%20murano%20candle/murano-aspro/photo1-1440w.webp 1440w" sizes="(max-width: 860px) 100vw, 40vw" />
+                    <img src="product%20photo/art%20class%20murano%20candle/murano-aspro/photo1.png" alt="Art Class Murano Candle" width="1000" height="1250" loading="lazy" decoding="async" />
+                  </picture>
+                </figure>
+                <div class="collection-story__body collection-story__body--feature">
                 <p class="collection-story__p home-reveal" data-i18n="collection_cat1_story_p1">Η συλλογή Murano Art Glass — Limited Edition είναι ένας φόρος τιμής στην αιώνια τέχνη του φυσητού γυαλιού. Κάθε κερί φιλοξενείται σε ένα μοναδικό γυάλινο δοχείο, εμπνευσμένο από τις ρευστές γραμμές, τα πλούσια χρώματα και τις οργανικές ατέλειες που χαρακτηρίζουν τα αυθεντικά έργα τέχνης από γυαλί.</p>
                 <p class="collection-story__p home-reveal" data-i18n="collection_cat1_story_p2">Το φως της φλόγας διαχέεται μέσα από το γυαλί δημιουργώντας μαγευτικές αντανακλάσεις, μετατρέποντας κάθε χώρο σε μια εμπειρία ζεστασιάς και κομψότητας. Κατασκευασμένα στη Θεσσαλονίκη με προσοχή στη λεπτομέρεια και γεμισμένα με ποιοτικό κερί, τα κεριά της συλλογής συνδυάζουν τη διακοσμητική αξία ενός έργου τέχνης με την ατμόσφαιρα ενός πολυτελούς αρώματος.</p>
                 <p class="collection-story__p collection-story__p--emphasis home-reveal" data-i18n="collection_cat1_story_p3">Κάθε κομμάτι είναι ξεχωριστό, όπως ακριβώς και η ιστορία που αφηγείται το φως του.</p>
@@ -306,30 +330,46 @@
                   <p class="collection-story__motto-line collection-story__motto-line--whisper" data-i18n="collection_cat1_story_motto">Nostalgia Murano Art Glass — όταν η τέχνη του γυαλιού συναντά την τέχνη της ατμόσφαιρας.</p>
                 </div>
               </div>
+              </div>
             </article>
 
-            <article class="collection-story" id="story-cat2" data-cat="cat2">
+            <article class="collection-story collection-story--feature" id="story-cat2" data-cat="cat2">
               <div class="collection-story__head">
                 <span class="collection-story__eyebrow home-reveal home-reveal--d1" data-i18n="collection_cat2">Driftwood Beeswax Flame</span>
                 <h3 class="collection-story__title home-reveal home-reveal--d2" data-i18n="collection_cat2_story_title">Η Μνήμη του Ποταμού Χαράζει Φως</h3>
                 <span class="collection-story__title-rule home-reveal home-reveal--d3" aria-hidden="true"></span>
               </div>
-              <div class="collection-story__body">
+              <div class="collection-story__split collection-story__split--reverse">
+                <figure class="collection-story__media home-reveal home-reveal--d1">
+                  <picture>
+                    <source type="image/webp" srcset="product%20photo/driftwood%20beeswax%20flame/product%201-480w.webp 480w, product%20photo/driftwood%20beeswax%20flame/product%201-960w.webp 960w, product%20photo/driftwood%20beeswax%20flame/product%201-1440w.webp 1440w" sizes="(max-width: 860px) 100vw, 40vw" />
+                    <img src="product%20photo/driftwood%20beeswax%20flame/product%201.png" alt="Driftwood Beeswax Flame" width="1000" height="1250" loading="lazy" decoding="async" />
+                  </picture>
+                </figure>
+                <div class="collection-story__body collection-story__body--feature">
                 <p class="collection-story__p home-reveal" data-i18n="collection_cat2_story_p1">Εκεί όπου η θρυλική Νέδα ενώνεται με την αλμύρα του Ιονίου, ο χρόνος αφήνει τα αποτυπώματά του πάνω στο ξύλο. Μορφές αρχέγονες αναδύονται από το driftwood, σαν να τις σμίλεψαν νεράιδες, ξωτικά, πνεύματα του κρύου νερού και ξεχασμένοι μαρμαρωμένοι βασιλιάδες.</p>
                 <p class="collection-story__p collection-story__p--emphasis home-reveal" data-i18n="collection_cat2_story_p2">Εγώ απλώς τις ανακαλύπτω, τις τιμώ και τις φωτίζω.</p>
                 <p class="collection-story__p home-reveal" data-i18n="collection_cat2_story_p3">Κάθε ξύλο είναι μοναδικό. Κάθε φλόγα ξυπνά μια ιστορία που περίμενε χρόνια να ειπωθεί, να αναγεννηθεί και να αποκτήσει ξανά νοσταλγική, πύρινη ζωή.</p>
                 <p class="collection-story__p home-reveal" data-i18n="collection_cat2_story_p4">Ένας συλλεκτικός συνδυασμός από φυσικά ξύλα που ταξίδεψαν από τις εκβολές της θρυλικής Νέδας, απολιθωμένα κοχύλια από τα ιερά νερά του Ιονίου και της Ελαίας, και ακατέργαστο μελισσοκέρι.</p>
                 <p class="collection-story__p collection-story__p--emphasis home-reveal" data-i18n="collection_cat2_story_p5">Δεν δημιουργώ απλώς κεριά. Ανασύρω μνήμες που η φύση φύλαξε για αιώνες και τους χαρίζω ξανά φως.</p>
               </div>
+              </div>
             </article>
 
-            <article class="collection-story" id="story-cat3" data-cat="cat3">
+            <article class="collection-story collection-story--feature" id="story-cat3" data-cat="cat3">
               <div class="collection-story__head">
                 <span class="collection-story__eyebrow home-reveal home-reveal--d1" data-i18n="collection_cat3">Liquid Eternal</span>
                 <h3 class="collection-story__title home-reveal home-reveal--d2" data-i18n="collection_cat3_story_title">LIQUID UNSPOKEN WORD</h3>
                 <span class="collection-story__title-rule home-reveal home-reveal--d3" aria-hidden="true"></span>
               </div>
-              <div class="collection-story__body">
+              <div class="collection-story__split">
+                <figure class="collection-story__media home-reveal home-reveal--d1">
+                  <picture>
+                    <source type="image/webp" srcset="product%20photo/liquid%20eternal/product%201-480w.webp 480w, product%20photo/liquid%20eternal/product%201-960w.webp 960w, product%20photo/liquid%20eternal/product%201-1440w.webp 1440w" sizes="(max-width: 860px) 100vw, 40vw" />
+                    <img src="product%20photo/liquid%20eternal/product%201.png" alt="Liquid Eternal" width="1000" height="1250" loading="lazy" decoding="async" />
+                  </picture>
+                </figure>
+                <div class="collection-story__body collection-story__body--feature">
                 <p class="collection-story__p collection-story__p--emphasis home-reveal" data-i18n="collection_cat3_story_p1">Υπάρχουν λέξεις που δεν ειπώθηκαν ποτέ.</p>
                 <p class="collection-story__p home-reveal" data-i18n="collection_cat3_story_p2">Σκέψεις που έμειναν κρυμμένες, εξομολογήσεις που καθυστέρησαν, αλήθειες που η καρδιά φύλαξε σιωπηλά μέσα της.</p>
                 <p class="collection-story__p home-reveal" data-i18n="collection_cat3_story_p3">Η σειρά Nostalgia Liquid Unspoken Word γεννήθηκε ακριβώς τούτες τις στιγμές.</p>
@@ -359,27 +399,44 @@
                   <p class="collection-story__motto-line collection-story__motto-line--shout" data-i18n="collection_cat3_story_motto2">ΝΟΣΤΑΛΓΕΙΣ ΟΣΑ ΔΕΝ ΠΡΟΛΑΒΕΣ ΝΑ ΠΕΙΣ</p>
                 </div>
               </div>
+              </div>
             </article>
 
-            <article class="collection-story" id="story-cat4" data-cat="cat4">
+            <article class="collection-story collection-story--feature" id="story-cat4" data-cat="cat4">
               <div class="collection-story__head">
                 <span class="collection-story__eyebrow home-reveal home-reveal--d1" data-i18n="collection_cat4">Unique Art Objects</span>
                 <h3 class="collection-story__title home-reveal home-reveal--d2" data-i18n="collection_cat4_story_title">Ανάμεσα στο Χθες και το Σήμερα</h3>
                 <span class="collection-story__title-rule home-reveal home-reveal--d3" aria-hidden="true"></span>
               </div>
-              <div class="collection-story__body">
+              <div class="collection-story__split collection-story__split--reverse">
+                <figure class="collection-story__media home-reveal home-reveal--d1">
+                  <picture>
+                    <source type="image/webp" srcset="product%20photo/unique%20art%20vessel/product%201-480w.webp 480w, product%20photo/unique%20art%20vessel/product%201-960w.webp 960w, product%20photo/unique%20art%20vessel/product%201-1440w.webp 1440w" sizes="(max-width: 860px) 100vw, 40vw" />
+                    <img src="product%20photo/unique%20art%20vessel/product%201.png" alt="Unique Art Objects" width="1000" height="1250" loading="lazy" decoding="async" />
+                  </picture>
+                </figure>
+                <div class="collection-story__body collection-story__body--feature">
                 <p class="collection-story__p home-reveal" data-i18n="collection_cat4_story_p1">Σπάνια αντικείμενα τέχνης, προερχόμενα από αρχοντικά σπίτια και οικογένειες με βαθιές ρίζες στην ελληνική παράδοση — δημιουργίες εμπνευσμένες από τις εποχές του Art Deco, του Baroque και του Rococo — συλλέγονται και αναβιώνουν τη διαχρονική αξία του χθες μέσα στο σήμερα.</p>
                 <p class="collection-story__p home-reveal" data-i18n="collection_cat4_story_p2">Μέσα από τη σύγχρονη ψυχή της Nostalgia The Collection, αποκτούν ξανά υπόσταση και φως. Ντύνονται με αρώματα εμπνευσμένα από άλλες εποχές και τυλίγονται με αναμνήσεις, μεταμορφώνοντας κάθε δημιουργία σε μια πολύτιμη νοσταλγική λάμψη που γεφυρώνει το χάσμα του παρελθόντος με το παρόν.</p>
               </div>
+              </div>
             </article>
-            <article class="collection-story" id="story-cat5" data-cat="cat5">
+            <article class="collection-story collection-story--feature" id="story-cat5" data-cat="cat5">
               <div class="collection-story__head">
                 <span class="collection-story__eyebrow home-reveal home-reveal--d1" data-i18n="collection_cat5">NI Terra</span>
                 <h3 class="collection-story__title home-reveal home-reveal--d2" data-i18n="collection_cat5_story_title">NI TERRA · ANCIENT NOSTALGIA</h3>
                 <span class="collection-story__title-rule home-reveal home-reveal--d3" aria-hidden="true"></span>
               </div>
-              <div class="collection-story__body">
-                <p class="collection-story__p home-reveal" data-i18n="collection_cat5_story_p1">Απόσπασμα από μια μνήμη παλαιότερη του χρόνου.</p>
+              <div class="collection-story__split">
+                <figure class="collection-story__media home-reveal home-reveal--d1">
+                  <picture>
+                    <source type="image/webp" srcset="product%20photo/Ni%20Terra/product%202-480w.webp 480w, product%20photo/Ni%20Terra/product%202-960w.webp 960w, product%20photo/Ni%20Terra/product%202-1440w.webp 1440w" sizes="(max-width: 860px) 100vw, 40vw" />
+                    <img src="product%20photo/Ni%20Terra/product%202.png" alt="NI Terra · Ancient Nostalgia" width="1000" height="1250" loading="lazy" decoding="async" />
+                  </picture>
+                </figure>
+                <div class="collection-story__body collection-story__body--feature">
+                  <p class="collection-story__poem home-reveal home-reveal--d2" data-i18n="collection_cat5_story_p1">Απόσπασμα από μια μνήμη παλαιότερη του χρόνου.</p>
+                </div>
               </div>
             </article>
           </section>
@@ -400,12 +457,12 @@
               />
             </div>
             <div class="collection-catalog__hero-overlay" aria-hidden="true"></div>
-          </figure>
-          <div class="collection-catalog__inner">
-            <header class="collection-catalog__head">
+            <div class="collection-catalog__hero-content" id="collection-catalog-hero-content">
               <h2 id="collection-products-title" class="collection-catalog__title"></h2>
               <p class="collection-catalog__lead" data-i18n="collection_catalog_lead">Χειροποίητα κεριά τέχνης — μια εμπειρία φωτός και μνήμης.</p>
-            </header>
+            </div>
+          </figure>
+          <div class="collection-catalog__inner">
             <div class="collection-catalog__bar">
               <button type="button" id="collection-back" class="collection-catalog__back" data-i18n="collection_back">Πίσω στις κατηγορίες</button>
               <div class="collection-catalog__controls">
@@ -424,6 +481,29 @@
               <p class="collection-catalog__count" id="collection-products-count" aria-live="polite"></p>
             </div>
             <div id="collection-products-grid" class="collection-catalog__grid" role="list"></div>
+
+            <ul class="collection-assurance" aria-label="Nostalgia promise">
+              <li class="collection-assurance__item">
+                <span class="collection-assurance__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.35-7-9.5A3.5 3.5 0 0 1 12 7a3.5 3.5 0 0 1 7 3.5C19 15.65 12 20 12 20z"/></svg></span>
+                <span class="collection-assurance__title" data-i18n="collection_assurance_handmade_title">Χειροποίητα</span>
+                <span class="collection-assurance__text" data-i18n="collection_assurance_handmade_text">Δημιουργημένα στο χέρι</span>
+              </li>
+              <li class="collection-assurance__item">
+                <span class="collection-assurance__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l3 5-9 13L3 8z"/><path d="M3 8h18M9 3l3 5 3-5M12 8v13"/></svg></span>
+                <span class="collection-assurance__title" data-i18n="collection_assurance_limited_title">Περιορισμένες δημιουργίες</span>
+                <span class="collection-assurance__text" data-i18n="collection_assurance_limited_text">Μοναδικά κομμάτια</span>
+              </li>
+              <li class="collection-assurance__item">
+                <span class="collection-assurance__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M3 12h18M12 8v13M12 8c-1.5-3-6-2.5-6-.3 0 1.5 3 .3 6 .3zm0 0c1.5-3 6-2.5 6-.3 0 1.5-3 .3-6 .3z"/></svg></span>
+                <span class="collection-assurance__title" data-i18n="collection_assurance_luxury_title">Πολυτελής εμπειρία</span>
+                <span class="collection-assurance__text" data-i18n="collection_assurance_luxury_text">Συσκευασία δώρου</span>
+              </li>
+              <li class="collection-assurance__item">
+                <span class="collection-assurance__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v5c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
+                <span class="collection-assurance__title" data-i18n="collection_assurance_secure_title">Ασφαλείς συναλλαγές</span>
+                <span class="collection-assurance__text" data-i18n="collection_assurance_secure_text">Ασφαλείς πληρωμές</span>
+              </li>
+            </ul>
           </div>
         </div>
       </section>
@@ -431,7 +511,7 @@
 
     <footer class="site-footer">
       <div class="site-footer__main">
-        <a class="site-footer__logo" href="index.html" data-i18n-aria="logo_aria">
+        <a class="site-footer__logo" href="/" data-i18n-aria="logo_aria">
           <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="180" height="52" alt="Nostalgia Collection" />
           <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="180" height="52" alt="Nostalgia Collection" />
         </a>
@@ -471,7 +551,7 @@
       </div>
       <div class="site-footer__bar">
         <nav class="site-footer__legal" data-i18n-aria="footer_legal_aria">
-          <a href="privacy.html" data-i18n="footer_privacy">Προστασία Δεδομένων</a>
+          <a href="/privacy" data-i18n="footer_privacy">Προστασία Δεδομένων</a>
         </nav>
         <p class="site-footer__copyright" data-i18n="footer_copyright">© 2026 Nostalgia. Με επιφύλαξη παντός δικαιώματος.</p>
         <p class="site-footer__hosting">
@@ -484,18 +564,20 @@
       <span aria-hidden="true">↑</span>
     </button>
   </div>
+  <script defer src="js/api.js?v=1"></script>
   <script defer src="js/europe-countries.js"></script>
   <script defer src="js/images.js?v=4"></script>
-    <script defer src="js/i18n-bundles/shared.js?v=1"></script>
-  <script defer src="js/i18n-bundles/catalog.js?v=1"></script>
+    <script defer src="js/i18n-bundles/shared.js?v=cat9"></script>
+  <script defer src="js/i18n-bundles/catalog.js?v=cat9"></script>
   <script defer src="js/i18n-core.js?v=1"></script>
   <script defer src="js/cookies.js"></script>
-  <script defer src="js/products.js"></script>
+  <script src="js/tracking.js?v=1" defer></script>
+  <script defer src="js/products.js?v=cat9"></script>
   <script defer src="js/breadcrumbs.js?v=4"></script>
   <script defer src="js/site-polish.js?v=6"></script>
-  <script defer src="js/side-nav.js"></script>
+  <script defer src="js/side-nav.js?v=cat9"></script>
   <script defer src="js/cart.js"></script>
-  <script defer src="js/collection.js?v=webp"></script>
+  <script defer src="js/collection.js?v=cat9"></script>
   <script defer src="js/account.js"></script>
   <script defer src="js/theme.js"></script>
   <script defer src="js/nav-mega.js"></script>

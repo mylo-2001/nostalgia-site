@@ -1,0 +1,297 @@
+/*
+ * Nostalgia — editorial inner-page heroes (collection catalog pattern)
+ */
+
+/* Breadcrumb now sits BELOW the hero (title lives on the image), so give the
+   bar that follows the hero a little breathing room before the page content. */
+.editorial-hero + .site-breadcrumb,
+.gift-hero + .site-breadcrumb {
+  padding-bottom: clamp(0.6rem, 1.5vw, 1rem);
+}
+
+body:has(.editorial-hero) {
+  --ed-bg: #070707;
+  --ed-fg: rgba(245, 240, 232, 0.92);
+  --ed-fg-soft: rgba(245, 240, 232, 0.55);
+  --ed-fg-mid: rgba(245, 240, 232, 0.62);
+  --ed-fg-strong: rgba(245, 240, 232, 0.88);
+  --ed-fg-full: rgba(245, 240, 232, 0.95);
+  --ed-fg-title: rgba(245, 240, 232, 0.96);
+  --ed-border-panel: rgba(255, 255, 255, 0.09);
+  --ed-panel-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012));
+  --ed-hero-bg: #121212;
+}
+
+[data-theme="light"] body:has(.editorial-hero) {
+  --ed-bg: var(--collection-cream-paper, #f7f3eb);
+  --ed-fg: var(--collection-cream-ink, #241c14);
+  --ed-fg-soft: color-mix(in srgb, var(--collection-cream-ink, #241c14) 52%, transparent);
+  --ed-fg-mid: color-mix(in srgb, var(--collection-cream-ink, #241c14) 68%, transparent);
+  --ed-fg-strong: color-mix(in srgb, var(--collection-cream-ink, #241c14) 88%, transparent);
+  --ed-fg-full: var(--collection-cream-ink, #241c14);
+  --ed-fg-title: var(--collection-cream-ink, #241c14);
+  --ed-border-panel: rgba(36, 28, 20, 0.14);
+  --ed-panel-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.65), rgba(247, 243, 235, 0.35));
+  --ed-hero-bg: #e8e2d8;
+}
+
+body:has(.editorial-hero) .page-wrap,
+body:has(.editorial-hero) main {
+  background: var(--ed-bg);
+  color: var(--ed-fg);
+}
+
+.editorial-hero {
+  position: relative;
+  width: 100%;
+}
+
+.editorial-hero__figure {
+  position: relative;
+  width: 100%;
+  height: min(88vh, 900px);
+  margin: 0;
+  overflow: hidden;
+  background: var(--ed-hero-bg);
+}
+
+.editorial-hero__zoom {
+  width: 100%;
+  height: 100%;
+  transform: scale(1.02);
+  will-change: transform;
+}
+
+.editorial-hero__zoom.is-animating {
+  animation: editorialHeroKenBurns 16s cubic-bezier(0.45, 0.05, 0.55, 0.95) forwards;
+}
+
+.editorial-hero__figure picture,
+.editorial-hero__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.editorial-hero__img {
+  object-fit: cover;
+  object-position: center center;
+}
+
+.editorial-hero__overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* Title sits bottom-left — darken the bottom and left edge for legibility
+     while leaving the centre of the photograph (and any logo) clear. */
+  background:
+    linear-gradient(
+      to top,
+      rgba(6, 6, 6, 0.62) 0%,
+      rgba(6, 6, 6, 0.18) 42%,
+      rgba(6, 6, 6, 0) 72%
+    ),
+    linear-gradient(
+      to right,
+      rgba(6, 6, 6, 0.34) 0%,
+      rgba(6, 6, 6, 0) 52%
+    );
+}
+
+[data-theme="light"] .editorial-hero__overlay {
+  background:
+    linear-gradient(
+      to top,
+      rgba(6, 6, 6, 0.56) 0%,
+      rgba(6, 6, 6, 0.16) 42%,
+      rgba(6, 6, 6, 0) 72%
+    ),
+    linear-gradient(
+      to right,
+      rgba(6, 6, 6, 0.3) 0%,
+      rgba(6, 6, 6, 0) 52%
+    );
+}
+
+@keyframes editorialHeroKenBurns {
+  0% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1.14);
+  }
+}
+
+/* Title + subtitle overlaid on the hero photo, centered, with a staged
+   letter reveal — no more separate bordered box below the image. */
+.editorial-hero__inner {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  text-align: left;
+  gap: clamp(0.65rem, 1.6vw, 1.05rem);
+  max-width: none;
+  margin: 0;
+  padding: clamp(2rem, 6vw, 4.5rem) clamp(1.5rem, 6vw, 5.5rem);
+}
+
+.editorial-hero__inner > .site-breadcrumb {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(245, 236, 220, 0.74);
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
+  animation: heroLeadReveal 0.9s ease 0.1s both;
+}
+
+.editorial-hero__inner > .site-breadcrumb a {
+  color: rgba(245, 236, 220, 0.74);
+}
+
+.editorial-hero__inner > .site-breadcrumb a:hover {
+  color: #ffffff;
+}
+
+.editorial-hero__inner > .site-breadcrumb .site-breadcrumb__current {
+  color: rgba(245, 236, 220, 0.95);
+}
+
+.editorial-hero__head {
+  max-width: 34rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.editorial-hero__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.7rem, 4.4vw, 3.1rem);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: #f6ecd8;
+  text-shadow: 0 2px 26px rgba(0, 0, 0, 0.55);
+  animation: heroTitleReveal 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.18s both;
+}
+
+.editorial-hero__lead {
+  margin: clamp(0.75rem, 1.6vw, 1rem) 0 0;
+  max-width: 34rem;
+  font-family: var(--font-body);
+  font-size: clamp(0.95rem, 1.5vw, 1.12rem);
+  font-style: italic;
+  line-height: 1.62;
+  color: rgba(244, 236, 222, 0.9);
+  text-shadow: 0 1px 16px rgba(0, 0, 0, 0.5);
+  white-space: pre-line;
+  animation: heroLeadReveal 1s ease 0.58s both;
+}
+
+/* Luxury letter reveal: the title fades up while its tracking opens out and a
+   soft blur clears — reads as the lettering settling onto the photograph. */
+@keyframes heroTitleReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(22px);
+    letter-spacing: 0.02em;
+    filter: blur(8px);
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    letter-spacing: 0.16em;
+    filter: blur(0);
+  }
+}
+
+@keyframes heroLeadReveal {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .editorial-hero__title,
+  .editorial-hero__lead,
+  .editorial-hero__inner > .site-breadcrumb {
+    animation: none;
+  }
+}
+
+main > .editorial-hero + .legal-page {
+  padding-top: clamp(0.5rem, 2vw, 1rem);
+}
+
+main > .editorial-hero + .reviews-page,
+main > .editorial-hero + .review-page {
+  padding-top: clamp(0.5rem, 2vw, 1.25rem);
+}
+
+main > .editorial-hero + .showcase,
+main > .editorial-hero + .wishlist-page {
+  padding-top: clamp(0.5rem, 2vw, 1rem);
+}
+
+main > .editorial-hero + .scent-finder-shell,
+main > .editorial-hero + #scent-finder-root {
+  padding: clamp(0.75rem, 2vw, 1.25rem) clamp(1.1rem, 4vw, 2.5rem) 0;
+}
+
+main > .editorial-hero + .about-section,
+main > .editorial-hero + .collection-section {
+  padding-top: 0;
+}
+
+@keyframes editorialHeroHeadIn {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 1rem, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+body:has(.editorial-hero) .legal-content,
+body:has(.editorial-hero) .legal-page h2,
+body:has(.editorial-hero) .legal-page h3 {
+  color: var(--ed-fg-mid);
+}
+
+body:has(.editorial-hero) .legal-page a {
+  color: var(--ed-fg-strong);
+}
+
+body:has(.editorial-hero) .legal-page a:hover {
+  color: var(--ed-fg-full);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .editorial-hero__head {
+    animation: none;
+  }
+
+  .editorial-hero__zoom.is-animating {
+    animation: none;
+  }
+}

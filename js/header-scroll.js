@@ -2,15 +2,27 @@
   var header = document.querySelector(".site-header");
   if (!header) return;
 
+  var intro = document.getElementById("site-intro");
+  var hero = document.querySelector(".hero-home");
   var lastY = window.scrollY || document.documentElement.scrollTop || 0;
   var minScroll = 56;
   var delta = 6;
 
+  function introHeight() {
+    return intro ? intro.offsetHeight || window.innerHeight || 0 : 0;
+  }
+
+  function heroHeight() {
+    return hero ? hero.offsetHeight || window.innerHeight || 0 : 0;
+  }
+
   function onScroll() {
     var y = window.scrollY || document.documentElement.scrollTop;
     var dy = y - lastY;
+    var keepVisibleUntil = introHeight() + (document.body.getAttribute("data-page") === "home" ? heroHeight() * 0.85 : 8);
 
-    if (y < 36) {
+    /* Don't auto-hide the header while the home intro/hero is still the active view. */
+    if (y < Math.max(36, keepVisibleUntil)) {
       header.classList.remove("site-header--scroll-hidden");
     } else if (dy > delta && y > minScroll) {
       header.classList.add("site-header--scroll-hidden");
@@ -22,4 +34,6 @@
   }
 
   window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll, { passive: true });
+  onScroll();
 })();

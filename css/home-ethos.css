@@ -1,0 +1,265 @@
+/*
+ * Nostalgia — home ethos (big-type statement, TrueKind-style)
+ * A bold editorial statement mixing heavy display caps with one italic-serif
+ * line, an eyebrow pill, an arrow link, and right-aligned value columns.
+ */
+
+.home-ethos {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-canvas);
+  padding: clamp(3.5rem, 9vw, 7rem) clamp(1.25rem, 5vw, 4rem);
+  border-top: 1px solid var(--rule-hairline);
+}
+
+[data-theme="dark"] .home-ethos {
+  background: var(--surface-paper);
+  border-top-color: rgba(197, 160, 96, 0.14);
+}
+
+.home-ethos__inner {
+  position: relative;
+  z-index: 1;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* Faint NI / Maria Gerostathi pattern background, softened per theme. */
+.home-ethos__bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  /* Slow parallax (data-parallax-speed) — over-scaled so the drift stays inside. */
+  --pllx-scale: 1.16;
+  will-change: transform;
+}
+
+.home-ethos__bg img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.home-ethos__bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(247, 243, 235, 0.62);
+}
+
+[data-theme="dark"] .home-ethos__bg::after {
+  background: rgba(12, 10, 8, 0.86);
+}
+
+/* Eyebrow pill */
+.home-ethos__eyebrow {
+  display: inline-block;
+  margin: 0 0 clamp(1.5rem, 4vw, 2.5rem);
+  padding: 0.55rem 1.5rem;
+  border: 1px solid var(--accent-muted, rgba(197, 160, 96, 0.5));
+  border-radius: 100px;
+  font-family: var(--font-nav, var(--font-display));
+  font-size: clamp(0.6rem, 0.85vw, 0.7rem);
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* Big statement */
+.home-ethos__statement {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: clamp(2.3rem, 8.5vw, 7rem);
+  line-height: 0.98;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+}
+
+[data-theme="dark"] .home-ethos__statement {
+  color: rgba(244, 236, 222, 0.97);
+}
+
+.home-ethos__line {
+  display: block;
+}
+
+.home-ethos__line--serif {
+  font-family: var(--font-hero);
+  font-style: italic;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--accent);
+}
+
+/* Arrow link */
+.home-ethos__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: clamp(2rem, 5vw, 3.5rem);
+}
+
+.home-ethos__link-arrow {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: clamp(48px, 6vw, 66px);
+  height: clamp(48px, 6vw, 66px);
+  border-radius: 50%;
+  border: 1px solid var(--accent-muted, rgba(197, 160, 96, 0.5));
+  color: var(--accent);
+  font-size: 1.15rem;
+  transition: background var(--transition), color var(--transition), transform 0.35s ease;
+}
+
+.home-ethos__link:hover .home-ethos__link-arrow,
+.home-ethos__link:focus-visible .home-ethos__link-arrow {
+  background: var(--accent);
+  color: #faf7f2;
+  transform: rotate(45deg);
+}
+
+.home-ethos__link-text {
+  font-family: var(--font-display);
+  font-size: clamp(0.7rem, 1vw, 0.82rem);
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink);
+  border-bottom: 1px solid var(--accent-muted, rgba(197, 160, 96, 0.5));
+  padding-bottom: 0.2rem;
+  transition: color var(--transition), border-color var(--transition);
+}
+
+.home-ethos__link:hover .home-ethos__link-text,
+.home-ethos__link:focus-visible .home-ethos__link-text {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Value columns (right-aligned, editorial) */
+.home-ethos__values {
+  margin: clamp(3rem, 8vw, 5.5rem) 0 0 auto;
+  max-width: 58rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(1.75rem, 4vw, 3.5rem);
+}
+
+.home-ethos__value-title {
+  margin: 0 0 0.6rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.02rem, 1.5vw, 1.28rem);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+}
+
+.home-ethos__value-text {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: clamp(0.9rem, 1.2vw, 1rem);
+  line-height: 1.65;
+  color: var(--ink-muted);
+}
+
+/* ——— Craft features (Η τέχνη πίσω από κάθε φλόγα — moved from home-pinned) ——— */
+.home-ethos__craft {
+  list-style: none;
+  margin: clamp(2.75rem, 6vw, 4.5rem) 0 0;
+  padding: clamp(1.9rem, 4vw, 2.9rem) clamp(1.6rem, 3.5vw, 2.6rem);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(1.5rem, 3vw, 2.75rem);
+  background: color-mix(in srgb, var(--surface-paper) 92%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 24px 60px -34px rgba(0, 0, 0, 0.4);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+
+/* thin gold dividers between the four features on wide screens */
+@media (min-width: 861px) {
+  .home-ethos__craft-item + .home-ethos__craft-item {
+    padding-left: clamp(1.25rem, 2.5vw, 2.25rem);
+    border-left: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  }
+}
+
+.home-ethos__craft-item {
+  position: relative;
+}
+
+.home-ethos__craft-icon {
+  display: block;
+  width: 26px;
+  height: 26px;
+  margin-bottom: 0.9rem;
+  color: var(--accent);
+}
+
+.home-ethos__craft-icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.home-ethos__craft-num {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  color: var(--accent);
+}
+
+.home-ethos__craft-item-title {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 1.4vw, 1.2rem);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+}
+
+.home-ethos__craft-text {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: clamp(0.86rem, 1.1vw, 0.96rem);
+  line-height: 1.62;
+  color: var(--ink-muted);
+}
+
+@media (max-width: 860px) {
+  .home-ethos__craft {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2rem 1.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-ethos__craft {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .home-ethos__values {
+    grid-template-columns: 1fr;
+    margin-right: 0;
+  }
+}
+
+@media (max-width: 540px) {
+  .home-ethos__collection-links {
+    grid-template-columns: 1fr;
+  }
+}

@@ -7,21 +7,10 @@
   <title>Nostalgia Collection · Gift Experience</title>
   <link rel="stylesheet" href="css/fonts.css?v=1" />
   <link rel="stylesheet" href="css/base.css?v=locale-drawer" />
-  <link rel="stylesheet" href="css/side-nav.css?v=dark-theme" />
-  <link rel="stylesheet" href="css/experience.css?v=1" />
+  <link rel="stylesheet" href="css/side-nav.css?v=menu-visual3" />
+  <link rel="stylesheet" href="css/experience.css?v=gift-v1" />
   <link rel="stylesheet" href="css/shop.css?v=cart-drawer" />
-  <script>
-    (function () {
-      try {
-        var t = localStorage.getItem("nostalgia-theme");
-        if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
-      } catch (e) {}
-      try {
-        var l = localStorage.getItem("nostalgia-lang");
-        if (l === "en" || l === "el") document.documentElement.lang = l;
-      } catch (e) {}
-    })();
-  </script>
+  <script src="js/theme-boot.js"></script>
 </head>
 <body data-page="gift">
   <div class="page-wrap gift-page">
@@ -29,21 +18,21 @@
       <nav class="site-header__bar" data-i18n-aria="nav_aria">
         <div class="mobile-nav-panel" id="mobile-nav-panel">
           <div class="site-nav site-nav--left">
-            <a href="index.html" data-i18n="nav_home">Αρχική</a>
-            <a href="collection.html" data-i18n="nav_collection">Συλλογή</a>
+            <a href="/" data-i18n="nav_home">Αρχική</a>
+            <a href="/collection" data-i18n="nav_collection">Συλλογή</a>
           </div>
-          <a class="site-header__logo site-header__logo--pulse" href="index.html" data-i18n-aria="logo_aria">
+          <a class="site-header__logo site-header__logo--pulse" href="/" data-i18n-aria="logo_aria">
             <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
             <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
           </a>
           <div class="site-nav site-nav--right">
-            <a href="about.html" data-i18n="nav_about">Σχετικά</a>
-            <a href="contact.html" data-i18n="nav_contact">Επικοινωνία</a>
+            <a href="/about" data-i18n="nav_about">Σχετικά</a>
+            <a href="/contact" data-i18n="nav_contact">Επικοινωνία</a>
             <button type="button" class="lang-toggle" id="lang-toggle">English</button>
             <button type="button" class="theme-toggle" id="theme-toggle"></button>
           </div>
         </div>
-        <a class="site-header__logo site-header__logo--topbar" href="index.html" data-i18n-aria="logo_aria">
+        <a class="site-header__logo site-header__logo--topbar" href="/" data-i18n-aria="logo_aria">
           <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
           <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
         </a>
@@ -53,7 +42,10 @@
     <main>
       <section class="gift-hero site-reveal">
         <div class="gift-hero__media" aria-hidden="true">
-          <img src="product%20photo/Ni%20Terra/product%201.png" alt="" width="1400" height="700" loading="eager" decoding="async" />
+          <picture>
+            <source type="image/webp" srcset="collections-hero/%CE%95%CE%BC%CF%80%CE%B5%CE%B9%CF%81%CE%AF%CE%B1%20%CE%94%CF%8E%CF%81%CE%BF%CF%85-hero-photo-480w.webp 480w, collections-hero/%CE%95%CE%BC%CF%80%CE%B5%CE%B9%CF%81%CE%AF%CE%B1%20%CE%94%CF%8E%CF%81%CE%BF%CF%85-hero-photo-960w.webp 960w, collections-hero/%CE%95%CE%BC%CF%80%CE%B5%CE%B9%CF%81%CE%AF%CE%B1%20%CE%94%CF%8E%CF%81%CE%BF%CF%85-hero-photo-1440w.webp 1440w" sizes="100vw" />
+            <img src="collections-hero/%CE%95%CE%BC%CF%80%CE%B5%CE%B9%CF%81%CE%AF%CE%B1%20%CE%94%CF%8E%CF%81%CE%BF%CF%85-hero-photo.png" alt="" width="1400" height="700" loading="eager" decoding="async" />
+          </picture>
           <div class="gift-hero__overlay"></div>
         </div>
         <div class="gift-hero__inner">
@@ -63,39 +55,49 @@
       </section>
       <div class="gift-grid">
         <article class="gift-card site-reveal site-reveal--d1">
-          <div class="gift-card__icon" aria-hidden="true">✦</div>
+          <div class="gift-card__icon" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.35"><rect x="6" y="13.5" width="20" height="13.5" rx="1.2"/><path d="M16 13.5v13.5M6 17.5h20"/><path d="M11 13.5c-2.1 0-3.2-1.4-3.2-2.8s1.4-2 3-1c1.4 1.3 5.2 3.8 5.2 3.8s3.8-2.5 5.2-3.8c1.6-1 3 0 3 1s-1.1 2.8-3.2 2.8"/></svg>
+          </div>
           <h2 class="gift-card__title" data-i18n="gift_wrap_title">Gift wrapping</h2>
           <p class="gift-card__text" data-i18n="gift_wrap_text">Χειροποίητη συσκευασία με ριζόχαρτο, κορδέλα και κερί σφραγίδα.</p>
         </article>
         <article class="gift-card site-reveal site-reveal--d2">
-          <div class="gift-card__icon" aria-hidden="true">✉</div>
+          <div class="gift-card__icon" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.35"><rect x="5.5" y="9.5" width="21" height="15" rx="1.2"/><path d="M5.5 12.5l10.5 7 10.5-7"/></svg>
+          </div>
           <h2 class="gift-card__title" data-i18n="gift_message_title">Προσωπικό μήνυμα</h2>
           <p class="gift-card__text" data-i18n="gift_message_text">Χειρόγραφη κάρτα με το μήνυμά σας — διακριτικά, ποιητικά.</p>
         </article>
         <article class="gift-card site-reveal site-reveal--d3">
-          <div class="gift-card__icon" aria-hidden="true">▣</div>
+          <div class="gift-card__icon" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.35"><path d="M8 12.5l8-5 8 5v13H8V12.5z"/><path d="M8 12.5h16M16 7.5v18"/></svg>
+          </div>
           <h2 class="gift-card__title" data-i18n="gift_box_title">Επιλογή κουτιού</h2>
           <p class="gift-card__text" data-i18n="gift_box_text">Ξύλινο ή χαρτί αρχειοθέτησης — ανάλογα τη συλλογή.</p>
         </article>
         <article class="gift-card site-reveal site-reveal--d4">
-          <div class="gift-card__icon" aria-hidden="true">↗</div>
+          <div class="gift-card__icon" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.35"><rect x="6" y="11" width="14" height="12" rx="1.2"/><path d="M20 15h4.5a1.5 1.5 0 0 1 1.5 1.5V22a1.5 1.5 0 0 1-1.5 1.5H20"/><path d="M11 17h6M11 20.5h4"/><path d="M23.5 16.5l3 2.5-3 2.5"/></svg>
+          </div>
           <h2 class="gift-card__title" data-i18n="gift_ship_title">Αποστολή σε άλλο πρόσωπο</h2>
           <p class="gift-card__text" data-i18n="gift_ship_text">Στέλνουμε απευθείας στον παραλήπτη — χωρίς τιμή στο δέμα.</p>
         </article>
       </div>
       <div class="gift-cta site-reveal">
-        <a class="btn-shop btn-shop--primary" href="contact.html" data-i18n="gift_cta">Ζητήστε δώρο</a>
-        <a class="btn-shop btn-shop--ghost" href="collection.html#cat8" data-i18n="gift_cta_collection">Δείτε Gift Sets</a>
+        <a class="btn-shop btn-shop--primary" href="/contact" data-i18n="gift_cta">Δημιουργήστε το δώρο</a>
+        <a class="btn-shop btn-shop--ghost" href="/collection#cat8" data-i18n="gift_cta_collection">Δείτε τα σετ δώρου</a>
       </div>
     </main>
     <footer class="site-footer"></footer>
   </div>
+  <script defer src="js/api.js?v=1"></script>
   <script defer src="js/europe-countries.js"></script>
   <script defer src="js/images.js?v=4"></script>
   <script defer src="js/i18n-bundles/shared.js?v=2"></script>
-  <script defer src="js/i18n-bundles/content.js?v=2"></script>
+  <script defer src="js/i18n-bundles/content.js?v=7"></script>
   <script defer src="js/i18n-core.js?v=1"></script>
   <script defer src="js/cookies.js"></script>
+  <script src="js/tracking.js?v=1" defer></script>
   <script defer src="js/products.js?v=2"></script>
   <script defer src="js/side-nav.js?v=wide-menu"></script>
   <script defer src="js/cart.js"></script>

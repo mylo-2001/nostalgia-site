@@ -1,0 +1,27 @@
+User-agent: *
+Allow: /
+
+# Admin and API are not for indexing
+Disallow: /admin
+Disallow: /api/
+
+# AI crawlers — see also /llms.txt
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: /sitemap.xml

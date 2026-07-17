@@ -1,0 +1,224 @@
+/*
+ * Nostalgia — home craft band (parallax scrolling)
+ * Photo 1 is a full-bleed background that drifts slower than the page
+ * (data-parallax-speed) while the craft text scrolls OVER it.
+ */
+
+.home-pinned {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  padding: clamp(4.5rem, 13vh, 8.5rem) clamp(1.1rem, 4vw, 2.5rem);
+}
+
+/* Full-bleed background image — parallax layer. Extra top/bottom bleed (>= the
+   JS clamp of 80px) so the drift never exposes an edge. */
+.home-pinned__bg {
+  position: absolute;
+  top: -90px;
+  bottom: -90px;
+  left: 0;
+  right: 0;
+  z-index: -2;
+  margin: 0;
+  will-change: transform;
+}
+
+.home-pinned__bg img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Darkening scrim so the text stays legible over the photo. */
+.home-pinned__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(
+      180deg,
+      rgba(8, 6, 4, 0.62) 0%,
+      rgba(8, 6, 4, 0.44) 45%,
+      rgba(8, 6, 4, 0.66) 100%
+    ),
+    radial-gradient(ellipse 80% 60% at 50% 50%, transparent 30%, rgba(8, 6, 4, 0.35) 100%);
+}
+
+/* ——— Content scrolls over the image ——— */
+.home-pinned__content {
+  position: relative;
+  z-index: 1;
+  max-width: 1140px;
+  margin: 0 auto;
+  color: #f3e4c4;
+}
+
+.home-pinned__head {
+  margin: 0 0 clamp(1.5rem, 5vh, 3rem);
+}
+
+.home-pinned__eyebrow {
+  margin: 0 0 clamp(0.7rem, 1.5vw, 1rem);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(0.62rem, 0.9vw, 0.72rem);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #e2c48d;
+}
+
+.home-pinned__title {
+  margin: 0;
+  font-family: var(--font-hero);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(1.9rem, 4vw, 3rem);
+  line-height: 1.16;
+  color: #f6ecd6;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.5);
+}
+
+.home-pinned__steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Alternating zigzag — odd steps hug the left, even steps the right. */
+.home-pinned__step {
+  max-width: 460px;
+  padding: clamp(1.75rem, 6vh, 3rem) 0;
+}
+
+.home-pinned__step:nth-child(odd) {
+  margin-right: auto;
+  text-align: left;
+}
+
+.home-pinned__step:nth-child(even) {
+  margin-left: auto;
+  text-align: right;
+}
+
+.home-pinned__step-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(2.2rem, 3vw, 2.8rem);
+  height: clamp(2.2rem, 3vw, 2.8rem);
+  margin-bottom: clamp(0.75rem, 1.6vw, 1.05rem);
+  color: #e2c48d;
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.4));
+}
+
+.home-pinned__step-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.home-pinned__step.is-visible .home-pinned__step-icon {
+  animation: pinnedIconFloat 4.5s ease-in-out infinite;
+}
+
+@keyframes pinnedIconFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.home-pinned__step-num {
+  display: block;
+  margin-bottom: 0.7rem;
+  font-family: var(--font-display);
+  font-size: clamp(0.7rem, 1vw, 0.82rem);
+  letter-spacing: 0.18em;
+  color: #e2c48d;
+}
+
+.home-pinned__step-title {
+  margin: 0 0 0.7rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.2rem, 2.2vw, 1.6rem);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: #f6ecd6;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.45);
+}
+
+.home-pinned__step-text {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: clamp(0.95rem, 1.2vw, 1.05rem);
+  line-height: 1.7;
+  color: rgba(250, 247, 242, 0.88);
+  text-shadow: 0 1px 14px rgba(0, 0, 0, 0.5);
+}
+
+.home-pinned__cta {
+  display: inline-block;
+  margin-top: clamp(1.5rem, 4vh, 2.25rem);
+  font-family: var(--font-display);
+  font-size: clamp(0.6rem, 0.9vw, 0.7rem);
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #f3e4c4;
+  padding: 0.82rem 1.9rem;
+  border: 1px solid rgba(236, 214, 164, 0.55);
+  border-radius: 2px;
+  transition:
+    transform 0.22s ease,
+    background var(--transition),
+    border-color var(--transition),
+    color var(--transition);
+}
+
+.home-pinned__cta:hover {
+  transform: translateY(-2px);
+  background: rgba(236, 214, 164, 0.92);
+  border-color: rgba(236, 214, 164, 0.92);
+  color: #1c130a;
+}
+
+/* ——— Step reveal — opacity + focus only; transform is owned by the parallax
+   engine (data-parallax-speed) so both effects run together smoothly. ——— */
+.home-pinned__step.home-reveal {
+  opacity: 0;
+  filter: blur(10px);
+  transition:
+    opacity 1.15s var(--reveal-ease, cubic-bezier(0.22, 1, 0.36, 1)),
+    filter 1s var(--reveal-ease, cubic-bezier(0.22, 1, 0.36, 1));
+  will-change: opacity, filter;
+}
+
+.home-pinned__step.home-reveal.is-visible {
+  opacity: 1;
+  filter: blur(0);
+  will-change: auto;
+}
+
+/* ——— Stack on small screens (no zigzag, parallax off) ——— */
+@media (max-width: 760px) {
+  .home-pinned__step,
+  .home-pinned__step:nth-child(odd),
+  .home-pinned__step:nth-child(even) {
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-pinned__step.home-reveal,
+  .home-pinned__step.home-reveal.is-visible {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+  .home-pinned__step.is-visible .home-pinned__step-icon {
+    animation: none;
+  }
+}

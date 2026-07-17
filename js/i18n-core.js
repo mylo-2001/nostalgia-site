@@ -291,6 +291,105 @@ window.NostalgiaI18nRegister = function (bundle) {
     if (!localeCountrySelect || !localeLangSelect) return;
     localeCountrySelect.value = getCountry();
     localeLangSelect.value = getLang();
+    refreshLocaleCustomSelects();
+  }
+
+  function refreshLocaleCustomSelects() {
+    [localeCountrySelect, localeLangSelect].forEach(function (sel) {
+      if (sel && typeof sel._syncCustomLabel === "function") sel._syncCustomLabel();
+    });
+  }
+
+  // Replace the native <select> popup with a themed dropdown so hover/selected
+  // states follow the site palette instead of the OS blue highlight.
+  function enhanceLocaleSelect(select) {
+    if (!select || select.getAttribute("data-enhanced") === "1") return;
+    var wrap = select.closest(".locale-drawer__select-wrap");
+    if (!wrap) return;
+    select.setAttribute("data-enhanced", "1");
+    wrap.classList.add("locale-select", "is-enhanced");
+
+    var trigger = document.createElement("button");
+    trigger.type = "button";
+    trigger.className = "locale-select__trigger";
+    trigger.setAttribute("aria-haspopup", "listbox");
+    trigger.setAttribute("aria-expanded", "false");
+    var valueSpan = document.createElement("span");
+    valueSpan.className = "locale-select__value";
+    trigger.appendChild(valueSpan);
+
+    var list = document.createElement("ul");
+    list.className = "locale-select__list";
+    list.setAttribute("role", "listbox");
+    list.hidden = true;
+
+    wrap.appendChild(trigger);
+    wrap.appendChild(list);
+
+    function syncLabel() {
+      var opt = select.options[select.selectedIndex];
+      valueSpan.textContent = opt ? opt.textContent : "";
+    }
+
+    function buildList() {
+      list.innerHTML = "";
+      Array.prototype.forEach.call(select.options, function (opt, i) {
+        var li = document.createElement("li");
+        li.className = "locale-select__option";
+        li.setAttribute("role", "option");
+        var isSel = i === select.selectedIndex;
+        li.setAttribute("aria-selected", isSel ? "true" : "false");
+        if (isSel) li.classList.add("is-selected");
+        li.textContent = opt.textContent;
+        li.addEventListener("click", function () {
+          select.value = opt.value;
+          if (typeof Event === "function") {
+            select.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+          syncLabel();
+          close();
+          trigger.focus();
+        });
+        list.appendChild(li);
+      });
+    }
+
+    function open() {
+      buildList();
+      list.hidden = false;
+      wrap.classList.add("is-open");
+      trigger.setAttribute("aria-expanded", "true");
+      var sel = list.querySelector(".is-selected");
+      if (sel && sel.scrollIntoView) sel.scrollIntoView({ block: "nearest" });
+    }
+
+    function close() {
+      list.hidden = true;
+      wrap.classList.remove("is-open");
+      trigger.setAttribute("aria-expanded", "false");
+    }
+
+    trigger.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (wrap.classList.contains("is-open")) close();
+      else open();
+    });
+
+    trigger.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        if (!wrap.classList.contains("is-open")) open();
+      } else if (e.key === "Escape") {
+        close();
+      }
+    });
+
+    document.addEventListener("click", function (e) {
+      if (!wrap.contains(e.target)) close();
+    });
+
+    select._syncCustomLabel = syncLabel;
+    syncLabel();
   }
 
   function ensureLocaleDrawer() {
@@ -344,6 +443,8 @@ window.NostalgiaI18nRegister = function (bundle) {
     localeCountrySelect = document.getElementById("locale-drawer-country");
     localeLangSelect = document.getElementById("locale-drawer-lang");
     fillLocaleSelectOptions();
+    enhanceLocaleSelect(localeCountrySelect);
+    enhanceLocaleSelect(localeLangSelect);
     syncLocaleDrawerFields();
 
     localeDrawerEl.querySelectorAll("[data-locale-close]").forEach(function (el) {
@@ -432,7 +533,29 @@ window.NostalgiaI18nRegister = function (bundle) {
     window.NostalgiaObserveAboutStory();
   }
 
+  function shopBundleLoaded() {
+    return !!(STRINGS.el && STRINGS.el.cart_empty_title);
+  }
+
+  function ensureShopBundle() {
+    if (shopBundleLoaded()) return;
+    if (document.querySelector('script[data-i18n-shop="1"], script[src*="i18n-bundles/shop.js"]')) {
+      return;
+    }
+    var script = document.createElement("script");
+    script.src = "js/i18n-bundles/shop.js?v=3";
+    script.defer = true;
+    script.setAttribute("data-i18n-shop", "1");
+    script.onload = function () {
+      var lang = getLang();
+      applyLang(lang, { restartStory: false });
+      window.dispatchEvent(new CustomEvent("nostalgia-i18n-updated", { detail: { lang: lang } }));
+    };
+    document.head.appendChild(script);
+  }
+
   function init() {
+    ensureShopBundle();
     var stored = getStoredLang();
     applyLang(stored === "en" || stored === "el" ? stored : "el", {
       restartStory: false,

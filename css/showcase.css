@@ -1,0 +1,185 @@
+/*
+ * Nostalgia — showcase pages (New Arrivals + Sale)
+ *
+ * Reuses the collection product-card system (.collection-product,
+ * .collection-coming, .collection-catalog__grid) by re-declaring the same
+ * --cat-* design tokens used by the collection catalog, so the cards match
+ * the rest of the shop in both light and dark themes.
+ */
+
+body[data-page="showcase"] {
+  --cat-bg: #070707;
+  --cat-fg: rgba(245, 240, 232, 0.92);
+  --cat-fg-soft: rgba(245, 240, 232, 0.55);
+  --cat-fg-mid: rgba(245, 240, 232, 0.62);
+  --cat-fg-strong: rgba(245, 240, 232, 0.88);
+  --cat-fg-full: rgba(245, 240, 232, 0.95);
+  --cat-fg-title: rgba(245, 240, 232, 0.96);
+  --cat-fg-name: rgba(245, 240, 232, 0.9);
+  --cat-border: rgba(255, 255, 255, 0.08);
+  --cat-coming-border: rgba(255, 255, 255, 0.1);
+  --cat-coming-bg: rgba(255, 255, 255, 0.03);
+  background: var(--cat-bg);
+}
+
+[data-theme="light"] body[data-page="showcase"] {
+  --cat-bg: #faf7f2;
+  --cat-fg: #1a1612;
+  --cat-fg-soft: color-mix(in srgb, #1a1612 52%, transparent);
+  --cat-fg-mid: color-mix(in srgb, #1a1612 68%, transparent);
+  --cat-fg-strong: color-mix(in srgb, #1a1612 88%, transparent);
+  --cat-fg-full: #1a1612;
+  --cat-fg-title: #1a1612;
+  --cat-fg-name: color-mix(in srgb, #1a1612 92%, transparent);
+  --cat-border: rgba(36, 28, 20, 0.12);
+  --cat-coming-border: rgba(36, 28, 20, 0.12);
+  --cat-coming-bg: rgba(255, 255, 255, 0.45);
+}
+
+body[data-page="showcase"] .page-wrap {
+  background: var(--cat-bg);
+}
+
+body[data-page="showcase"] .site-footer {
+  border-top-color: var(--cat-border);
+}
+
+/* ---- intro heading (gold gradient, same treatment as the collection) ---- */
+.page-intro--showcase h1 {
+  font-family: var(--font-body);
+  font-size: clamp(1.85rem, 3.6vw, 2.6rem);
+  font-weight: 500;
+  font-style: italic;
+  letter-spacing: 0.022em;
+  line-height: 1.12;
+  margin: 0 0 0.85rem;
+  background: linear-gradient(
+    180deg,
+    var(--accent) 0%,
+    rgba(212, 175, 55, 0.92) 55%,
+    rgba(157, 120, 65, 0.86) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--accent);
+  text-shadow: 0 2px 22px rgba(197, 160, 96, 0.14);
+}
+
+[data-theme="dark"] .page-intro--showcase h1 {
+  background: linear-gradient(
+    180deg,
+    #e9c97e 0%,
+    var(--accent) 55%,
+    rgba(157, 120, 65, 0.8) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-shadow: 0 2px 26px rgba(197, 160, 96, 0.22);
+}
+
+.page-intro--showcase p {
+  color: var(--cat-fg-mid);
+}
+
+/* ---- layout ---- */
+.showcase {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 clamp(1rem, 4vw, 2rem) clamp(3rem, 6vw, 5rem);
+}
+
+.showcase__bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  margin: 0 0 clamp(1.25rem, 2.5vw, 1.75rem);
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--cat-border);
+}
+
+.showcase__count {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  color: var(--cat-fg-mid);
+}
+
+.showcase-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(0.85rem, 1.8vw, 1.35rem);
+}
+
+/* ---- product card visual: anchor the badge ---- */
+.showcase-product .collection-product__visual {
+  position: relative;
+}
+
+.showcase-badge {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+  z-index: 2;
+  padding: 0.32rem 0.6rem;
+  font-family: var(--font-nav);
+  font-size: 0.56rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1;
+  border-radius: 2px;
+  color: #fff;
+}
+
+.showcase-badge--new {
+  background: linear-gradient(135deg, #b8893f, var(--accent));
+  box-shadow: 0 4px 12px rgba(127, 92, 44, 0.3);
+}
+
+.showcase-badge--sale {
+  background: linear-gradient(135deg, #9c2f25, #7a1f17);
+  box-shadow: 0 4px 12px rgba(122, 31, 23, 0.32);
+}
+
+/* ---- price (with optional struck-through original) ---- */
+.showcase-price {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.showcase-price__was {
+  font-size: 0.85rem;
+  color: var(--cat-fg-soft);
+  text-decoration: line-through;
+}
+
+.showcase-price__now {
+  color: #c0392b;
+  font-weight: 600;
+}
+
+[data-theme="dark"] .showcase-price__now {
+  color: #e8736a;
+}
+
+@media (max-width: 1080px) {
+  .showcase-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .showcase-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .showcase-grid {
+    grid-template-columns: 1fr;
+  }
+}

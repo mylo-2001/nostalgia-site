@@ -2,26 +2,18 @@
 <html lang="el">
 <head>
   <meta charset="UTF-8" />
+  <!-- /account/register is a two-segment path; this base ref keeps all
+       relative assets (css, js, logo) resolving from root. -->
+  <base href="/" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" href="logo/logo.png" type="image/png" />
   <title>Nostalgia Collection · Ο λογαριασμός μου</title>
   <link rel="stylesheet" href="css/fonts.css?v=1" />
 <link rel="stylesheet" href="css/base.css?v=locale-drawer" />
-  <link rel="stylesheet" href="css/side-nav.css?v=dark-theme" />
+  <link rel="stylesheet" href="css/side-nav.css?v=menu-visual3" />
   <link rel="stylesheet" href="css/shop.css?v=cart-drawer" />
-  <link rel="stylesheet" href="css/account.css?v=dark-theme-glow" />
-  <script>
-    (function () {
-      try {
-        var t = localStorage.getItem("nostalgia-theme");
-        if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
-      } catch (e) {}
-      try {
-        var l = localStorage.getItem("nostalgia-lang");
-        if (l === "en" || l === "el") document.documentElement.lang = l;
-      } catch (e) {}
-    })();
-  </script>
+  <link rel="stylesheet" href="css/account.css?v=dashboard2" />
+  <script src="js/theme-boot.js"></script>
 </head>
 <body data-page="account">
   <div class="page-wrap">
@@ -29,21 +21,21 @@
       <nav class="site-header__bar" data-i18n-aria="nav_aria">
         <div class="mobile-nav-panel" id="mobile-nav-panel">
           <div class="site-nav site-nav--left">
-            <a href="index.html" data-i18n="nav_home">Αρχική</a>
-            <a href="collection.html" data-i18n="nav_collection">Συλλογή</a>
+            <a href="/" data-i18n="nav_home">Αρχική</a>
+            <a href="/collection" data-i18n="nav_collection">Συλλογή</a>
           </div>
-          <a class="site-header__logo site-header__logo--pulse" href="index.html" data-i18n-aria="logo_aria">
+          <a class="site-header__logo site-header__logo--pulse" href="/" data-i18n-aria="logo_aria">
             <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
             <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
           </a>
           <div class="site-nav site-nav--right">
-            <a href="about.html" data-i18n="nav_about">Σχετικά</a>
-            <a href="contact.html" data-i18n="nav_contact">Επικοινωνία</a>
+            <a href="/about" data-i18n="nav_about">Σχετικά</a>
+            <a href="/contact" data-i18n="nav_contact">Επικοινωνία</a>
             <button type="button" class="lang-toggle" id="lang-toggle" aria-live="polite">English</button>
             <button type="button" class="theme-toggle" id="theme-toggle" aria-live="polite"></button>
           </div>
         </div>
-        <a class="site-header__logo site-header__logo--topbar" href="index.html" data-i18n-aria="logo_aria">
+        <a class="site-header__logo site-header__logo--topbar" href="/" data-i18n-aria="logo_aria">
           <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
           <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
         </a>
@@ -62,17 +54,22 @@
     </main>
     <footer class="site-footer"></footer>
   </div>
+  <script defer src="js/api.js?v=1"></script>
+  <script defer src="js/captcha.js?v=2"></script>
   <script defer src="js/europe-countries.js"></script>
+  <script defer src="js/greek-prefectures.js"></script>
+  <script defer src="js/address-options.js"></script>
   <script defer src="js/images.js?v=4"></script>
-    <script defer src="js/i18n-bundles/shared.js?v=1"></script>
+    <script defer src="js/i18n-bundles/shared.js?v=4"></script>
   <script defer src="js/i18n-bundles/content.js?v=1"></script>
   <script defer src="js/i18n-bundles/shop.js?v=1"></script>
   <script defer src="js/i18n-core.js?v=1"></script>
   <script defer src="js/cookies.js"></script>
+  <script src="js/tracking.js?v=1" defer></script>
   <script defer src="js/products.js"></script>
-  <script defer src="js/side-nav.js?v=7"></script>
+  <script defer src="js/side-nav.js?v=8"></script>
   <script defer src="js/cart.js"></script>
-  <script defer src="js/account.js?v=8"></script>
+  <script defer src="js/account.js?v=dashboard2"></script>
   <script defer src="js/breadcrumbs.js?v=4"></script>
 
   <script defer src="js/theme.js"></script>

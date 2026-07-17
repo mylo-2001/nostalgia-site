@@ -138,8 +138,18 @@
       .filter(Boolean);
   }
 
+  function lineUnitPrice(product) {
+    if (window.NostalgiaProducts && typeof window.NostalgiaProducts.getEffectivePrice === "function") {
+      return window.NostalgiaProducts.getEffectivePrice(product);
+    }
+    return product ? product.price : null;
+  }
+
   function getSubtotal() {
-    return 0;
+    return getLineItems().reduce(function (sum, line) {
+      var price = lineUnitPrice(line.product);
+      return sum + (price != null ? Number(price) * line.qty : 0);
+    }, 0);
   }
 
   function escapeHtml(str) {
@@ -238,10 +248,10 @@
       "</ul>";
 
     drawerFootEl.innerHTML =
-      '<a class="btn-shop btn-shop--primary" href="checkout.html" data-i18n="cart_checkout">' +
+      '<a class="btn-shop btn-shop--primary" href="/checkout" data-i18n="cart_checkout">' +
       escapeHtml(t("cart_checkout")) +
       "</a>" +
-      '<a class="btn-shop btn-shop--ghost" href="cart.html" data-i18n="cart_view">' +
+      '<a class="btn-shop btn-shop--ghost" href="/cart" data-i18n="cart_view">' +
       escapeHtml(t("cart_view")) +
       "</a>";
 
@@ -285,6 +295,25 @@
 
     window.addEventListener("nostalgia-cart-updated", function () {
       if (drawerEl && drawerEl.classList.contains("is-open")) renderCartDrawer();
+    });
+
+    window.addEventListener("nostalgia-i18n-updated", function () {
+      if (!drawerEl) return;
+      var title = drawerEl.querySelector("#cart-drawer-title");
+      if (title) title.textContent = t("cart_heading");
+      var closeBtn = drawerEl.querySelector(".cart-drawer__close");
+      if (closeBtn) closeBtn.setAttribute("aria-label", t("toast_close_aria"));
+      if (drawerEl.classList.contains("is-open")) renderCartDrawer();
+      if (modalEl && !modalEl.hidden) {
+        var modalTitle = modalEl.querySelector("[data-i18n='cart_added_title']");
+        if (modalTitle) modalTitle.textContent = t("cart_added_title");
+        modalEl.querySelectorAll("[data-i18n]").forEach(function (el) {
+          var key = el.getAttribute("data-i18n");
+          if (key) el.textContent = t(key);
+        });
+        var modalClose = modalEl.querySelector(".cart-modal__close");
+        if (modalClose) modalClose.setAttribute("aria-label", t("toast_close_aria"));
+      }
     });
   }
 
@@ -335,7 +364,9 @@
     modalEl.innerHTML =
       '<div class="cart-modal__backdrop" data-cart-modal-close></div>' +
       '<div class="cart-modal__panel">' +
-      '  <button type="button" class="cart-modal__close" data-cart-modal-close aria-label="Close">' +
+      '  <button type="button" class="cart-modal__close" data-cart-modal-close aria-label="' +
+      escapeHtml(t("toast_close_aria")) +
+      '">' +
       '    <span aria-hidden="true">×</span>' +
       "  </button>" +
       '  <div class="cart-modal__icon" aria-hidden="true">' +
@@ -344,7 +375,7 @@
       '  <p class="cart-modal__title" data-i18n="cart_added_title">Το προϊόν προστέθηκε στο καλάθι σου</p>' +
       '  <div class="cart-modal__preview" id="cart-modal-preview"></div>' +
       '  <div class="cart-modal__actions">' +
-      '    <a class="btn-shop btn-shop--primary" href="cart.html" data-i18n="cart_view">Δες το καλάθι σου</a>' +
+      '    <a class="btn-shop btn-shop--primary" href="/cart" data-i18n="cart_view">Δες το καλάθι σου</a>' +
       '    <button type="button" class="btn-shop btn-shop--ghost" data-cart-modal-close data-i18n="cart_continue">Συνέχεια αγορών</button>' +
       "  </div>" +
       "</div>";
@@ -574,7 +605,7 @@
       product.title +
       "</p>" +
       "</div>" +
-      '<a class="cart-toast__link" href="cart.html" data-i18n="cart_view">' +
+      '<a class="cart-toast__link" href="/cart" data-i18n="cart_view">' +
       t("cart_view") +
       "</a>";
     toastEl.classList.remove("is-visible");

@@ -1,6 +1,12 @@
 (function () {
   var COUPON_STORAGE = "nostalgia-coupon";
 
+  function couponMetaKey() {
+    return window.NostalgiaOrderFees && window.NostalgiaOrderFees.COUPON_META_KEY
+      ? window.NostalgiaOrderFees.COUPON_META_KEY
+      : "nostalgia-coupon-meta";
+  }
+
   var rootEl;
   var emptyEl;
   var itemsEl;
@@ -90,10 +96,16 @@
     }
   }
 
-  function setStoredCoupon(code) {
+  function setStoredCoupon(code, meta) {
     try {
-      if (code) localStorage.setItem(COUPON_STORAGE, code);
-      else localStorage.removeItem(COUPON_STORAGE);
+      if (code) {
+        localStorage.setItem(COUPON_STORAGE, code);
+        if (meta) localStorage.setItem(couponMetaKey(), JSON.stringify(meta));
+        else localStorage.removeItem(couponMetaKey());
+      } else {
+        localStorage.removeItem(COUPON_STORAGE);
+        localStorage.removeItem(couponMetaKey());
+      }
     } catch (e) {}
     window.dispatchEvent(new CustomEvent("nostalgia-coupon-updated"));
   }
@@ -125,14 +137,33 @@
 
     couponForm.addEventListener("submit", function (e) {
       e.preventDefault();
-      var code = couponInput ? couponInput.value.trim() : "";
+      var code = couponInput ? couponInput.value.trim().toUpperCase() : "";
       if (!code) {
         showCouponFeedback(t("cart_coupon_empty"), true);
         return;
       }
-      setStoredCoupon(code.toUpperCase());
-      syncCouponUi();
-      render();
+      var apply = function (meta) {
+        setStoredCoupon(code, meta);
+        syncCouponUi();
+        render();
+      };
+      /* Validate against the backend when it is running. */
+      if (window.NostalgiaAPI && window.NostalgiaAPI.isAvailable()) {
+        showCouponFeedback(t("cart_coupon_checking") || "…", false);
+        window.NostalgiaAPI.post("/api/coupons/validate", { code: code })
+          .then(function (res) {
+            if (res.ok && res.valid) {
+              apply(res.coupon || null);
+            } else {
+              showCouponFeedback(t("cart_coupon_invalid") || "Μη έγκυρο κουπόνι.", true);
+            }
+          })
+          .catch(function () {
+            apply(null);
+          });
+        return;
+      }
+      apply(null);
     });
 
     if (couponRemoveBtn) {
@@ -166,6 +197,14 @@
         "</div>"
       : "";
 
+    var subtotal = window.NostalgiaCart ? window.NostalgiaCart.getSubtotal() : 0;
+    var lang = document.documentElement.lang === "en" ? "en" : "el";
+    var shippingAmount = t("cart_shipping_note");
+    if (window.NostalgiaOrderFees) {
+      var shipFee = window.NostalgiaOrderFees.extraFees("stripe", subtotal).shipping;
+      shippingAmount = window.NostalgiaOrderFees.formatFee(shipFee, lang);
+    }
+
     summaryEl.innerHTML =
       '<h2 class="cart-sidebar__heading" id="cart-summary-heading" data-i18n="cart_order_summary">' +
       escapeHtml(t("cart_order_summary")) +
@@ -183,8 +222,8 @@
       '<dt data-i18n="cart_estimate_shipping">' +
       escapeHtml(t("cart_estimate_shipping")) +
       "</dt>" +
-      '<dd data-i18n="cart_shipping_note">' +
-      escapeHtml(t("cart_shipping_note")) +
+      '<dd>' +
+      escapeHtml(shippingAmount) +
       "</dd>" +
       "</div>" +
       couponRow +
@@ -192,10 +231,10 @@
       '<p class="cart-summary__note" data-i18n="cart_summary_note">' +
       escapeHtml(t("cart_summary_note")) +
       "</p>" +
-      '<a class="btn-shop btn-shop--primary cart-summary__checkout" href="checkout.html" data-i18n="cart_proceed_checkout">' +
+      '<a class="btn-shop btn-shop--primary cart-summary__checkout" href="/checkout" data-i18n="cart_proceed_checkout">' +
       escapeHtml(t("cart_proceed_checkout")) +
       "</a>" +
-      '<a class="btn-shop btn-shop--ghost cart-summary__continue" href="collection.html" data-i18n="cart_continue_shopping">' +
+      '<a class="btn-shop btn-shop--ghost cart-summary__continue" href="/collection" data-i18n="cart_continue_shopping">' +
       escapeHtml(t("cart_continue_shopping")) +
       "</a>";
   }

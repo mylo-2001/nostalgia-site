@@ -1,5 +1,5 @@
 (function () {
-  var CAT_IDS = ["cat1", "cat2", "cat3", "cat4", "cat5", "cat6", "cat7", "cat8"];
+  var CAT_IDS = ["cat1", "cat2", "cat3", "cat4", "cat5", "cat6", "cat7", "cat8", "cat9"];
   var customTrail = null;
   var navEl = null;
 
@@ -16,21 +16,28 @@
     privacy: ["privacy_title"],
     terms: ["footer_terms"],
     journal: ["footer_journal"],
+    reviews: ["reviews_page_title"],
+    review: ["reviews_page_title", "reviews_single_hero"],
+    "scent-finder": ["scent_finder_title"],
+    gift: ["nav_gift"],
+    seasonal: ["seasonal_title"],
   };
 
   var LINK_KEYS = {
-    nav_collection: "collection.html",
-    nav_about: "about.html",
-    nav_contact: "contact.html",
-    cart_heading: "cart.html",
-    footer_faq: "faq.html",
-    payments_heading: "payments.html",
-    shipping_heading: "shipping-returns.html",
-    privacy_title: "privacy.html",
-    footer_terms: "terms.html",
-    footer_journal: "journal.html",
-    wishlist_heading: "wishlist.html",
-    account_my_account: "account.html",
+    nav_collection: "/collection",
+    nav_about: "/about",
+    nav_contact: "/contact",
+    cart_heading: "/cart",
+    footer_faq: "/faq",
+    payments_heading: "/payments",
+    shipping_heading: "/shipping-returns",
+    privacy_title: "/privacy",
+    footer_terms: "/terms",
+    footer_journal: "/journal",
+    wishlist_heading: "/wishlist",
+    account_my_account: "/account",
+    reviews_page_title: "/reviews",
+    scent_finder_title: "/scent-finder",
   };
 
   function t(key) {
@@ -44,13 +51,13 @@
     if (LINK_KEYS[key]) return LINK_KEYS[key];
     if (key.indexOf("collection_") === 0 && key !== "collection_heading") {
       var cat = key.replace("collection_", "");
-      if (CAT_IDS.indexOf(cat) !== -1) return "collection.html#" + cat;
+      if (CAT_IDS.indexOf(cat) !== -1) return "/collection#" + cat;
     }
     return null;
   }
 
   function buildFromKeys(keys) {
-    var items = [{ labelKey: "nav_home", href: "index.html" }];
+    var items = [{ labelKey: "nav_home", href: "/" }];
     keys.forEach(function (key, index) {
       var isLast = index === keys.length - 1;
       items.push({
@@ -80,14 +87,14 @@
     }
 
     var items = [
-      { labelKey: "nav_home", href: "index.html" },
-      { labelKey: "nav_collection", href: "collection.html" },
+      { labelKey: "nav_home", href: "/" },
+      { labelKey: "nav_collection", href: "/collection" },
     ];
 
     if (product && product.catId) {
       items.push({
         labelKey: "collection_" + product.catId,
-        href: "collection.html#" + product.catId,
+        href: "/collection#" + product.catId,
       });
       items.push({ text: product.title || id, href: null });
     } else {
@@ -102,6 +109,14 @@
     if (!page || page === "home") return null;
     if (page === "collection") return getCollectionTrail();
     if (page === "product") return getProductTrailFromPage();
+    if (page === "showcase") {
+      /* sale and new-arrivals share data-page="showcase" — tell them apart by path. */
+      return buildFromKeys(
+        (location.pathname || "").indexOf("sale") !== -1
+          ? ["nav_sale"]
+          : ["nav_new_arrivals"]
+      );
+    }
     var keys = PAGE_TRAILS[page];
     if (!keys) return null;
     return buildFromKeys(keys);
@@ -153,51 +168,93 @@
     });
   }
 
-  function getBreadcrumbMount() {
+  /* First full-width hero block directly under <main> (any *-hero section). */
+  function findPageHero(main) {
+    if (!main) return null;
+
+    var known = main.querySelector(":scope > .editorial-hero, :scope > .gift-hero");
+    if (known) return known;
+
+    var child = main.firstElementChild;
+    while (child) {
+      if (child.id === "site-breadcrumb") {
+        child = child.nextElementSibling;
+        continue;
+      }
+      if (child.tagName === "SECTION") {
+        var cls = child.className || "";
+        if (/(^|\s)([a-z0-9-]*hero[a-z0-9-]*)(\s|$)/i.test(cls)) return child;
+      }
+      child = child.nextElementSibling;
+    }
+
+    return null;
+  }
+
+  function placementAfterHero(main) {
+    var hero = findPageHero(main);
+    if (!hero || !hero.parentNode) return null;
+    return { parent: hero.parentNode, before: hero.nextSibling };
+  }
+
+  /* Returns { parent, before, catalog } describing exactly where the breadcrumb
+     nav should live. The title now sits ON the hero image, so the breadcrumb is
+     placed BELOW the hero (as a sibling in <main>), never on the overlay. */
+  function getBreadcrumbPlacement() {
     var main = document.querySelector("main");
     if (!main) return null;
     var page = document.body && document.body.getAttribute("data-page");
 
     if (page === "account") {
       var panel = main.querySelector(".account-page__panel");
-      if (panel) return panel;
+      if (panel) return { parent: panel, before: panel.firstChild };
     }
 
     if (page === "product") {
       var productRoot = document.getElementById("product-page-root");
-      if (productRoot) return productRoot;
+      if (productRoot) return { parent: productRoot, before: productRoot.firstChild };
     }
 
-    if (page === "collection") {
-      if (document.body.classList.contains("collection-products-open")) {
-        var catalogInner = document.querySelector(".collection-catalog__inner");
-        if (catalogInner) return catalogInner;
-      }
-      var section = main.querySelector(".collection-section");
-      if (section) return section;
+    if (page === "collection" && document.body.classList.contains("collection-products-open")) {
+      var catalogInner = document.querySelector(".collection-catalog__inner");
+      if (catalogInner) return { parent: catalogInner, before: catalogInner.firstChild, catalog: true };
     }
 
     if (page === "contact") {
       var contactSection = main.querySelector(".contact-section");
-      if (contactSection) return contactSection;
+      if (contactSection) return { parent: contactSection, before: contactSection.firstChild };
+    }
+
+    var afterHero = placementAfterHero(main);
+    if (afterHero) return afterHero;
+
+    if (page === "collection") {
+      var section = main.querySelector(".collection-section");
+      if (section) return { parent: section, before: section.firstChild };
     }
 
     var legalPage = main.querySelector(".legal-page");
-    if (legalPage) return legalPage;
+    if (legalPage) return { parent: legalPage, before: legalPage.firstChild };
 
-    return main;
+    return { parent: main, before: main.firstChild };
+  }
+
+  function getBreadcrumbMount() {
+    var placement = getBreadcrumbPlacement();
+    return placement ? placement.parent : null;
   }
 
   function syncBreadcrumbPlacement() {
     if (!navEl) return;
-    var mount = getBreadcrumbMount();
-    if (!mount) return;
+    var placement = getBreadcrumbPlacement();
+    if (!placement || !placement.parent) return;
 
-    var inCatalog = mount.classList && mount.classList.contains("collection-catalog__inner");
-    navEl.classList.toggle("site-breadcrumb--catalog", inCatalog);
+    navEl.classList.toggle("site-breadcrumb--catalog", !!placement.catalog);
 
-    if (navEl.parentNode !== mount) {
-      mount.insertBefore(navEl, mount.firstChild);
+    /* Already sitting exactly where it should. */
+    if (placement.before === navEl) return;
+    if (navEl.parentNode !== placement.parent || navEl.nextSibling !== placement.before) {
+      placement.parent.insertBefore(navEl, placement.before || null);
     }
   }
 

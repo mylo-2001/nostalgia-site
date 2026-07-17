@@ -70,7 +70,9 @@
       { sel: ".contact-split", cls: ["site-reveal"] },
       { sel: ".contact-card", cls: ["site-reveal"] },
       { sel: ".contact-form-card", cls: ["site-reveal"] },
-      { sel: ".collection-section .page-intro", cls: ["site-reveal"] },
+      { sel: ".site-promise", cls: ["site-reveal"] },
+      { sel: ".site-follow", cls: ["site-reveal"] },
+      { sel: "main > .editorial-hero", cls: ["site-reveal"] },
       { sel: ".collection-category", cls: ["site-reveal"] },
       { sel: ".collection-catalog__head", cls: ["site-reveal"] },
       { sel: ".journal-card", cls: ["site-reveal"] },
@@ -331,9 +333,13 @@
 
     var qv = ensureQuickView();
     var url = window.NostalgiaProducts.getProductUrl(product.id);
+    var titleText =
+      document.documentElement.lang === "en" && product.titleEn && String(product.titleEn).trim()
+        ? product.titleEn
+        : product.title;
     qv.querySelector(".quick-view__media img").src = product.image;
-    qv.querySelector(".quick-view__media img").alt = product.title;
-    qv.querySelector(".quick-view__title").textContent = product.title;
+    qv.querySelector(".quick-view__media img").alt = titleText;
+    qv.querySelector(".quick-view__title").textContent = titleText;
 
     var actions = qv.querySelector(".quick-view__actions");
     actions.innerHTML =

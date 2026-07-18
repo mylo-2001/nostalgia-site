@@ -3243,6 +3243,203 @@
   transform: scale(1.03);
 }
 
+/* Two large editorial category cards below the carousel (Diffusers / Perfume) */
+.home-duo {
+  margin-top: clamp(1.6rem, 3.6vw, 3rem);
+}
+
+.home-duo__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(1rem, 2.8vw, 2.2rem);
+}
+
+.home-duo__card {
+  display: flex;
+  flex-direction: column;
+}
+
+.home-duo__media-link {
+  display: block;
+  text-decoration: none;
+}
+
+.home-duo__media {
+  margin: 0;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: rgba(36, 28, 20, 0.05);
+}
+
+.home-duo__media img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  /* start softly zoomed + slightly dimmed, settle when the card reveals */
+  transform: scale(1.14);
+  opacity: 0.6;
+  transition:
+    transform 1.7s var(--reveal-ease),
+    opacity 1.2s var(--reveal-ease);
+}
+
+.home-duo__card.is-visible .home-duo__media img {
+  transform: scale(1.02);
+  opacity: 1;
+}
+
+.home-duo__card:hover .home-duo__media img {
+  transform: scale(1.06);
+}
+
+.home-duo__body {
+  text-align: center;
+  padding: clamp(1.1rem, 2.4vw, 1.9rem) 1rem 0;
+}
+
+.home-duo__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.05rem, 2vw, 1.55rem);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+[data-theme="dark"] .home-duo__title {
+  color: rgba(240, 232, 218, 0.92);
+}
+
+.home-duo__desc {
+  margin: 0.7rem auto 0;
+  max-width: 36ch;
+  font-size: clamp(0.72rem, 1vw, 0.83rem);
+  line-height: 1.6;
+  color: var(--accent);
+}
+
+[data-theme="dark"] .home-duo__desc {
+  color: rgba(197, 160, 96, 0.85);
+}
+
+.home-duo__cta {
+  display: inline-block;
+  margin-top: clamp(1rem, 1.9vw, 1.45rem);
+  padding: 0.72rem 1.95rem;
+  border: 1px solid rgba(36, 28, 20, 0.4);
+  font-family: var(--font-nav, var(--font-display));
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+  transition:
+    background 0.25s ease,
+    color 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.home-duo__cta:hover,
+.home-duo__cta:focus-visible {
+  background: var(--ink);
+  color: var(--surface-paper);
+  border-color: var(--ink);
+  outline: none;
+}
+
+[data-theme="dark"] .home-duo__cta {
+  color: rgba(240, 232, 218, 0.9);
+  border-color: rgba(197, 160, 96, 0.4);
+}
+
+[data-theme="dark"] .home-duo__cta:hover,
+[data-theme="dark"] .home-duo__cta:focus-visible {
+  background: var(--accent);
+  color: #0a0908;
+  border-color: var(--accent);
+}
+
+/* Cleaner, slower entrance for the big cards (drop the generic blur) */
+.home-duo__card.home-reveal {
+  opacity: 0;
+  transform: translate3d(0, 3rem, 0) scale(0.985);
+  filter: none;
+  transition:
+    opacity 1.15s var(--reveal-ease),
+    transform 1.3s var(--reveal-ease);
+}
+
+.home-duo__card.home-reveal.is-visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+}
+
+/* second card eases in a touch later for a gentle stagger */
+.home-duo__card.home-reveal--d1 {
+  transition-delay: 0.14s;
+}
+
+/* Orchestrate the copy: title → description → button, after the card settles */
+.home-duo__title,
+.home-duo__desc,
+.home-duo__cta {
+  opacity: 0;
+  transform: translateY(1.25rem);
+  transition:
+    opacity 0.9s var(--reveal-ease),
+    transform 0.95s var(--reveal-ease);
+}
+
+.home-duo__card.is-visible .home-duo__title {
+  opacity: 1;
+  transform: none;
+  transition-delay: 0.34s;
+}
+
+.home-duo__card.is-visible .home-duo__desc {
+  opacity: 1;
+  transform: none;
+  transition-delay: 0.46s;
+}
+
+.home-duo__card.is-visible .home-duo__cta {
+  opacity: 1;
+  transform: none;
+  transition-delay: 0.58s;
+}
+
+.home-duo__card.home-reveal--d1.is-visible .home-duo__title {
+  transition-delay: 0.46s;
+}
+.home-duo__card.home-reveal--d1.is-visible .home-duo__desc {
+  transition-delay: 0.58s;
+}
+.home-duo__card.home-reveal--d1.is-visible .home-duo__cta {
+  transition-delay: 0.7s;
+}
+
+@media (max-width: 640px) {
+  .home-duo__grid {
+    grid-template-columns: 1fr;
+    gap: 1.8rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-duo__card.home-reveal,
+  .home-duo__media img,
+  .home-duo__title,
+  .home-duo__desc,
+  .home-duo__cta {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+}
+
 .home-collections__cat:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;

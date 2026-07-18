@@ -26,6 +26,7 @@
   var MURANO_DIR = "product%20photo/art%20class%20murano%20candle/";
   var GIFT_DIR = "product%20photo/Gift%20Sets/";
   var MIRROR_DIR = "product%20photo/Nostalgia%20Exclusive%20Mirror%20Candles/";
+  var LIQUID_DIR = "product%20photo/liquid%20eternal/";
   /* Each colour is its OWN product; they are linked as a variant group so the
      product page shows swatches that navigate between the colour-products. */
   var MIRROR_REGULAR = [
@@ -88,11 +89,13 @@
       driftwoodImg("product%2013.png"),
     ],
     cat3: [
-      liquidImg(1), liquidImg(2), liquidImg(3), liquidImg(4),
-      liquidImg(5), liquidImg(6), liquidImg(7), liquidImg(8),
-      liquidImg(9), liquidImg(10), liquidImg(11), liquidImg(12),
-      liquidImg(13), liquidImg(14), liquidImg(15), liquidImg(16),
-      liquidImg(17),
+      gallery(LIQUID_DIR + "liquid-1"),
+      gallery(LIQUID_DIR + "liquid-2"),
+      gallery(LIQUID_DIR + "liquid-3"),
+      gallery(LIQUID_DIR + "liquid-4"),
+      gallery(LIQUID_DIR + "liquid-5"),
+      gallery(LIQUID_DIR + "liquid-6"),
+      gallery(LIQUID_DIR + "liquid-7"),
     ],
     cat4: [
       vesselImg(1), vesselImg(2), vesselImg(3), vesselImg(4),

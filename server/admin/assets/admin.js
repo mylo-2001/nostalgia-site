@@ -430,7 +430,7 @@
     cat1: "Art Class Murano Candle",
     cat2: "Driftwood Beeswax Flame",
     cat3: "Liquid Eternal",
-    cat4: "Unique Art Objects",
+    cat4: "Vintage Unique Objects",
     cat5: "NI Terra",
     cat6: "Perfume",
     cat7: "Diffusers",

@@ -2514,7 +2514,7 @@ app.use(
 
 app.use((req, res) => {
   if (req.path.startsWith("/api/")) return bad(res, 404, "not_found");
-  res.status(404).sendFile(path.join(ROOT, "index.html"));
+  res.status(404).sendFile(path.join(ROOT, "404.html"));
 });
 
 /* error handler — keep JSON shape for API consumers */

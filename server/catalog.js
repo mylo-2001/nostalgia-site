@@ -9,8 +9,8 @@
 const CATEGORIES = {
   cat1: { name: "Art Class Murano Candle", count: 12 },
   cat2: { name: "Driftwood Beeswax Flame", count: 13 },
-  cat3: { name: "Liquid Eternal", count: 17 },
-  cat4: { name: "Unique Art Objects", count: 8 },
+  cat3: { name: "Liquid Eternal", count: 7 },
+  cat4: { name: "Vintage Unique Objects", count: 8 },
   cat5: { name: "NI Terra", count: 4 },
   cat6: { name: "Perfume", count: 0 },
   cat7: { name: "Diffusers", count: 0 },
@@ -87,7 +87,9 @@ const CAT_IMAGES = {
     "product%2012.png",
     "product%2013.png",
   ].map(driftwoodImg),
-  cat3: Array.from({ length: 17 }, (_, i) => liquidImg(i + 1)),
+  cat3: Array.from({ length: 7 }, (_, i) =>
+    folderMain("product%20photo/liquid%20eternal/liquid-" + (i + 1))
+  ),
   cat4: Array.from({ length: 8 }, (_, i) => vesselImg(i + 1)),
   cat5: Array.from({ length: 4 }, (_, i) => terraImg(i + 1)),
   cat6: [],

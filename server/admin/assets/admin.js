@@ -458,6 +458,47 @@
       .join("");
   }
 
+  /* Colour families — must match COLOR_FAMILIES in js/products.js so the storefront
+     colour filter and product page resolve the chosen colour correctly. */
+  var COLOR_FAMILY_OPTIONS = [
+    { id: "white", label: "Λευκό" },
+    { id: "cream", label: "Εκρού" },
+    { id: "beige", label: "Μπεζ" },
+    { id: "taupe", label: "Ταμπά" },
+    { id: "brown", label: "Καφέ" },
+    { id: "copper", label: "Χάλκινο" },
+    { id: "bronze", label: "Μπρούτζινο" },
+    { id: "gold", label: "Χρυσό" },
+    { id: "rosegold", label: "Ροζ Χρυσό" },
+    { id: "silver", label: "Ασημί" },
+    { id: "yellow", label: "Κίτρινο" },
+    { id: "orange", label: "Πορτοκαλί" },
+    { id: "coral", label: "Κοραλί" },
+    { id: "red", label: "Κόκκινο" },
+    { id: "bordeaux", label: "Μπορντό" },
+    { id: "pink", label: "Ροζ" },
+    { id: "fuchsia", label: "Φούξια" },
+    { id: "purple", label: "Μωβ" },
+    { id: "lilac", label: "Λιλά" },
+    { id: "navy", label: "Navy Μπλε" },
+    { id: "blue", label: "Μπλε" },
+    { id: "lightblue", label: "Γαλάζιο" },
+    { id: "turquoise", label: "Τιρκουάζ" },
+    { id: "petrol", label: "Πετρόλ" },
+    { id: "green", label: "Πράσινο" },
+    { id: "black", label: "Μαύρο" },
+    { id: "multi", label: "Πολύχρωμο" },
+    { id: "transparent", label: "Διάφανο" },
+  ];
+
+  function colorFamilyOptionsHtml(selected) {
+    var opts = '<option value="">— Χωρίς / αυτόματο —</option>';
+    COLOR_FAMILY_OPTIONS.forEach(function (o) {
+      opts += '<option value="' + o.id + '"' + (o.id === selected ? " selected" : "") + ">" + o.label + "</option>";
+    });
+    return opts;
+  }
+
   function detailsFormValues(d) {
     d = d || {};
     var specsToText = function (specs) {
@@ -468,6 +509,7 @@
       variantColor: d.variantColor || "",
       variantColorEn: d.variantColorEn || "",
       variantColorHex: d.variantColorHex || "",
+      colorFamily: d.colorFamily || "",
       badges: (d.badges || []).join(", "),
       badgesEn: (d.badgesEn || []).join(", "),
       features: (d.features || []).join("\n"),
@@ -515,6 +557,7 @@
       '<div class="prod-variant-box">' +
       '<p class="prod-variant-box__title">Χρώμα / Παραλλαγή</p>' +
       '<p class="prod-variant-box__hint">Ίδιο προϊόν σε άλλο χρώμα; Βάλε το <strong>ίδιο όνομα ομάδας</strong> σε όλα τα χρώματα και θα συνδεθούν αυτόματα στη σελίδα προϊόντος (καθένα με δική του τιμή).</p>' +
+      '<label class="field field--full"><span>Χρώμα προϊόντος (για το φίλτρο χρώματος & τη σελίδα προϊόντος)</span><select data-d="colorFamily">' + colorFamilyOptionsHtml(v.colorFamily) + "</select></label>" +
       '<div class="prod-variant-box__grid">' +
       '<label class="field"><span>Ομάδα χρώματος</span><input type="text" data-d="variantGroup" value="' + esc(v.variantGroup) + '" placeholder="π.χ. mirror-classic" /></label>' +
       '<label class="field"><span>Χρώμα (ετικέτα)</span><input type="text" data-d="variantColor" data-lang="el" value="' + esc(v.variantColor) + '" placeholder="Ασημί" /><input type="text" data-d="variantColorEn" data-lang="en" value="' + esc(v.variantColorEn) + '" placeholder="Silver" /></label>' +
@@ -549,6 +592,7 @@
       variantColor: val("variantColor"),
       variantColorEn: val("variantColorEn"),
       variantColorHex: val("variantColorHex"),
+      colorFamily: val("colorFamily"),
       badges: val("badges"),
       badgesEn: val("badgesEn"),
       features: val("features"),
@@ -1637,6 +1681,7 @@
         variantColor: fv("details_variantColor"),
         variantColorEn: fv("details_variantColorEn"),
         variantColorHex: fv("details_variantColorHex"),
+        colorFamily: fv("details_colorFamily"),
         badges: fv("details_badges"),
         badgesEn: fv("details_badgesEn"),
         features: fv("details_features"),

@@ -55,7 +55,7 @@
       bs_out_of_stock: "Εξαντλήθηκε",
       bs_low_stock: "Τελευταία {n}",
       bs_price_ask: "Κατόπιν ζήτησης",
-      bs_badge: "Best seller",
+      bs_badge: "Ευπώλητο",
       bs_notes_floral: "Λευκά άνθη · Τριαντάφυλλο · Γιασεμί",
       bs_notes_woody: "Κέδρος · Sandalwood · Πατσουλί",
       bs_notes_warm: "Κεχριμπάρι · Βανίλια · Μπαχαρικά",

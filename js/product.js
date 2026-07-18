@@ -202,6 +202,8 @@
     merged.layout = layout;
     merged.catId = product.catId;
 
+    merged.colorFamily = sv(saved, "colorFamily") || "";
+
     return merged;
   }
 
@@ -541,10 +543,51 @@
       tags: buildBadgesHtml(details.badges, details),
       shortDesc: shortDesc,
       features: buildFeaturesHtml(details),
-      variants: buildVariantsHtml(product),
+      variants: buildVariantsHtml(product) || buildColorLine(product, details),
       accordions: buildAccordions(details),
       layoutClass: "product-info--" + details.layout,
     };
+  }
+
+  /* Resolve a single colour for products that don't have colour variants:
+     the admin-chosen colour family wins, else a single detected colour. */
+  function resolveSingleColor(product, details) {
+    var famId = (details && details.colorFamily) || "";
+    var P = window.NostalgiaProducts;
+    if (!famId && P && typeof P.getColorFamilies === "function") {
+      var fams = P.getColorFamilies(product);
+      if (fams.length === 1) famId = fams[0];
+    }
+    if (!famId) return null;
+    var label = t("color_" + famId);
+    if (label === "color_" + famId) return null;
+    var meta = P && typeof P.getColorMeta === "function" ? P.getColorMeta(famId) : null;
+    return { id: famId, label: label, hex: meta ? meta.hex : "" };
+  }
+
+  function colorSwatchStyle(c) {
+    if (c.id === "multi") {
+      return ' style="background:conic-gradient(#b0342c,#e3c65b,#4a7a4e,#a9cbe0,#6b4a7a,#b0342c)"';
+    }
+    if (c.id === "transparent" || !c.hex) {
+      return ' style="background:#f2f2f2"';
+    }
+    return ' style="--sw:' + escapeHtml(c.hex) + '"';
+  }
+
+  /* A read-only "Χρώμα: <label>" line with a swatch, shown in the same visible
+     spot as the variant selector for single-colour products. */
+  function buildColorLine(product, details) {
+    var c = resolveSingleColor(product, details);
+    if (!c) return "";
+    return (
+      '<div class="product-info__variants product-info__variants--static">' +
+      '<p class="product-info__variants-label"><span data-i18n="product_color">' + t("product_color") + "</span>: " +
+      "<strong>" + escapeHtml(c.label) + "</strong></p>" +
+      '<div class="product-info__swatches">' +
+      '<span class="product-swatch product-swatch--static is-active"' + colorSwatchStyle(c) + ' title="' + escapeHtml(c.label) + '" aria-hidden="true"></span>' +
+      "</div></div>"
+    );
   }
 
   function buildVariantsHtml(product) {

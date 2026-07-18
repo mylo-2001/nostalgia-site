@@ -9,9 +9,9 @@
   <link rel="stylesheet" href="css/fonts.css?v=1" />
 <link rel="stylesheet" href="css/base.css?v=locale-drawer" />
   <link rel="stylesheet" href="css/side-nav.css?v=menu-visual3" />
-  <link rel="stylesheet" href="css/collection.css?v=light2" />
+  <link rel="stylesheet" href="css/collection.css?v=clr3" />
   <link rel="stylesheet" href="css/legal.css" />
-  <link rel="stylesheet" href="css/shop.css?v=cart-drawer" />
+  <link rel="stylesheet" href="css/shop.css?v=clr4-drawer" />
   <link rel="stylesheet" href="css/polish.css?v=mobile-perf" />
   <link rel="stylesheet" href="css/account.css" />
   <script src="js/theme-boot.js"></script>
@@ -487,14 +487,11 @@
           <div class="collection-catalog__inner">
             <div class="collection-catalog__bar">
               <button type="button" id="collection-back" class="collection-catalog__back" data-i18n="collection_back">Πίσω στις κατηγορίες</button>
-              <div class="collection-catalog__controls">
-                <label class="collection-control">
-                  <span data-i18n="collection_sort_label">Ταξινόμηση</span>
-                  <select id="collection-sort">
-                    <option value="featured" data-i18n="collection_sort_featured">Προτεινόμενα</option>
-                    <option value="name-asc" data-i18n="collection_sort_name">Όνομα A-Z</option>
-                  </select>
-                </label>
+              <div class="collection-catalog__bar-actions">
+                <button type="button" id="collection-filters-toggle" class="collection-filters-toggle" aria-controls="collection-filters" aria-expanded="false">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+                  <span data-i18n="collection_filters_title">Φίλτρα</span>
+                </button>
                 <label class="collection-control collection-control--search">
                   <span data-i18n="search_label">Αναζήτηση</span>
                   <input id="collection-search" type="search" data-i18n-placeholder="search_placeholder" placeholder="Αναζήτηση προϊόντος..." />
@@ -502,7 +499,53 @@
               </div>
               <p class="collection-catalog__count" id="collection-products-count" aria-live="polite"></p>
             </div>
-            <div id="collection-products-grid" class="collection-catalog__grid" role="list"></div>
+            <div class="collection-catalog__layout">
+              <div class="collection-filters__backdrop" id="collection-filters-backdrop" hidden></div>
+              <aside class="collection-filters" id="collection-filters" data-i18n-aria="collection_filters_title" aria-label="Φίλτρα">
+                <div class="collection-filters__head">
+                  <span class="collection-filters__head-title" data-i18n="collection_filters_title">Φίλτρα</span>
+                  <button type="button" class="collection-filters__close" id="collection-filters-close" data-i18n-aria="collection_filters_close_aria" aria-label="Κλείσιμο φίλτρων">×</button>
+                </div>
+
+                <div class="collection-filter">
+                  <h4 class="collection-filter__title" data-i18n="collection_sort_label">Ταξινόμηση</h4>
+                  <select id="collection-sort" class="collection-filter__select">
+                    <option value="featured" data-i18n="collection_sort_featured">Προτεινόμενα</option>
+                    <option value="bestseller" data-i18n="collection_sort_bestseller">Best seller</option>
+                    <option value="price-asc" data-i18n="collection_sort_price_asc">Τιμή: χαμηλή προς υψηλή</option>
+                    <option value="price-desc" data-i18n="collection_sort_price_desc">Τιμή: υψηλή προς χαμηλή</option>
+                    <option value="name-asc" data-i18n="collection_sort_name">Όνομα A-Z</option>
+                  </select>
+                </div>
+
+                <div class="collection-filter collection-filter--colors" id="collection-colors" hidden>
+                  <h4 class="collection-filter__title" data-i18n="collection_color_label">Χρώμα</h4>
+                  <ul class="collection-colors__list" id="collection-colors-swatches" role="group" data-i18n-aria="collection_color_label" aria-label="Χρώμα"></ul>
+                </div>
+
+                <div class="collection-filter">
+                  <h4 class="collection-filter__title" data-i18n="collection_filter_price">Τιμή</h4>
+                  <div class="collection-price">
+                    <input type="number" id="collection-price-min" class="collection-price__input" min="0" step="1" inputmode="numeric" data-i18n-aria="collection_price_from" aria-label="Από" placeholder="0" />
+                    <span class="collection-price__sep" aria-hidden="true">–</span>
+                    <input type="number" id="collection-price-max" class="collection-price__input" min="0" step="1" inputmode="numeric" data-i18n-aria="collection_price_to" aria-label="Έως" placeholder="—" />
+                    <span class="collection-price__cur" aria-hidden="true">€</span>
+                  </div>
+                  <button type="button" class="collection-price__apply" id="collection-price-apply" data-i18n="collection_price_apply">Εφαρμογή</button>
+                  <label class="collection-check">
+                    <input type="checkbox" id="collection-sale-only" class="collection-check__input" />
+                    <span class="collection-check__box" aria-hidden="true"></span>
+                    <span class="collection-check__label" data-i18n="collection_sale_only">Μόνο σε έκπτωση</span>
+                  </label>
+                </div>
+
+                <button type="button" class="collection-filters__clear" id="collection-filters-clear" data-i18n="collection_filters_clear">Καθαρισμός φίλτρων</button>
+              </aside>
+
+              <div class="collection-catalog__main">
+                <div id="collection-products-grid" class="collection-catalog__grid" role="list"></div>
+              </div>
+            </div>
 
             <ul class="collection-assurance" aria-label="Nostalgia promise">
               <li class="collection-assurance__item">
@@ -589,17 +632,17 @@
   <script defer src="js/api.js?v=1"></script>
   <script defer src="js/europe-countries.js"></script>
   <script defer src="js/images.js?v=4"></script>
-    <script defer src="js/i18n-bundles/shared.js?v=cat9"></script>
-  <script defer src="js/i18n-bundles/catalog.js?v=cat9"></script>
+    <script defer src="js/i18n-bundles/shared.js?v=clr1"></script>
+  <script defer src="js/i18n-bundles/catalog.js?v=clr3"></script>
   <script defer src="js/i18n-core.js?v=1"></script>
   <script defer src="js/cookies.js"></script>
   <script src="js/tracking.js?v=1" defer></script>
-  <script defer src="js/products.js?v=liquid7"></script>
+  <script defer src="js/products.js?v=clr3"></script>
   <script defer src="js/breadcrumbs.js?v=4"></script>
   <script defer src="js/site-polish.js?v=6"></script>
   <script defer src="js/side-nav.js?v=cat10"></script>
   <script defer src="js/cart.js"></script>
-  <script defer src="js/collection.js?v=cat9"></script>
+  <script defer src="js/collection.js?v=clr2"></script>
   <script defer src="js/account.js"></script>
   <script defer src="js/theme.js"></script>
   <script defer src="js/nav-mega.js"></script>

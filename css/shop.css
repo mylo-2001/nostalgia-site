@@ -1685,7 +1685,10 @@ body.cart-modal-open {
   position: relative;
   overflow: hidden;
   border-radius: 4px;
-  background: var(--photo-placeholder);
+  /* White so letterbox bars around portrait product photos (e.g. Mirror
+     Candles, shot on a white studio background) blend in instead of showing
+     the beige placeholder. */
+  background: #fff;
   aspect-ratio: 1 / 1;
   display: flex;
   align-items: center;
@@ -1738,7 +1741,7 @@ body.cart-modal-open {
   height: 100%;
   object-fit: contain;
   border-radius: 4px;
-  background: var(--photo-placeholder);
+  background: #fff;
   transition: opacity 0.25s ease;
 }
 
@@ -2169,6 +2172,14 @@ body.cart-modal-open {
 
 .product-swatch:hover {
   transform: scale(1.1);
+}
+
+/* Read-only single-colour indicator (non-variant products). */
+.product-swatch--static {
+  cursor: default;
+}
+.product-swatch--static:hover {
+  transform: none;
 }
 
 .product-swatch.is-active {

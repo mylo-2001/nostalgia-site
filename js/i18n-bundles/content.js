@@ -172,7 +172,7 @@
       scent_progress_purpose: "Σκοπός",
       scent_progress_person: "Πρόσωπο",
       scent_progress_scent: "Άρωμα",
-      scent_progress_style: "Style",
+      scent_progress_style: "Στυλ",
       scent_progress_proposal: "Πρόταση",
       scent_step_product: "Είδος",
       scent_q_product: "Τι ψάχνεις;",

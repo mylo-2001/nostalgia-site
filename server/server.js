@@ -483,6 +483,7 @@ function normalizeProductDetails(raw) {
   if (d.variantGroup !== undefined) d.variantGroup = String(d.variantGroup || "").trim();
   if (d.variantColor !== undefined) d.variantColor = String(d.variantColor || "").trim();
   if (d.variantColorHex !== undefined) d.variantColorHex = String(d.variantColorHex || "").trim();
+  if (d.colorFamily !== undefined) d.colorFamily = String(d.colorFamily || "").trim();
   if (d.scentNotes && typeof d.scentNotes === "object") {
     d.scentNotes = {
       top: String(d.scentNotes.top || "").trim(),

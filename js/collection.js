@@ -87,6 +87,22 @@
   var searchEl;
   var activeCategory = null;
   var searchMode = false;
+  var activeColor = null;
+  var priceMin = null;
+  var priceMax = null;
+  var saleOnly = false;
+  var bestSellerRank = null; // id -> rank (0 = top), lazily fetched
+  var colorsEl;
+  var colorsSwatchEl;
+  var filtersEl;
+  var filtersToggleEl;
+  var filtersCloseEl;
+  var filtersBackdropEl;
+  var priceMinEl;
+  var priceMaxEl;
+  var priceApplyEl;
+  var saleOnlyEl;
+  var filtersClearEl;
 
   function normalizeSearchText(str) {
     var s = String(str == null ? "" : str).toLowerCase();
@@ -242,6 +258,7 @@
       }
     }
 
+    renderColorFilter(products);
     products = applyFilters(products);
 
     if (productsCountEl) {
@@ -384,6 +401,7 @@
 
   function showSearchResults(query) {
     searchMode = true;
+    resetFilterState();
     activeCategory = "__search__";
     document.body.classList.add("collection-products-open");
     if (categoriesEl) {
@@ -408,6 +426,7 @@
 
   function showProducts(catId) {
     searchMode = false;
+    resetFilterState();
     activeCategory = catId;
     document.body.classList.add("collection-products-open");
     if (categoriesEl) {
@@ -500,6 +519,17 @@
     backBtn = $("#collection-back");
     sortEl = $("#collection-sort");
     searchEl = $("#collection-search");
+    colorsEl = $("#collection-colors");
+    colorsSwatchEl = $("#collection-colors-swatches");
+    filtersEl = $("#collection-filters");
+    filtersToggleEl = $("#collection-filters-toggle");
+    filtersCloseEl = $("#collection-filters-close");
+    filtersBackdropEl = $("#collection-filters-backdrop");
+    priceMinEl = $("#collection-price-min");
+    priceMaxEl = $("#collection-price-max");
+    priceApplyEl = $("#collection-price-apply");
+    saleOnlyEl = $("#collection-sale-only");
+    filtersClearEl = $("#collection-filters-clear");
 
     getCategoryButtons().forEach(function (btn) {
       btn.addEventListener("click", function () {
@@ -518,24 +548,64 @@
     if (sortEl) {
       sortEl.addEventListener("change", function () {
         if (!activeCategory) return;
-        if (searchMode && searchEl) {
-          renderProducts("__search__", filterProductsByQuery(searchEl.value.trim()));
-        } else {
-          renderProducts(activeCategory);
-        }
+        if (sortEl.value === "bestseller") fetchBestSellerRank();
+        rerender();
       });
     }
 
     if (searchEl) {
       searchEl.addEventListener("input", function () {
         if (!activeCategory) return;
-        if (searchMode) {
-          renderProducts("__search__", filterProductsByQuery(searchEl.value.trim()));
-        } else {
-          renderProducts(activeCategory);
-        }
+        rerender();
       });
     }
+
+    if (priceApplyEl) {
+      priceApplyEl.addEventListener("click", function () {
+        applyPriceInputs();
+      });
+    }
+    [priceMinEl, priceMaxEl].forEach(function (el) {
+      if (!el) return;
+      el.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          applyPriceInputs();
+        }
+      });
+      el.addEventListener("change", function () { applyPriceInputs(); });
+    });
+
+    if (saleOnlyEl) {
+      saleOnlyEl.addEventListener("change", function () {
+        saleOnly = !!saleOnlyEl.checked;
+        rerender();
+      });
+    }
+
+    if (filtersClearEl) {
+      filtersClearEl.addEventListener("click", function () {
+        resetFilterState();
+        if (sortEl) sortEl.value = "featured";
+        rerender();
+      });
+    }
+
+    if (filtersToggleEl) {
+      filtersToggleEl.addEventListener("click", function () {
+        if (filtersEl && filtersEl.classList.contains("is-open")) closeFilters();
+        else openFilters();
+      });
+    }
+    if (filtersCloseEl) filtersCloseEl.addEventListener("click", closeFilters);
+    if (filtersBackdropEl) filtersBackdropEl.addEventListener("click", closeFilters);
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && filtersEl && filtersEl.classList.contains("is-open")) {
+        closeFilters();
+      }
+    });
+
+    fetchBestSellerRank();
 
     window.addEventListener("hashchange", onHash);
 
@@ -637,8 +707,112 @@
     })();
   }
 
+  /* Re-render the active view (category or search results). */
+  function rerender() {
+    if (!activeCategory || !productsEl || productsEl.hidden) return;
+    if (searchMode && searchEl) {
+      renderProducts("__search__", filterProductsByQuery(searchEl.value.trim()));
+    } else {
+      renderProducts(activeCategory);
+    }
+  }
+
+  /* Build the colour list (swatch · name · count) from the colours present in
+     the current category (or search) set. Hidden when a set has fewer than two
+     distinct colours, so categories without colour data (liquid, driftwood…)
+     show no colour filter at all. */
+  function renderColorFilter(list) {
+    if (!colorsEl || !colorsSwatchEl || !window.NostalgiaProducts) return;
+    var families = window.NostalgiaProducts.COLOR_FAMILIES || [];
+    var counts = {};
+    list.forEach(function (p) {
+      (p.colors || []).forEach(function (c) { counts[c] = (counts[c] || 0) + 1; });
+    });
+    var available = families.filter(function (f) { return counts[f.id]; });
+
+    if (available.length < 2) {
+      colorsEl.hidden = true;
+      colorsSwatchEl.innerHTML = "";
+      activeColor = null;
+      return;
+    }
+    if (activeColor && !counts[activeColor]) activeColor = null;
+
+    colorsEl.hidden = false;
+    colorsSwatchEl.innerHTML = "";
+
+    function addRow(opts) {
+      var li = document.createElement("li");
+      li.className = "collection-colors__item";
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className =
+        "collection-color" +
+        (opts.active ? " is-active" : "") +
+        (opts.all ? " collection-color--all" : "");
+      btn.setAttribute("data-color", opts.id || "");
+      btn.setAttribute("aria-pressed", opts.active ? "true" : "false");
+      if (!opts.all) {
+        var dot = document.createElement("span");
+        dot.className = "collection-color__dot collection-color__dot--" + opts.id;
+        if (opts.hex) dot.style.background = opts.hex;
+        btn.appendChild(dot);
+      }
+      var name = document.createElement("span");
+      name.className = "collection-color__name";
+      name.textContent = opts.label;
+      btn.appendChild(name);
+      if (opts.count != null) {
+        var count = document.createElement("span");
+        count.className = "collection-color__count";
+        count.textContent = opts.count;
+        btn.appendChild(count);
+      }
+      btn.addEventListener("click", opts.onClick);
+      li.appendChild(btn);
+      colorsSwatchEl.appendChild(li);
+    }
+
+    addRow({
+      all: true,
+      active: !activeColor,
+      label: t("collection_filter_all"),
+      count: list.length,
+      onClick: function () { setColor(null); },
+    });
+    available.forEach(function (f) {
+      addRow({
+        id: f.id,
+        hex: f.hex,
+        active: activeColor === f.id,
+        label: t(f.key),
+        count: counts[f.id],
+        onClick: function () { setColor(activeColor === f.id ? null : f.id); },
+      });
+    });
+  }
+
+  function setColor(id) {
+    activeColor = id;
+    rerender();
+  }
+
+  /* Effective (sale-aware) price, or null when the product has no price. */
+  function priceOf(item) {
+    var P = window.NostalgiaProducts;
+    if (P && typeof P.getEffectivePrice === "function") return P.getEffectivePrice(item);
+    return item && item.price != null ? Number(item.price) : null;
+  }
+
+  function bestSellerRankOf(item) {
+    if (!bestSellerRank) return Infinity;
+    var r = bestSellerRank[item.id];
+    return r == null ? Infinity : r;
+  }
+
   function applyFilters(list) {
     var out = list.slice();
+    var P = window.NostalgiaProducts;
     var sortVal = sortEl ? sortEl.value : "featured";
     var q = searchEl ? searchEl.value.trim().toLowerCase() : "";
 
@@ -651,13 +825,112 @@
       });
     }
 
+    if (activeColor) {
+      out = out.filter(function (item) {
+        return (item.colors || []).indexOf(activeColor) !== -1;
+      });
+    }
+
+    if (saleOnly && P && typeof P.isOnSale === "function") {
+      out = out.filter(function (item) { return P.isOnSale(item); });
+    }
+
+    if (priceMin != null || priceMax != null) {
+      out = out.filter(function (item) {
+        var price = priceOf(item);
+        if (price == null) return false;
+        if (priceMin != null && price < priceMin) return false;
+        if (priceMax != null && price > priceMax) return false;
+        return true;
+      });
+    }
+
     if (sortVal === "name-asc") {
       out.sort(function (a, b) { return pickTitle(a).localeCompare(pickTitle(b)); });
+    } else if (sortVal === "price-asc") {
+      out.sort(function (a, b) {
+        var pa = priceOf(a), pb = priceOf(b);
+        return (pa == null ? Infinity : pa) - (pb == null ? Infinity : pb);
+      });
+    } else if (sortVal === "price-desc") {
+      out.sort(function (a, b) {
+        var pa = priceOf(a), pb = priceOf(b);
+        return (pb == null ? -Infinity : pb) - (pa == null ? -Infinity : pa);
+      });
+    } else if (sortVal === "bestseller") {
+      out.sort(function (a, b) {
+        return bestSellerRankOf(a) - bestSellerRankOf(b) || a.index - b.index;
+      });
     } else {
       out.sort(function (a, b) { return a.index - b.index; });
     }
 
     return out;
+  }
+
+  /* Best-seller ranking (this month's real sales). Empty until orders exist —
+     then the sort falls back to the featured order. Fetched once. */
+  function fetchBestSellerRank() {
+    if (bestSellerRank || !window.fetch) return;
+    window
+      .fetch("/api/products/bestsellers", { headers: { Accept: "application/json" } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        bestSellerRank = {};
+        if (data && Array.isArray(data.items)) {
+          data.items.forEach(function (it, i) {
+            if (it && it.id) bestSellerRank[it.id] = i;
+          });
+        }
+        if (sortEl && sortEl.value === "bestseller") rerender();
+      })
+      .catch(function () { bestSellerRank = {}; });
+  }
+
+  function readPriceInput(el) {
+    if (!el) return null;
+    var v = String(el.value || "").trim();
+    if (v === "") return null;
+    var n = Number(v);
+    return isFinite(n) && n >= 0 ? n : null;
+  }
+
+  function applyPriceInputs() {
+    priceMin = readPriceInput(priceMinEl);
+    priceMax = readPriceInput(priceMaxEl);
+    if (priceMin != null && priceMax != null && priceMin > priceMax) {
+      var tmp = priceMin; priceMin = priceMax; priceMax = tmp;
+      if (priceMinEl) priceMinEl.value = String(priceMin);
+      if (priceMaxEl) priceMaxEl.value = String(priceMax);
+    }
+    rerender();
+  }
+
+  function resetFilterState() {
+    activeColor = null;
+    priceMin = null;
+    priceMax = null;
+    saleOnly = false;
+    if (priceMinEl) priceMinEl.value = "";
+    if (priceMaxEl) priceMaxEl.value = "";
+    if (saleOnlyEl) saleOnlyEl.checked = false;
+    closeFilters();
+  }
+
+  function openFilters() {
+    if (!filtersEl) return;
+    document.body.classList.add("collection-filters-open");
+    filtersEl.classList.add("is-open");
+    if (filtersBackdropEl) filtersBackdropEl.hidden = false;
+    if (filtersToggleEl) filtersToggleEl.setAttribute("aria-expanded", "true");
+  }
+
+  function closeFilters() {
+    if (!filtersEl) return;
+    document.body.classList.remove("collection-filters-open");
+    filtersEl.classList.remove("is-open");
+    if (filtersBackdropEl) filtersBackdropEl.hidden = true;
+    if (filtersToggleEl) filtersToggleEl.setAttribute("aria-expanded", "false");
   }
 
   if (document.readyState === "loading") {

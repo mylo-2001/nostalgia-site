@@ -58,6 +58,150 @@
     });
   })();
 
+  /* ---------------------------------------------------------------------
+     Colour classification. Each product is tagged with one or more colour
+     "families" so the collection page can offer a colour filter. Colours are
+     derived, in order, from: a variant colour hex (built-in or admin/backend),
+     a colour label (Greek or English), and finally the image folder name
+     (e.g. "murano-mple", "Mirror Candles-galazio"). Products with no colour
+     signal (liquid, driftwood, vessels…) simply carry no colour and only show
+     under "All".
+     --------------------------------------------------------------------- */
+  var COLOR_FAMILIES = [
+    { id: "white", hex: "#f4f1ea", key: "color_white" },
+    { id: "cream", hex: "#efe6d3", key: "color_cream" },
+    { id: "beige", hex: "#d9c7a8", key: "color_beige" },
+    { id: "taupe", hex: "#b79b82", key: "color_taupe" },
+    { id: "brown", hex: "#6b4a2f", key: "color_brown" },
+    { id: "copper", hex: "#a55a33", key: "color_copper" },
+    { id: "bronze", hex: "#7d6033", key: "color_bronze" },
+    { id: "gold", hex: "#c9a24a", key: "color_gold" },
+    { id: "rosegold", hex: "#d9a6a0", key: "color_rosegold" },
+    { id: "silver", hex: "#c3c6c9", key: "color_silver" },
+    { id: "yellow", hex: "#e3c65b", key: "color_yellow" },
+    { id: "orange", hex: "#d98a4a", key: "color_orange" },
+    { id: "coral", hex: "#e5735a", key: "color_coral" },
+    { id: "red", hex: "#b0342c", key: "color_red" },
+    { id: "bordeaux", hex: "#6e2233", key: "color_bordeaux" },
+    { id: "pink", hex: "#e2a7bd", key: "color_pink" },
+    { id: "fuchsia", hex: "#d43d7d", key: "color_fuchsia" },
+    { id: "purple", hex: "#6b4a7a", key: "color_purple" },
+    { id: "lilac", hex: "#b98fd0", key: "color_lilac" },
+    { id: "navy", hex: "#1f3a5f", key: "color_navy" },
+    { id: "blue", hex: "#3a5a8c", key: "color_blue" },
+    { id: "lightblue", hex: "#a9cbe0", key: "color_lightblue" },
+    { id: "turquoise", hex: "#3fc1c9", key: "color_turquoise" },
+    { id: "petrol", hex: "#1a6b74", key: "color_petrol" },
+    { id: "green", hex: "#4a7a4e", key: "color_green" },
+    { id: "black", hex: "#2b2b2b", key: "color_black" },
+    { id: "multi", hex: "", key: "color_multi" },
+    { id: "transparent", hex: "", key: "color_transparent" },
+  ];
+  var FAMILY_BY_ID = {};
+  COLOR_FAMILIES.forEach(function (f) { FAMILY_BY_ID[f.id] = f; });
+
+  /* Substring tokens (lower-cased, accent-tolerant) mapped to a colour family.
+     Matched against decoded image paths and colour labels. Only used when the
+     admin has NOT set an explicit colour family for the product. */
+  var COLOR_KEYWORDS = [
+    { fam: "white", tokens: ["aspro", "ασπρ", "λευκ", "white", "ivory", "ιβουαρ"] },
+    { fam: "cream", tokens: ["cream", "κρεμ", "εκρου", "ecru"] },
+    { fam: "black", tokens: ["mauro", "μαυρ", "black"] },
+    { fam: "bordeaux", tokens: ["bordeaux", "μπορντ", "κρασ", "burgundy"] },
+    { fam: "red", tokens: ["kokkino", "κοκκιν", "red", "rouge"] },
+    { fam: "coral", tokens: ["coral", "κοραλ"] },
+    { fam: "turquoise", tokens: ["turquoise", "τιρκουαζ", "τυρκουαζ"] },
+    { fam: "petrol", tokens: ["petrol", "πετρολ"] },
+    { fam: "lightblue", tokens: ["galazio", "γαλαζ", "sky", "aqua"] },
+    { fam: "navy", tokens: ["navy", "ραφ"] },
+    { fam: "blue", tokens: ["mple", "μπλε", "blue"] },
+    { fam: "green", tokens: ["prasino", "πρασιν", "green", "sage", "φασκομ", "olive", "ελια", "χακι", "khaki"] },
+    { fam: "yellow", tokens: ["kitrino", "κιτριν", "yellow"] },
+    { fam: "orange", tokens: ["portokali", "πορτοκαλ", "orange"] },
+    { fam: "fuchsia", tokens: ["φουξ", "fuchsia"] },
+    { fam: "pink", tokens: ["roz", "ροζ", "pink", "blush", "rose"] },
+    { fam: "lilac", tokens: ["λιλα", "lilac"] },
+    { fam: "purple", tokens: ["mov", "μωβ", "purple", "violet"] },
+    { fam: "rosegold", tokens: ["rose gold", "ροζ χρυσ"] },
+    { fam: "gold", tokens: ["xriso", "chriso", "χρυσ", "gold"] },
+    { fam: "copper", tokens: ["copper", "χαλκιν"] },
+    { fam: "bronze", tokens: ["bronze", "μπρουτζ", "μπρουντζ"] },
+    { fam: "silver", tokens: ["asimi", "ασημ", "silver", "γκρι", "gray", "grey"] },
+    { fam: "taupe", tokens: ["taupe", "ταμπα", "πουρο"] },
+    { fam: "beige", tokens: ["bez", "μπεζ", "beige", "sand", "αμμ", "nude"] },
+    { fam: "brown", tokens: ["kafe", "καφε", "brown", "terracotta", "τερακοτα", "amber", "κεχριμπαρ", "καστ"] },
+    { fam: "transparent", tokens: ["διαφαν", "transparent", "clear"] },
+    { fam: "multi", tokens: ["pardalo", "παρδαλ", "multi", "πολυχρ", "rainbow", "ουρανιο"] },
+  ];
+
+  function hexToRgb(hex) {
+    if (!hex) return null;
+    var s = String(hex).trim().replace(/^#/, "");
+    if (s.length === 3) s = s.replace(/(.)/g, "$1$1");
+    if (s.length !== 6 || /[^0-9a-fA-F]/.test(s)) return null;
+    return [parseInt(s.slice(0, 2), 16), parseInt(s.slice(2, 4), 16), parseInt(s.slice(4, 6), 16)];
+  }
+  var HEX_ANCHORS = COLOR_FAMILIES
+    .filter(function (f) { return f.hex; })
+    .map(function (f) { return { id: f.id, rgb: hexToRgb(f.hex) }; });
+
+  function classifyHex(hex) {
+    var rgb = hexToRgb(hex);
+    if (!rgb) return null;
+    var best = null, bd = Infinity;
+    HEX_ANCHORS.forEach(function (a) {
+      var dr = rgb[0] - a.rgb[0], dg = rgb[1] - a.rgb[1], db = rgb[2] - a.rgb[2];
+      var d = dr * dr + dg * dg + db * db;
+      if (d < bd) { bd = d; best = a.id; }
+    });
+    return best;
+  }
+
+  function getColorFamilies(p) {
+    if (!p) return [];
+    /* 0 — an explicit colour family chosen in the admin panel is authoritative. */
+    if (p.details && p.details.colorFamily && FAMILY_BY_ID[p.details.colorFamily]) {
+      return [p.details.colorFamily];
+    }
+    var found = {};
+    function addFromText(text) {
+      if (!text) return;
+      var s;
+      try { s = decodeURIComponent(String(text)); } catch (e) { s = String(text); }
+      s = s.toLowerCase();
+      COLOR_KEYWORDS.forEach(function (entry) {
+        for (var i = 0; i < entry.tokens.length; i++) {
+          if (s.indexOf(entry.tokens[i]) !== -1) { found[entry.fam] = true; return; }
+        }
+      });
+    }
+    /* 1 — colour hex from any variant source */
+    var hexes = [];
+    if (p._variant && p._variant.hex) hexes.push(p._variant.hex);
+    if (p.variantColorHex) hexes.push(p.variantColorHex);
+    if (p.details && p.details.variantColorHex) hexes.push(p.details.variantColorHex);
+    if (p.variants && p.variants.length) {
+      p.variants.forEach(function (v) { if (v && v.colorHex) hexes.push(v.colorHex); });
+    }
+    hexes.forEach(function (h) { var f = classifyHex(h); if (f) found[f] = true; });
+    /* 2 — colour labels (Greek + English) */
+    if (p._variant && p._variant.label) addFromText(p._variant.label);
+    if (p.variantColorLabel) addFromText(p.variantColorLabel);
+    if (p.details) {
+      addFromText(p.details.variantColor);
+      addFromText(p.details.variantColorEn);
+      addFromText(p.details.color);
+      addFromText(p.details.colorEn);
+    }
+    if (p.variants && p.variants.length) {
+      p.variants.forEach(function (v) { if (v) { addFromText(v.color); addFromText(v.colorEn); } });
+    }
+    /* 3 — image folder name (covers murano / mirror colour folders) */
+    addFromText(p.image);
+    if (p.images && p.images.length) addFromText(p.images.join(" "));
+    return Object.keys(found);
+  }
+
   var CAT_IMAGES = {
     cat1: [
       gallery(MURANO_DIR + "murano-aspro"),
@@ -374,6 +518,7 @@
         p.description = getDescription(p.catId, p.index);
       }
       p.categoryName = t("collection_" + p.catId);
+      p.colors = getColorFamilies(p);
     });
   }
 
@@ -535,6 +680,9 @@
     CAT_IDS: CAT_IDS,
     CAT_IMAGES: CAT_IMAGES,
     CAT_KIND: CAT_KIND,
+    COLOR_FAMILIES: COLOR_FAMILIES,
+    getColorFamilies: getColorFamilies,
+    getColorMeta: function (id) { return FAMILY_BY_ID[id] || null; },
     CAT_SCENT: CAT_SCENT,
     getCategoryKind: getCategoryKind,
     getCategoryUrl: function (catId) {

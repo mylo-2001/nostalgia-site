@@ -132,6 +132,40 @@
             <textarea name="description" data-lang="el" rows="3" maxlength="4000"></textarea>
             <textarea name="description_en" data-lang="en" rows="3" maxlength="4000" placeholder="Short description (English)"></textarea>
           </label>
+          <label class="field">
+            <span>Χρώμα προϊόντος (για το φίλτρο χρώματος & τη σελίδα προϊόντος)</span>
+            <select name="details_colorFamily">
+              <option value="">— Χωρίς / αυτόματο —</option>
+              <option value="white">Λευκό</option>
+              <option value="cream">Εκρού</option>
+              <option value="beige">Μπεζ</option>
+              <option value="taupe">Ταμπά</option>
+              <option value="brown">Καφέ</option>
+              <option value="copper">Χάλκινο</option>
+              <option value="bronze">Μπρούτζινο</option>
+              <option value="gold">Χρυσό</option>
+              <option value="rosegold">Ροζ Χρυσό</option>
+              <option value="silver">Ασημί</option>
+              <option value="yellow">Κίτρινο</option>
+              <option value="orange">Πορτοκαλί</option>
+              <option value="coral">Κοραλί</option>
+              <option value="red">Κόκκινο</option>
+              <option value="bordeaux">Μπορντό</option>
+              <option value="pink">Ροζ</option>
+              <option value="fuchsia">Φούξια</option>
+              <option value="purple">Μωβ</option>
+              <option value="lilac">Λιλά</option>
+              <option value="navy">Navy Μπλε</option>
+              <option value="blue">Μπλε</option>
+              <option value="lightblue">Γαλάζιο</option>
+              <option value="turquoise">Τιρκουάζ</option>
+              <option value="petrol">Πετρόλ</option>
+              <option value="green">Πράσινο</option>
+              <option value="black">Μαύρο</option>
+              <option value="multi">Πολύχρωμο</option>
+              <option value="transparent">Διάφανο</option>
+            </select>
+          </label>
           <details class="card prod-details" open>
             <summary class="prod-details__summary">Περιεχόμενο σελίδας προϊόντος</summary>
             <div class="prod-details__grid" id="new-product-details-fields">
@@ -411,6 +445,6 @@
   </div>
 
   <script src="/js/captcha.js?v=2"></script>
-  <script src="/admin/assets/admin.js"></script>
+  <script src="/admin/assets/admin.js?v=color2"></script>
 </body>
 </html>

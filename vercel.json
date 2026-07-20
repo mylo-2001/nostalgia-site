@@ -1,8 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api" }
+  ],
   "functions": {
     "api/**/*.js": {
-      "maxDuration": 30
+      "maxDuration": 30,
+      "includeFiles": "{html/**,css/**,js/**,logo/**,admin/dist/**,product photo/**,home page photo/**,home-photo-beforemenu/**,collections-hero/**,4-epoxes-photo/**,fonts/**}"
     }
   },
   "crons": [

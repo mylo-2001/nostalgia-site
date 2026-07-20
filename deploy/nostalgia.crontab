@@ -1,0 +1,8 @@
+# Nostalgia maintenance cron — install for the app user:
+#   sudo chmod +x /var/www/nostalgia/deploy/run-maintenance.sh
+#   sudo crontab -u nostalgia deploy/nostalgia.crontab
+#
+# Every 5 minutes: release expired reservations + flush notification outbox.
+# (Reservation TTL is ~1h, so a daily cron is NOT enough — this is why the VPS
+#  matters vs Vercel Hobby.)
+*/5 * * * * /var/www/nostalgia/deploy/run-maintenance.sh >> /var/log/nostalgia-maintenance.log 2>&1

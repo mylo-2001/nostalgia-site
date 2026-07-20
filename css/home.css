@@ -5146,6 +5146,12 @@ body[data-page="home"] .home-experience__inner {
   visibility: hidden;
 }
 
+/* Only until site-intro.js scrolls past — then the class is removed */
+html.intro-resume .site-intro {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .site-intro-spacer {
   display: block;
   width: 100%;

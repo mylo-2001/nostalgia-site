@@ -1,0 +1,6 @@
+-- migration: no-transaction
+
+DROP INDEX CONCURRENTLY IF EXISTS inventory_reservation_groups_expiry_phase4_idx;
+DROP INDEX CONCURRENTLY IF EXISTS inventory_movements_event_inventory_phase4_idx;
+DROP INDEX CONCURRENTLY IF EXISTS inventory_reservations_order_status_phase4_idx;
+DROP INDEX CONCURRENTLY IF EXISTS inventory_reservations_group_inventory_phase4_uidx;

@@ -3,7 +3,7 @@
 /**
  * Nostalgia backend — PostgreSQL edition.
  * Serves the static storefront, the JSON API and the hidden admin panel
- * at /admin (not linked anywhere on the site).
+ * (path from ADMIN_UI_PATH in .env — not linked anywhere on the site).
  *
  *   npm start            → http://localhost:8000
  *   PORT=3000 npm start  → custom port
@@ -39,14 +39,40 @@ const mailer = require("./email");
 const security = require("./security");
 const fees = require("./fees");
 const cdn = require("./cloudinary");
+const { createAdminDatabaseSession, recordAdminLoginEvent, revokeAdminSession } =
+  require("./services/admin-session-service");
+const { createV2Router } = require("./routes/v2-router");
+const { StripePaymentProvider } = require("./payments/stripe-provider");
+const { processPaymentWebhook } = require("./services/payment-service");
+const { processRefundWebhook } = require("./services/return-refund-service");
+const { expireInventoryReservations } = require("./services/inventory-service");
+const { processNotificationBatch } = require("./services/notification-outbox-service");
+const { EmailNotificationSender } = require("./notifications/email-notification-sender");
+const { collectOperationalMetrics, evaluateOperationalAlerts, runTrackedJob } =
+  require("./services/monitoring-service");
 
 const PORT = parseInt(process.env.PORT, 10) || 8000;
 const ROOT = path.join(__dirname, "..");
-const ADMIN_DIR = path.join(__dirname, "admin");
+/* All storefront *.html live under html/ (assets like css/js/images stay at ROOT).
+   URLs are unchanged — only the files moved — so nothing in the pages breaks. */
+const HTML_DIR = path.join(ROOT, "html");
 const UPLOADS_DIR = path.join(ROOT, "product photo", "uploads");
 
 const app = express();
 app.disable("x-powered-by");
+
+app.use((req, res, next) => {
+  const supplied = String(req.headers["x-request-id"] || "");
+  req.requestId = /^[A-Za-z0-9._:-]{8,100}$/.test(supplied)
+    ? supplied
+    : crypto.randomUUID();
+  res.setHeader("X-Request-Id", req.requestId);
+  req.log = {
+    info(fields) { console.info(JSON.stringify({ level: "info", ...fields })); },
+    error(fields) { console.error(JSON.stringify({ level: "error", ...fields })); },
+  };
+  next();
+});
 
 if (security.trustProxyEnabled()) {
   app.set("trust proxy", 1);
@@ -107,7 +133,7 @@ function publicSiteUrl(req) {
 }
 
 function requireCron(req, res, next) {
-  const expected = (process.env.CRON_TOKEN || "").trim();
+  const expected = (process.env.CRON_TOKEN || process.env.CRON_SECRET || "").trim();
   if (!expected) return bad(res, 503, "cron_not_configured");
   const authHeader = String(req.headers.authorization || "");
   // Bearer header only — never accept the secret via URL query (avoids leaking
@@ -151,6 +177,27 @@ app.post(
   })
 );
 
+/* V2 Stripe endpoint dispatches only after the selected service verifies the signature. */
+app.post(
+  "/api/v2/stripe/webhook",
+  express.raw({ type: "application/json", limit: "1mb" }),
+  ah(async (req, res) => {
+    const secret = (process.env.STRIPE_WEBHOOK_SECRET || "").trim();
+    const stripe = await getStripe();
+    if (!secret || !stripe) return bad(res, 503, "webhook_not_configured");
+    const provider = new StripePaymentProvider(stripe);
+    let type = "";
+    try { type = JSON.parse(req.body.toString("utf8")).type || ""; } catch (_) {}
+    const operation = String(type).startsWith("refund.")
+      ? processRefundWebhook
+      : processPaymentWebhook;
+    const result = await operation({ pool: db.getPool(), provider, rawBody: req.body,
+      signature: req.headers["stripe-signature"], webhookSecret: secret,
+      requestId: req.requestId });
+    res.json({ ok: true, ...result });
+  })
+);
+
 /*
  * Body size limits — tight by default to shrink the DoS amplification surface on
  * public endpoints. Only the admin product create/update routes carry base64
@@ -161,13 +208,14 @@ const jsonLarge = express.json({ limit: "15mb" });
 app.use((req, res, next) => {
   if (
     req.method !== "GET" &&
-    /^\/api\/admin\/products(\/|$)/.test(req.path)
+    /^\/api\/admin\/(?:products|variants)(\/|$)/.test(req.path)
   ) {
     return jsonLarge(req, res, next);
   }
   return jsonSmall(req, res, next);
 });
 app.use(security.checkApiOrigin);
+app.use("/api/v2", createV2Router({ getPool: () => db.getPool(), getStripe }));
 
 /* ---------- helpers ---------- */
 
@@ -226,6 +274,10 @@ function requireAdmin(req, res, next) {
   const session = auth.getAdminSession(req);
   if (!session) return bad(res, 401, "unauthorized");
   req.admin = session;
+  const enrollmentRoute = /^\/api\/admin\/(?:mfa\/(?:status|setup|enable)|logout)$/.test(req.path);
+  if (security.admin2faRequired() && !session.mfa && !enrollmentRoute) {
+    return bad(res, 403, "admin_2fa_required");
+  }
   next();
 }
 
@@ -491,6 +543,13 @@ function normalizeProductDetails(raw) {
       base: String(d.scentNotes.base || "").trim(),
     };
   }
+  if (d.diffuser && typeof d.diffuser === "object") {
+    d.diffuser = {
+      notes: String(d.diffuser.notes || "").trim(),
+      duration: String(d.diffuser.duration || "").trim(),
+      capacity: String(d.diffuser.capacity || "").trim(),
+    };
+  }
 
   /* English (bilingual) counterparts — same shapes as the Greek fields, kept
      alongside them in the JSONB blob. Empty ones fall back to Greek on the
@@ -679,6 +738,16 @@ async function saveProductImage(id, dataUrl, slot) {
 /** Save up to `MAX_PRODUCT_IMAGES` gallery photos; returns the stored URLs.
  *  The first photo doubles as the thumbnail (image). */
 const MAX_PRODUCT_IMAGES = 3;
+function validProductImageBatch(dataUrls) {
+  if (!Array.isArray(dataUrls) || dataUrls.length > MAX_PRODUCT_IMAGES) return false;
+  return dataUrls.every((dataUrl) => {
+    const match = /^data:image\/(png|jpe?g|webp|gif);base64,(.+)$/.exec(String(dataUrl || ""));
+    if (!match) return false;
+    const bytes = Buffer.from(match[2], "base64");
+    return bytes.length > 0 && bytes.length <= 10 * 1024 * 1024;
+  });
+}
+
 async function saveProductImages(id, dataUrls) {
   const list = (Array.isArray(dataUrls) ? dataUrls : [dataUrls])
     .filter(Boolean)
@@ -732,9 +801,11 @@ function couponDiscount(coupon, subtotal) {
 
 /* ================= PUBLIC API ================= */
 
-app.get("/api/health", (req, res) => {
-  res.json({ ok: true });
-});
+app.get("/api/health", ah(async (req, res) => {
+  await db.getPool().query("SELECT 1");
+  res.set("Cache-Control", "no-store");
+  res.json({ ok: true, database: "ready", requestId: req.requestId });
+}));
 
 app.get("/api/public-config", (req, res) => {
   const pk = (process.env.STRIPE_PUBLISHABLE_KEY || "").trim();
@@ -742,6 +813,7 @@ app.get("/api/public-config", (req, res) => {
     ok: true,
     gaMeasurementId: gaMeasurementId(),
     stripePublishableKey: pk,
+    checkoutV2Enabled: process.env.CHECKOUT_V2_ENABLED === "true",
     turnstileSiteKey: security.turnstileSiteKey(),
     siteUrl: publicSiteUrl(req),
     email: {
@@ -755,6 +827,27 @@ app.get("/api/public-config", (req, res) => {
 app.get("/api/cron/ping", requireCron, (req, res) => {
   res.json({ ok: true, ts: new Date().toISOString() });
 });
+
+app.get("/api/cron/maintenance", requireCron, ah(async (req, res) => {
+  const pool = db.getPool();
+  const workerId = `maintenance:${process.env.VERCEL_REGION || "local"}`;
+  const result = await runTrackedJob({ pool, jobName: "commerce_maintenance", workerId,
+    correlationId: req.requestId, work: async () => {
+      const inventory = await expireInventoryReservations({ pool, workerId,
+        requestId: req.requestId, batchSize: 100 });
+      const notifications = mailer.emailConfigured()
+        ? await processNotificationBatch({ pool, workerId,
+          sender: new EmailNotificationSender(pool), batchSize: 25 })
+        : { claimed: 0, skipped: "email_not_configured" };
+      const monitoring = await evaluateOperationalAlerts({ pool });
+      return { inventory, notifications, monitoring };
+    } });
+  res.json({ ok: true, result, requestId: req.requestId });
+}));
+
+app.get("/api/admin/operations/metrics", requireAdmin, ah(async (req, res) => {
+  res.json({ ok: true, metrics: await collectOperationalMetrics({ pool: db.getPool() }) });
+}));
 
 /* ---------- auth ---------- */
 
@@ -1280,7 +1373,15 @@ app.post("/api/reviews", ah(async (req, res) => {
 
 /* ---------- orders ---------- */
 
-const ORDER_STATUSES = ["new", "processing", "shipped", "completed", "cancelled"];
+/* Three independent axes. Legacy values (shipped/delivered/issue/offline/cod)
+   are still accepted so orders created before the split keep working. */
+const ORDER_STATUSES = ["new", "processing", "ready", "completed", "cancelled", "review", "shipped", "delivered", "issue"];
+const PAYMENT_STATUSES = [
+  "pending", "paid", "failed", "refunded", "partial_refund", "offline",
+  "cod_pending", "cod_collected", "cod_not_delivered", "cod_awaiting_remittance", "cod",
+];
+const SHIPPING_STATUSES = ["not_ready", "ready_courier", "handed", "transit", "delivered", "failed", "returning", "returned"];
+const ORDER_TABS = ["active", "new", "card_paid", "cod", "processing", "ready", "transit", "delivered", "review", "cancelled", "all"];
 
 app.post("/api/orders", ah(async (req, res) => {
   const b = req.body || {};
@@ -1335,8 +1436,12 @@ app.post("/api/orders", ah(async (req, res) => {
   const order = {
     id: crypto.randomUUID(),
     number: await db.nextOrderNumber(),
+    /* random capability token so guests can track their order via an emailed
+       link, without login and without a guessable order id. */
+    accessToken: crypto.randomBytes(24).toString("hex"),
     payment,
-    paymentStatus: payment === "cod" ? "cod" : stripeFlow ? "pending" : "offline",
+    /* COD is NEVER "paid" at creation — it is collected on delivery. */
+    paymentStatus: payment === "cod" ? "cod_pending" : stripeFlow ? "pending" : "offline",
     coupon: coupon ? coupon.code : "",
     discount,
     shippingFee,
@@ -1486,12 +1591,68 @@ app.get("/api/orders/confirm", ah(async (req, res) => {
     ok: true,
     paid: order.paymentStatus === "paid",
     order: {
+      id: order.id,
       number: order.number,
       payment: order.payment,
       items: order.items,
       total: order.total,
     },
   });
+}));
+
+/* Customer-initiated cancellation (from the order-success page or account).
+   Card + paid → Stripe refund; card pending / COD → just cancel. Only allowed
+   before the parcel has been handed to the courier. */
+app.post("/api/orders/:id/cancel", ah(async (req, res) => {
+  if (!security.isUuid(req.params.id)) return bad(res, 400, "invalid_id");
+  const order = await db.getOrder(req.params.id);
+  if (!order) return bad(res, 404, "not_found");
+
+  /* Logged-in users must own the order; guests are authorized by possession of
+     the unguessable order id (shown only to them on the success page). */
+  const session = auth.getUserSession(req);
+  if (session) {
+    const owns =
+      (order.userEmail && order.userEmail === session.sub) ||
+      (order.customer && normEmail(order.customer.email) === normEmail(session.sub));
+    if (!owns) return bad(res, 403, "forbidden");
+  }
+
+  if (order.status === "cancelled") return res.json({ ok: true, alreadyCancelled: true, refunded: order.paymentStatus === "refunded" });
+
+  const shippedish = ["handed", "transit", "delivered"].includes(order.shippingStatus);
+  const doneish = ["shipped", "delivered", "completed"].includes(order.status);
+  if (shippedish || doneish) return bad(res, 409, "not_cancellable");
+
+  const now = new Date().toISOString();
+  let refunded = false;
+
+  if (order.payment !== "cod" && order.paymentStatus === "paid" && order.stripeSessionId) {
+    const stripe = await getStripe();
+    if (stripe) {
+      try {
+        const s = await stripe.checkout.sessions.retrieve(order.stripeSessionId);
+        if (s && s.payment_intent) {
+          await stripe.refunds.create({ payment_intent: s.payment_intent });
+          refunded = true;
+        }
+      } catch (e) {
+        console.error("[stripe] refund failed:", e.message);
+        return bad(res, 502, "refund_failed");
+      }
+    }
+  }
+
+  const fields = { status: "cancelled" };
+  if (refunded) fields.payment_status = "refunded";
+  await db.updateOrder(order.id, fields);
+  await db.releaseStock(order.items);
+  await db.appendOrderEvent(order.id, { at: now, actor: "customer", type: "status", from: order.status, to: "cancelled" });
+  if (refunded) await db.appendOrderEvent(order.id, { at: now, actor: "customer", type: "payment", from: "paid", to: "refunded" });
+  audit(req, "order.cancelled.customer", order.number, { refunded });
+  clearReadCache();
+
+  res.json({ ok: true, refunded });
 }));
 
 app.get("/api/orders/mine", ah(async (req, res) => {
@@ -1501,6 +1662,35 @@ app.get("/api/orders/mine", ah(async (req, res) => {
   res.json({ ok: true, orders });
 }));
 
+/* Public guest tracking by capability token (emailed link). No login, no
+   guessable id. Returns a safe subset — the recipient's own order. */
+app.get("/api/orders/track", ah(async (req, res) => {
+  const token = String(req.query.token || "");
+  if (token.length < 20) return bad(res, 400, "invalid_token");
+  const o = await db.getOrderByAccessToken(token);
+  if (!o) return bad(res, 404, "not_found");
+  const c = o.customer || {};
+  const courier = o.courier || c.courier || "";
+  res.json({
+    ok: true,
+    order: {
+      number: o.number,
+      createdAt: o.createdAt,
+      status: o.status,
+      paymentStatus: o.paymentStatus,
+      shippingStatus: o.shippingStatus,
+      payment: o.payment,
+      tracking: o.tracking || "",
+      courier: courier,
+      items: (o.items || []).map((it) => ({ title: it.title, qty: it.qty, image: it.image, price: it.price })),
+      total: o.total,
+      discount: o.discount,
+      coupon: o.coupon,
+      customer: { firstname: c.firstname || "", lastname: c.lastname || "", city: c.city || "", postal: c.postal || "" },
+    },
+  });
+}));
+
 /* ================= ADMIN API ================= */
 
 app.post("/api/admin/login", ah(async (req, res) => {
@@ -1508,8 +1698,12 @@ app.post("/api/admin/login", ah(async (req, res) => {
   const password = String((req.body && req.body.password) || "");
   const code = String((req.body && req.body.code) || "");
   const rememberDevice = !!(req.body && req.body.rememberDevice);
+  const mfaRequired = security.admin2faRequired();
   if (auth.rateLimited("admin:" + (req.ip || ""))) {
     audit(req, "admin.login.blocked", username);
+    try { await recordAdminLoginEvent({ pool: db.getPool(), username, outcome: "blocked",
+      ipAddress: clientIp(req), userAgent: req.get("user-agent") || null,
+      requestId: req.requestId }); } catch (_) {}
     return bad(res, 429, "too_many_attempts");
   }
   if (!(await security.verifyTurnstile(req.body && req.body.captchaToken, req.ip))) {
@@ -1522,17 +1716,28 @@ app.post("/api/admin/login", ah(async (req, res) => {
     !await auth.verifyPassword(password, admin.passHash)
   ) {
     audit(req, "admin.login.failed", username);
+    try { await recordAdminLoginEvent({ pool: db.getPool(), username,
+      outcome: "invalid_credentials", ipAddress: clientIp(req),
+      userAgent: req.get("user-agent") || null, requestId: req.requestId }); } catch (_) {}
     return bad(res, 401, "invalid_credentials");
   }
   /* Second factor: when TOTP is enabled the code is mandatory — UNLESS this
      device is already trusted ("remember this device"), in which case the
      password alone completes the login. */
-  if (admin.totpEnabled && admin.totpSecret) {
+  if (mfaRequired && admin.totpEnabled && admin.totpSecret) {
     const trusted = auth.hasAdminTrust(req, username);
     if (!trusted) {
-      if (!code) return bad(res, 401, "mfa_required");
+      if (!code) {
+        try { await recordAdminLoginEvent({ pool: db.getPool(), username,
+          outcome: "mfa_required", ipAddress: clientIp(req),
+          userAgent: req.get("user-agent") || null, requestId: req.requestId }); } catch (_) {}
+        return bad(res, 401, "mfa_required");
+      }
       if (!auth.verifyTotp(admin.totpSecret, code)) {
         audit(req, "admin.login.mfa_failed", username);
+        try { await recordAdminLoginEvent({ pool: db.getPool(), username,
+          outcome: "invalid_mfa", ipAddress: clientIp(req),
+          userAgent: req.get("user-agent") || null, requestId: req.requestId }); } catch (_) {}
         return bad(res, 401, "invalid_mfa");
       }
       /* Fresh 2FA pass — honour the "trust this device" choice. */
@@ -1549,24 +1754,69 @@ app.post("/api/admin/login", ah(async (req, res) => {
       console.error("[rehash] admin", e.message);
     }
   }
-  auth.startAdminSession(res, username);
+  const mfaVerified = mfaRequired && !!admin.totpEnabled && !!admin.totpSecret;
+  const session = auth.startAdminSession(res, username, {
+    mfaVerified,
+  });
+  try {
+    await createAdminDatabaseSession({
+      pool: db.getPool(),
+      username,
+      mfaVerified,
+      sessionId: session.sessionId,
+      sessionFamilyId: session.sessionFamilyId,
+      csrfHash: session.csrfHash,
+      expiresAt: session.expiresAt,
+      ipAddress: clientIp(req),
+      userAgent: req.get("user-agent") || null,
+      requestId: req.requestId || null,
+    });
+  } catch (error) {
+    // Legacy admin remains available until V2 migrations are deployed.
+    console.warn("[admin-session] V2 session not persisted:", error.message);
+  }
   audit(req, "admin.login.success", username, {
-    mfa: !!admin.totpEnabled,
+    mfa: mfaVerified,
     trustedDevice: admin.totpEnabled ? auth.hasAdminTrust(req, username) || rememberDevice : false,
   });
-  res.json({ ok: true, username });
+  res.json({ ok: true, username, csrfToken: session.csrfToken, mfaRequired });
 }));
 
-app.post("/api/admin/logout", requireAdmin, (req, res) => {
+app.post("/api/admin/logout", requireAdmin, ah(async (req, res) => {
+  if (req.admin?.sid) {
+    try {
+      await revokeAdminSession({ pool: db.getPool(), sessionId: req.admin.sid });
+    } catch (error) {
+      console.warn("[admin-session] logout revocation failed:", error.message);
+    }
+  }
   auth.endAdminSession(res);
   audit(req, "admin.logout", req.admin && req.admin.sub);
   res.json({ ok: true });
-});
+}));
 
-app.get("/api/admin/me", (req, res) => {
+app.get("/api/admin/me", ah(async (req, res) => {
   const session = auth.getAdminSession(req);
-  res.json({ ok: true, admin: session ? { username: session.sub } : null });
-});
+  res.set("Cache-Control", "no-store");
+  if (!session) return res.json({ ok: true, admin: null });
+
+  const admin = await db.getSetting("admin");
+  const mfaRequired = security.admin2faRequired();
+  const mfaEnabled = !!(admin && admin.totpEnabled && admin.totpSecret);
+  const mfaVerified = !!session.mfa;
+  res.json({
+    ok: true,
+    admin: {
+      username: session.sub,
+      mfaRequired,
+      mfaEnabled,
+      mfaVerified,
+      accessGranted: !mfaRequired || mfaVerified,
+      requiresMfaSetup: mfaRequired && !mfaEnabled,
+      requiresMfaVerification: mfaRequired && mfaEnabled && !mfaVerified,
+    },
+  });
+}));
 
 app.post("/api/admin/password", requireAdmin, ah(async (req, res) => {
   const current = String((req.body && req.body.current) || "");
@@ -1590,7 +1840,8 @@ app.post("/api/admin/password", requireAdmin, ah(async (req, res) => {
 
 app.get("/api/admin/mfa/status", requireAdmin, ah(async (req, res) => {
   const admin = await db.getSetting("admin");
-  res.json({ ok: true, enabled: !!(admin && admin.totpEnabled) });
+  res.json({ ok: true, required: security.admin2faRequired(),
+    enabled: !!(admin && admin.totpEnabled) });
 }));
 
 /* Step 1: generate a fresh secret (kept "pending" until verified) and hand
@@ -1621,12 +1872,31 @@ app.post("/api/admin/mfa/enable", requireAdmin, ah(async (req, res) => {
   admin.totpEnabled = true;
   delete admin.totpPending;
   await db.setSetting("admin", admin);
+  if (req.admin?.sid) {
+    try { await revokeAdminSession({ pool: db.getPool(), sessionId: req.admin.sid,
+      reason: "mfa_enrolled" }); } catch (error) {
+      console.warn("[admin-session] pre-MFA session revocation failed:", error.message);
+    }
+  }
+  const session = auth.startAdminSession(res, admin.username, { mfaVerified: true });
+  try {
+    await createAdminDatabaseSession({ pool: db.getPool(), username: admin.username,
+      mfaVerified: true, sessionId: session.sessionId,
+      sessionFamilyId: session.sessionFamilyId, csrfHash: session.csrfHash,
+      expiresAt: session.expiresAt, ipAddress: clientIp(req),
+      userAgent: req.get("user-agent") || null, requestId: req.requestId || null });
+  } catch (error) {
+    console.warn("[admin-session] MFA session not persisted:", error.message);
+  }
   audit(req, "admin.mfa.enabled", req.admin && req.admin.sub);
-  res.json({ ok: true });
+  res.json({ ok: true, csrfToken: session.csrfToken });
 }));
 
 /* Disable MFA — requires BOTH the current password and a live code. */
 app.post("/api/admin/mfa/disable", requireAdmin, ah(async (req, res) => {
+  if (process.env.ALLOW_ADMIN_2FA_DISABLE !== "true") {
+    return bad(res, 403, "admin_2fa_required");
+  }
   const password = String((req.body && req.body.password) || "");
   const code = String((req.body && req.body.code) || "");
   const admin = await db.getSetting("admin");
@@ -1670,7 +1940,7 @@ app.get("/api/admin/settings", requireAdmin, ah(async (req, res) => {
       publishableFromEnv: !!process.env.STRIPE_PUBLISHABLE_KEY,
       webhookFromEnv: !!process.env.STRIPE_WEBHOOK_SECRET,
     },
-    analytics: { configured: !!gaMeasurementId() },
+    analytics: { configured: !!gaMeasurementId(), id: gaMeasurementId() || null, fromEnv: !!(process.env.GA_MEASUREMENT_ID || process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID) },
     email: {
       resend: mailer.resendConfigured(),
       smtp: mailer.smtpConfigured(),
@@ -1698,19 +1968,83 @@ app.get("/api/admin/overview", requireAdmin, ah(async (req, res) => {
 }));
 
 app.get("/api/admin/orders", requireAdmin, ah(async (req, res) => {
-  const q = pageQuery(req);
+  const pg = pageQuery(req);
   const status = String(req.query.status || "");
+  const tab = String(req.query.tab || "");
   if (status && !ORDER_STATUSES.includes(status)) return bad(res, 400, "invalid_status");
-  const data = await db.listOrdersPage(Object.assign({}, q, status ? { status } : {}));
-  res.json({ ok: true, orders: data.orders, pagination: data.pagination });
+  if (tab && !ORDER_TABS.includes(tab)) return bad(res, 400, "invalid_tab");
+  const fromD = req.query.from ? new Date(String(req.query.from)) : null;
+  let toD = req.query.to ? new Date(String(req.query.to)) : null;
+  if (toD && !isNaN(toD.getTime())) toD = new Date(toD.getTime() + 24 * 60 * 60 * 1000); // inclusive day
+  const opts = Object.assign({}, pg, {
+    tab: tab || undefined,
+    status: status || undefined,
+    q: String(req.query.q || "").slice(0, 120),
+    payment: String(req.query.payment || ""),
+    shipping: String(req.query.shipping || ""),
+    courier: String(req.query.courier || ""),
+    sort: String(req.query.sort || ""),
+    from: fromD && !isNaN(fromD.getTime()) ? fromD : undefined,
+    to: toD && !isNaN(toD.getTime()) ? toD : undefined,
+  });
+  const [data, counts] = await Promise.all([db.listOrdersPage(opts), db.orderTabCounts()]);
+  res.json({ ok: true, orders: data.orders, pagination: data.pagination, counts });
 }));
 
 app.patch("/api/admin/orders/:id", requireAdmin, ah(async (req, res) => {
   if (!security.isUuid(req.params.id)) return bad(res, 400, "invalid_id");
-  const status = req.body && req.body.status;
-  if (!ORDER_STATUSES.includes(status)) return bad(res, 400, "invalid_status");
-  const updated = await db.updateOrder(req.params.id, { status });
-  if (!updated) return bad(res, 404, "not_found");
+  const current = await db.getOrder(req.params.id);
+  if (!current) return bad(res, 404, "not_found");
+  const body = req.body || {};
+  const actor = (req.admin && (req.admin.sub || req.admin.username)) || "admin";
+  const now = new Date().toISOString();
+  const fields = {};
+  const events = [];
+
+  if (body.status !== undefined) {
+    const status = String(body.status);
+    if (!ORDER_STATUSES.includes(status)) return bad(res, 400, "invalid_status");
+    if (status !== current.status) {
+      fields.status = status;
+      events.push({ at: now, actor: actor, type: "status", from: current.status, to: status });
+    }
+  }
+  if (body.paymentStatus !== undefined) {
+    const ps = String(body.paymentStatus);
+    if (!PAYMENT_STATUSES.includes(ps)) return bad(res, 400, "invalid_payment_status");
+    if (ps !== current.paymentStatus) {
+      fields.payment_status = ps;
+      events.push({ at: now, actor: actor, type: "payment", from: current.paymentStatus, to: ps });
+    }
+  }
+  if (body.shippingStatus !== undefined) {
+    const ss = String(body.shippingStatus);
+    if (!SHIPPING_STATUSES.includes(ss)) return bad(res, 400, "invalid_shipping_status");
+    if (ss !== current.shippingStatus) {
+      fields.shipping_status = ss;
+      events.push({ at: now, actor: actor, type: "shipping", from: current.shippingStatus, to: ss });
+    }
+  }
+  if (body.tracking !== undefined) {
+    const v = String(body.tracking).trim().slice(0, 120);
+    if (v !== current.tracking) { fields.tracking = v; events.push({ at: now, actor: actor, type: "tracking", to: v }); }
+  }
+  if (body.courier !== undefined) {
+    const v = String(body.courier).trim().slice(0, 40);
+    if (v !== current.courier) { fields.courier = v; events.push({ at: now, actor: actor, type: "courier", to: v }); }
+  }
+  if (body.assignee !== undefined) {
+    const v = String(body.assignee).trim().slice(0, 80);
+    if (v !== current.assignee) { fields.assignee = v; events.push({ at: now, actor: actor, type: "assignee", to: v }); }
+  }
+  if (body.notes !== undefined) {
+    const v = String(body.notes).slice(0, 4000);
+    if (v !== current.notes) { fields.notes = v; events.push({ at: now, actor: actor, type: "notes" }); }
+  }
+
+  if (Object.keys(fields).length) await db.updateOrder(req.params.id, fields);
+  for (const ev of events) await db.appendOrderEvent(req.params.id, ev);
+  audit(req, "admin.order.update", req.params.id);
   res.json({ ok: true, order: await db.getOrder(req.params.id) });
 }));
 
@@ -1811,9 +2145,10 @@ app.post("/api/admin/products", requireAdmin, ah(async (req, res) => {
   const incoming = Array.isArray(b.imagesData)
     ? b.imagesData
     : (b.imageData ? [b.imageData] : []);
+  if (!validProductImageBatch(incoming)) return bad(res, 400, "invalid_image");
   if (incoming.length) {
     images = await saveProductImages(id, incoming);
-    if (!images.length) return bad(res, 400, "invalid_image");
+    if (images.length !== incoming.length) return bad(res, 400, "invalid_image");
     image = images[0];
   }
   const product = {
@@ -1847,6 +2182,8 @@ app.post("/api/admin/products", requireAdmin, ah(async (req, res) => {
   notifyNewProduct(product);
 
   clearReadCache();
+  audit(req, "admin.product.created", req.admin && req.admin.sub,
+    { productId: id, category: catId, hasImages: images.length > 0 });
   res.json({ ok: true, product });
 }));
 
@@ -1897,13 +2234,15 @@ app.patch("/api/admin/products/:id", requireAdmin, ah(async (req, res) => {
     const incomingImgs = Array.isArray(b.imagesData)
       ? b.imagesData
       : (b.imageData ? [b.imageData] : []);
-    if (incomingImgs.length) {
+    const replaceImages = b.replaceImages === true && Array.isArray(b.imagesData);
+    if (replaceImages || incomingImgs.length) {
+      if (!validProductImageBatch(incomingImgs)) return bad(res, 400, "invalid_image");
       const prev = Array.isArray(custom.images) && custom.images.length
         ? custom.images
         : (custom.image ? [custom.image] : []);
-      const saved = await saveProductImages(id, incomingImgs);
-      if (!saved.length) return bad(res, 400, "invalid_image");
-      fields.image = saved[0];
+      const saved = incomingImgs.length ? await saveProductImages(id, incomingImgs) : [];
+      if (saved.length !== incomingImgs.length) return bad(res, 400, "invalid_image");
+      fields.image = saved[0] || null;
       fields.images = JSON.stringify(saved);
       /* clean up any previous files that are no longer referenced */
       const stale = prev.filter((u) => saved.indexOf(u) === -1);
@@ -1973,6 +2312,11 @@ app.patch("/api/admin/products/:id", requireAdmin, ah(async (req, res) => {
   const overrides = await db.getOverrides();
   const ov = overrides[id] || {};
   clearReadCache();
+  audit(req, "admin.product.updated", req.admin && req.admin.sub, {
+    productId: id,
+    fields: Object.keys(b).map((key) => key === "imagesData" || key === "imageData" ? "images" : key)
+      .filter((key, index, all) => all.indexOf(key) === index),
+  });
   res.json({
     ok: true,
     id,
@@ -1998,6 +2342,8 @@ app.delete("/api/admin/products/:id", requireAdmin, ah(async (req, res) => {
     if (v.images && v.images.length) await removeProductImages(v.id, v.images);
   }
   clearReadCache();
+  audit(req, "admin.product.deleted", req.admin && req.admin.sub,
+    { productId: id, variantsDeleted: variants.length });
   res.json({ ok: true });
 }));
 
@@ -2008,6 +2354,24 @@ function parseStockValue(raw) {
   const n = parseInt(raw, 10);
   if (isNaN(n) || n < 0 || n > 9999) return undefined; // undefined = invalid
   return n;
+}
+
+function validVariantHex(value) {
+  return value === "" || /^#[0-9a-f]{6}$/i.test(value);
+}
+
+function sendVariantConstraintConflict(res, error) {
+  if (!error || error.code !== "23505") return false;
+  const constraint = String(error.constraint || "");
+  if (constraint === "product_variants_product_color_unique_idx") {
+    bad(res, 409, "variant_color_exists");
+    return true;
+  }
+  if (constraint === "product_variants_sku_unique_idx") {
+    bad(res, 409, "variant_sku_exists");
+    return true;
+  }
+  return false;
 }
 
 async function baseProductExists(id) {
@@ -2028,8 +2392,18 @@ app.post("/api/admin/products/:id/variants", requireAdmin, ah(async (req, res) =
     return bad(res, 409, "variant_color_exists");
   }
 
+  const sku = str(b.sku, 80);
+  if (!sku) return bad(res, 400, "missing_sku");
+  if (await db.variantSkuExists(sku)) {
+    return bad(res, 409, "variant_sku_exists");
+  }
+
+  const colorHex = str(b.colorHex, 20);
+  if (!validVariantHex(colorHex)) return bad(res, 400, "invalid_color_hex");
+
   const price = parsePrice(b.price);
   if (price === undefined) return bad(res, 400, "invalid_price");
+  if (price === null) return bad(res, 400, "missing_price");
   const salePrice = parsePrice(b.salePrice);
   if (salePrice === undefined) return bad(res, 400, "invalid_sale_price");
   if (salePrice != null && (price == null || salePrice >= price)) {
@@ -2039,31 +2413,42 @@ app.post("/api/admin/products/:id/variants", requireAdmin, ah(async (req, res) =
   if (saleUntil === undefined) return bad(res, 400, "invalid_sale_days");
   const stock = parseStockValue(b.stock);
   if (stock === undefined) return bad(res, 400, "invalid_stock");
+  if (stock === null) return bad(res, 400, "missing_stock");
 
   const id = await db.nextVariantId();
   let images = [];
   const incoming = Array.isArray(b.imagesData) ? b.imagesData : (b.imageData ? [b.imageData] : []);
+  if (!validProductImageBatch(incoming)) return bad(res, 400, "invalid_image");
   if (incoming.length) {
     images = await saveProductImages(id, incoming);
-    if (!images.length) return bad(res, 400, "invalid_image");
+    if (images.length !== incoming.length) return bad(res, 400, "invalid_image");
   }
 
-  const variant = await db.createVariant({
-    id,
-    productId: baseId,
-    color,
-    colorEn: str(b.colorEn, 80),
-    colorHex: str(b.colorHex, 20),
-    sku: str(b.sku, 80),
-    price,
-    salePrice: salePrice != null ? salePrice : null,
-    saleUntil: salePrice != null ? saleUntil : null,
-    stock,
-    images,
-    available: b.available !== false && b.available !== "0",
-  });
+  let variant;
+  try {
+    variant = await db.createVariant({
+      id,
+      productId: baseId,
+      color,
+      colorEn: str(b.colorEn, 80),
+      colorHex,
+      sku,
+      price,
+      salePrice: salePrice != null ? salePrice : null,
+      saleUntil: salePrice != null ? saleUntil : null,
+      stock,
+      images,
+      available: b.available !== false && b.available !== "0",
+    });
+  } catch (error) {
+    if (images.length) await removeProductImages(id, images);
+    if (sendVariantConstraintConflict(res, error)) return;
+    throw error;
+  }
 
   clearReadCache();
+  audit(req, "admin.product_variant.created", req.admin && req.admin.sub,
+    { variantId: variant.id, productId: baseId, sku: variant.sku });
   res.json({ ok: true, variant });
 }));
 
@@ -2083,8 +2468,19 @@ app.patch("/api/admin/variants/:vid", requireAdmin, ah(async (req, res) => {
     fields.color = color;
   }
   if (b.colorEn !== undefined) fields.color_en = str(b.colorEn, 80);
-  if (b.colorHex !== undefined) fields.color_hex = str(b.colorHex, 20);
-  if (b.sku !== undefined) fields.sku = str(b.sku, 80);
+  if (b.colorHex !== undefined) {
+    const colorHex = str(b.colorHex, 20);
+    if (!validVariantHex(colorHex)) return bad(res, 400, "invalid_color_hex");
+    fields.color_hex = colorHex;
+  }
+  if (b.sku !== undefined) {
+    const sku = str(b.sku, 80);
+    if (!sku) return bad(res, 400, "missing_sku");
+    if (await db.variantSkuExists(sku, vid)) {
+      return bad(res, 409, "variant_sku_exists");
+    }
+    fields.sku = sku;
+  }
   if (b.available !== undefined) fields.available = b.available !== false && b.available !== "0";
 
   const effPriceGiven = b.price !== undefined;
@@ -2092,6 +2488,7 @@ app.patch("/api/admin/variants/:vid", requireAdmin, ah(async (req, res) => {
   if (effPriceGiven) {
     const price = parsePrice(b.price);
     if (price === undefined) return bad(res, 400, "invalid_price");
+    if (price === null) return bad(res, 400, "missing_price");
     fields.price = price;
     effPrice = price;
   }
@@ -2113,20 +2510,35 @@ app.patch("/api/admin/variants/:vid", requireAdmin, ah(async (req, res) => {
   if (b.stock !== undefined) {
     const stock = parseStockValue(b.stock);
     if (stock === undefined) return bad(res, 400, "invalid_stock");
+    if (stock === null) return bad(res, 400, "missing_stock");
     fields.stock = stock;
   }
 
   const incoming = Array.isArray(b.imagesData) ? b.imagesData : (b.imageData ? [b.imageData] : []);
-  if (incoming.length) {
-    const saved = await saveProductImages(vid, incoming);
-    if (!saved.length) return bad(res, 400, "invalid_image");
+  const replaceImages = b.replaceImages === true;
+  if (replaceImages || incoming.length) {
+    if (!validProductImageBatch(incoming)) return bad(res, 400, "invalid_image");
+    const saved = incoming.length ? await saveProductImages(vid, incoming) : [];
+    if (incoming.length && saved.length !== incoming.length) return bad(res, 400, "invalid_image");
     const stale = (current.images || []).filter((u) => saved.indexOf(u) === -1);
     if (stale.length) await removeProductImages(vid, stale);
-    fields.images = JSON.stringify(saved);
+    fields.images = saved.length ? JSON.stringify(saved) : null;
   }
 
-  const variant = await db.updateVariant(vid, fields);
+  let variant;
+  try {
+    variant = await db.updateVariant(vid, fields);
+  } catch (error) {
+    if (sendVariantConstraintConflict(res, error)) return;
+    throw error;
+  }
   clearReadCache();
+  audit(req, "admin.product_variant.updated", req.admin && req.admin.sub, {
+    variantId: vid,
+    productId: current.productId,
+    fields: Object.keys(b).map((key) => key === "imagesData" || key === "imageData" ? "images" : key)
+      .filter((key, index, all) => all.indexOf(key) === index),
+  });
   res.json({ ok: true, variant });
 }));
 
@@ -2137,6 +2549,9 @@ app.delete("/api/admin/variants/:vid", requireAdmin, ah(async (req, res) => {
     await removeProductImages(req.params.vid, removed.imageList);
   }
   clearReadCache();
+  audit(req, "admin.product_variant.deleted", req.admin && req.admin.sub, {
+    variantId: req.params.vid, productId: removed.productId || null,
+  });
   res.json({ ok: true });
 }));
 
@@ -2237,19 +2652,52 @@ app.delete("/api/admin/reviews/:id", requireAdmin, ah(async (req, res) => {
   res.json({ ok: true });
 }));
 
-/* ================= ADMIN PANEL (hidden — /admin) ================= */
+/* ================= ADMIN PANEL (secret path via ADMIN_UI_PATH) ================= */
 
-app.use("/admin", (req, res, next) => {
+const {
+  ADMIN_UI_PATH,
+  adminUiPathRegex,
+} = require("./admin-ui-path");
+
+/* Guessable legacy URLs must not reveal the panel. */
+app.get(/^\/admin(\/.*)?$/, (req, res) => {
+  res.status(404).type("text/plain").send("Not found");
+});
+if (ADMIN_UI_PATH !== "/admin-react") {
+  app.get(/^\/admin-react(\/.*)?$/, (req, res) => {
+    res.status(404).type("text/plain").send("Not found");
+  });
+}
+
+const ADMIN_REACT_DIR = path.join(ROOT, "admin", "dist");
+app.use(
+  ADMIN_UI_PATH + "/assets",
+  (req, res, next) => {
+    res.set("X-Robots-Tag", "noindex, nofollow");
+    res.set("Cache-Control", "no-store");
+    next();
+  },
+  express.static(path.join(ADMIN_REACT_DIR, "assets"))
+);
+app.get(adminUiPathRegex(), (req, res, next) => {
+  const index = path.join(ADMIN_REACT_DIR, "index.html");
+  if (!fs.existsSync(index)) return next();
+  let html;
+  try {
+    html = fs.readFileSync(index, "utf8");
+  } catch {
+    return next();
+  }
+  /* Vite builds with base "./". Without a trailing slash in the URL, the browser
+     resolves ./assets to /assets. Rewrite to absolute ADMIN_UI_PATH URLs. */
+  html = html.replace(
+    /(src|href)="\.\/assets\//g,
+    "$1=\"" + ADMIN_UI_PATH + "/assets/"
+  );
   res.set("X-Robots-Tag", "noindex, nofollow");
   res.set("Cache-Control", "no-store");
-  next();
+  res.type("html").send(html);
 });
-
-app.get("/admin", (req, res) => {
-  res.sendFile(path.join(ADMIN_DIR, "index.html"));
-});
-
-app.use("/admin/assets", express.static(path.join(ADMIN_DIR, "assets")));
 
 /* ================= SEO (dynamic) ================= */
 
@@ -2365,6 +2813,8 @@ function redirectQueryWithout(keys) {
 /* Legacy *.html bookmarks → clean paths (301). */
 app.use(function (req, res, next) {
   if (req.method !== "GET" && req.method !== "HEAD") return next();
+  /* /html/* is an internal folder, not a public path → let it fall through to the 404 guard. */
+  if (req.path.startsWith("/html/")) return next();
   const match = req.path.match(/^\/(.+)\.html$/);
   if (!match) return next();
 
@@ -2396,14 +2846,19 @@ app.use(function (req, res, next) {
 });
 
 app.get("/account/register", function (req, res) {
-  res.sendFile(path.join(ROOT, "account.html"));
+  res.sendFile(path.join(HTML_DIR, "account.html"));
+});
+
+/* Public guest order tracking page (opened from the emailed link). */
+app.get("/track", function (req, res) {
+  res.sendFile(path.join(HTML_DIR, "track.html"));
 });
 
 /* product.html template, cached until the file changes (dev-friendly). */
 let PRODUCT_TEMPLATE = null;
 let PRODUCT_TEMPLATE_MTIME = 0;
 function productTemplate() {
-  const file = path.join(ROOT, "product.html");
+  const file = path.join(HTML_DIR, "product.html");
   const mtime = fs.statSync(file).mtimeMs;
   if (PRODUCT_TEMPLATE == null || mtime !== PRODUCT_TEMPLATE_MTIME) {
     PRODUCT_TEMPLATE = fs.readFileSync(file, "utf8");
@@ -2484,7 +2939,7 @@ app.get("/product/:id", ah(async (req, res) => {
 
   /* Unknown product → serve the page untouched (client shows its own 404). */
   if (!product) {
-    return res.sendFile(path.join(ROOT, "product.html"));
+    return res.sendFile(path.join(HTML_DIR, "product.html"));
   }
 
   const base = publicSiteUrl(req);
@@ -2496,18 +2951,22 @@ app.get("/product/:id", ah(async (req, res) => {
 }));
 
 app.get("/review/:id", function (req, res) {
-  res.sendFile(path.join(ROOT, "review.html"));
+  res.sendFile(path.join(HTML_DIR, "review.html"));
 });
 
 /* Never expose server internals or repo plumbing through the static server. */
-const BLOCKED = /^\/(server|node_modules|tools|\.git|\.claude)(\/|$)|^\/package(-lock)?\.json$|^\/run-server\.cmd$/i;
+const BLOCKED = /^\/(server|node_modules|tools|html|admin|\.git|\.claude)(\/|$)|^\/package(-lock)?\.json$|^\/run-server\.cmd$/i;
 app.use((req, res, next) => {
   if (BLOCKED.test(req.path)) return res.status(404).end();
   next();
 });
 
+/* Static assets (css, js, logo, images) live at ROOT; pages live under html/.
+   Assets are matched first, then clean-URL pages (/checkout → html/checkout.html,
+   / → html/index.html). */
+app.use(express.static(ROOT, { index: false }));
 app.use(
-  express.static(ROOT, {
+  express.static(HTML_DIR, {
     extensions: ["html"],
     index: "index.html",
   })
@@ -2515,7 +2974,7 @@ app.use(
 
 app.use((req, res) => {
   if (req.path.startsWith("/api/")) return bad(res, 404, "not_found");
-  res.status(404).sendFile(path.join(ROOT, "404.html"));
+  res.status(404).sendFile(path.join(HTML_DIR, "404.html"));
 });
 
 /* error handler — keep JSON shape for API consumers */
@@ -2550,6 +3009,7 @@ async function ensureAdmin() {
      on every startup so credentials live only in .env, not in the panel. */
   if (envPass) {
     await db.setSetting("admin", {
+      ...(existing || {}),
       username: envUser || (existing && existing.username) || "admin",
       passHash: await auth.hashPassword(envPass),
       fromEnv: true,
@@ -2575,7 +3035,7 @@ async function ensureAdmin() {
   fs.mkdirSync(db.DATA_DIR, { recursive: true });
   fs.writeFileSync(
     path.join(db.DATA_DIR, "admin-credentials.txt"),
-    "Nostalgia admin panel — http://localhost:" + PORT + "/admin\n" +
+    "Nostalgia admin panel — http://localhost:" + PORT + ADMIN_UI_PATH + "\n" +
       "Username: " + admin.username + "\n" +
       "Password: " + password + "\n" +
       "(Change it from the admin panel → Ρυθμίσεις, or set ADMIN_PASSWORD in .env.\n" +
@@ -2583,20 +3043,31 @@ async function ensureAdmin() {
     "utf8"
   );
   console.log("=".repeat(56));
-  console.log("  Admin panel created: /admin");
+  console.log("  Admin panel created: " + ADMIN_UI_PATH);
   console.log("  Username: " + admin.username);
   console.log("  Password: " + password);
   console.log("  (saved in server/data/admin-credentials.txt)");
   console.log("=".repeat(56));
 }
 
+let initializationPromise = null;
+
+function initialize() {
+  if (!initializationPromise) {
+    initializationPromise = (async () => {
+      await db.init();
+      await ensureSecret();
+      await ensureAdmin();
+    })();
+  }
+  return initializationPromise;
+}
+
 async function main() {
-  await db.init();
-  await ensureSecret();
-  await ensureAdmin();
+  await initialize();
   const server = app.listen(PORT, () => {
     console.log("Nostalgia site + API:  http://localhost:" + PORT);
-    console.log("Admin panel (hidden):  http://localhost:" + PORT + "/admin");
+    console.log("Admin panel (hidden):  http://localhost:" + PORT + ADMIN_UI_PATH + "/");
     console.log("Database:              PostgreSQL");
     console.log("");
     console.log("Server is running — keep this window open (Ctrl+C to stop).");
@@ -2615,7 +3086,7 @@ async function main() {
   }
 }
 
-main().catch((err) => {
+if (require.main === module) main().catch((err) => {
   console.error("Failed to start:", err.message);
   console.error(
     "Is PostgreSQL running? Connection: host=%s port=%s user=%s db=%s",
@@ -2626,3 +3097,5 @@ main().catch((err) => {
   );
   process.exit(1);
 });
+
+module.exports = { app, initialize };

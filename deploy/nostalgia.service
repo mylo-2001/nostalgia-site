@@ -1,0 +1,41 @@
+# systemd unit for the Nostalgia storefront + API on a VPS.
+# Install:
+#   sudo cp deploy/nostalgia.service /etc/systemd/system/nostalgia.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now nostalgia
+#   systemctl status nostalgia
+#   journalctl -u nostalgia -f          # live logs
+#
+# The app loads its own .env from the project root (Node >= 20.6 process.loadEnvFile),
+# so no EnvironmentFile is required — just keep .env in WorkingDirectory.
+
+[Unit]
+Description=Nostalgia Collection storefront + API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Dedicated non-login user (create once): sudo useradd --system --home /var/www/nostalgia --shell /usr/sbin/nologin nostalgia
+User=nostalgia
+Group=nostalgia
+WorkingDirectory=/var/www/nostalgia
+# NODE_ENV=production turns on: trust proxy, Secure cookies, production migration guard.
+Environment=NODE_ENV=production
+# Use the Node 20/22 LTS binary path on your box (which node):
+ExecStart=/usr/bin/node server/server.js
+Restart=always
+RestartSec=3
+# Give the process a moment on shutdown to finish in-flight requests.
+TimeoutStopSec=20
+
+# --- hardening ---
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+# The app only needs to write nothing on disk in normal operation; if you keep
+# local uploads/logs under the project, remove ProtectSystem=full or add ReadWritePaths.
+
+[Install]
+WantedBy=multi-user.target

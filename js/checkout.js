@@ -2,6 +2,31 @@
   var step = 1;
   var shippingData = null;
   var orderCaptcha = null;
+  var checkoutSubmitting = false;
+
+  function v2Context(lines, payment) {
+    var currentShipping = Object.assign({}, shippingData || {});
+    currentShipping.courier = getCourier() || currentShipping.courier;
+    currentShipping.gift = collectGiftData();
+    return {
+      step: step,
+      shippingData: currentShipping,
+      lines: lines || window.NostalgiaCart.getLineItems().slice(),
+      payment: payment || getPayMethod(),
+      couponCode: getStoredCoupon(),
+      lang: getLang(),
+    };
+  }
+
+  function setCheckoutStatus(message, busy) {
+    var status = document.getElementById("checkout-submit-status");
+    var cta = document.getElementById("checkout-cta");
+    if (status) status.textContent = message || "";
+    if (cta) {
+      cta.disabled = !!busy;
+      cta.setAttribute("aria-busy", busy ? "true" : "false");
+    }
+  }
 
   function t(key) {
     if (window.NostalgiaI18n && typeof window.NostalgiaI18n.t === "function") {
@@ -476,6 +501,9 @@
       escapeHtml(t("checkout_vat_included")) +
       "</p>" +
       "</div>";
+    if (window.NostalgiaCheckoutV2) {
+      window.NostalgiaCheckoutV2.refreshQuote(v2Context(lines));
+    }
   }
 
   function updateCta() {
@@ -537,7 +565,7 @@
     return true;
   }
 
-  function hideCheckoutAndShowSuccess(lines, payment, orderNumber) {
+  function hideCheckoutAndShowSuccess(lines, payment, orderNumber, orderId, extra) {
     document.getElementById("checkout-step-shipping").hidden = true;
     document.getElementById("checkout-step-payment").hidden = true;
     document.getElementById("checkout-sidebar").hidden = true;
@@ -549,14 +577,20 @@
     var layout = document.querySelector(".checkout-page__layout");
     if (layout) layout.hidden = true;
 
-    showOrderSuccess(lines, payment, orderNumber);
+    showOrderSuccess(lines, payment, orderNumber, orderId, extra);
     window.NostalgiaCart.clearCart();
   }
 
   function submitOrderByEmail(lines, payment) {
     var body = encodeURIComponent(buildOrderText(shippingData, payment));
     var subject = encodeURIComponent(t("checkout_email_subject"));
-    hideCheckoutAndShowSuccess(lines, payment);
+    hideCheckoutAndShowSuccess(lines, payment, undefined, undefined, {
+      courier: shippingData && shippingData.courier,
+      date: Date.now(),
+      email: shippingData && shippingData.email,
+      firstname: shippingData && shippingData.firstname,
+      lastname: shippingData && shippingData.lastname,
+    });
     window.setTimeout(function () {
       window.location.href = "mailto:mgerostathi@gmail.com?subject=" + subject + "&body=" + body;
     }, 3200);
@@ -566,6 +600,44 @@
     if (!shippingData) return;
     var payment = getPayMethod();
     var lines = window.NostalgiaCart.getLineItems().slice();
+
+    if (window.NostalgiaCheckoutV2 && window.NostalgiaCheckoutV2.isEnabled()) {
+      if (checkoutSubmitting) return;
+      checkoutSubmitting = true;
+      setCheckoutStatus(getLang() === "en" ? "Creating your order..."
+        : "Δημιουργία παραγγελίας...", true);
+      window.NostalgiaCheckoutV2.submit(v2Context(lines, payment)).then(function (result) {
+        if (result.checkoutUrl) {
+          window.location.href = result.checkoutUrl;
+          return;
+        }
+        try { sessionStorage.removeItem("nostalgia-pending-order"); } catch (_) {}
+        hideCheckoutAndShowSuccess(lines, payment, result.order.orderNumber,
+          result.order.orderId, {
+            courier: getCourier(), date: Date.now(), email: shippingData.email,
+            firstname: shippingData.firstname, lastname: shippingData.lastname,
+          });
+      }).catch(function (error) {
+        checkoutSubmitting = false;
+        var code = error && error.code || "CHECKOUT_FAILED";
+        var message;
+        if (code === "card_required") {
+          message = getLang() === "en"
+            ? "For this order, please choose card payment."
+            : "Για αυτή την παραγγελία, επιλέξτε πληρωμή με κάρτα.";
+        } else if (code === "GIFT_CHECKOUT_V2_NOT_CONFIGURED") {
+          message = getLang() === "en"
+            ? "Gift packaging is temporarily unavailable in secure checkout."
+            : "Η συσκευασία δώρου δεν είναι προσωρινά διαθέσιμη στο ασφαλές checkout.";
+        } else {
+          message = getLang() === "en"
+            ? "The order could not be created. No duplicate charge was made. Please try again."
+            : "Η παραγγελία δεν δημιουργήθηκε. Δεν έγινε διπλή χρέωση. Δοκιμάστε ξανά.";
+        }
+        setCheckoutStatus(message, false);
+      });
+      return;
+    }
 
     /* Backend running → store the order there; otherwise email fallback. */
     if (window.NostalgiaAPI && window.NostalgiaAPI.isAvailable()) {
@@ -597,11 +669,23 @@
               }),
               payment: payment,
               orderNumber: res.order && res.order.number,
+              orderId: res.order && res.order.id,
+              courier: shippingData && shippingData.courier,
+              date: Date.now(),
+              email: shippingData && shippingData.email,
+              firstname: shippingData && shippingData.firstname,
+              lastname: shippingData && shippingData.lastname,
             }));
           } catch (e) {}
           window.location.href = res.checkoutUrl;
         } else if (res.ok) {
-          hideCheckoutAndShowSuccess(lines, payment, res.order && res.order.number);
+          hideCheckoutAndShowSuccess(lines, payment, res.order && res.order.number, res.order && res.order.id, {
+            courier: shippingData && shippingData.courier,
+            date: Date.now(),
+            email: shippingData && shippingData.email,
+            firstname: shippingData && shippingData.firstname,
+            lastname: shippingData && shippingData.lastname,
+          });
         } else if (res.error && String(res.error).indexOf("out_of_stock") === 0) {
           alert(
             getLang() === "en"
@@ -643,31 +727,114 @@
       .replace(/"/g, "&quot;");
   }
 
-  function showOrderSuccess(lines, payment, orderNumber) {
+  function setupOrderCancel(orderId, payment) {
+    var wrap = document.getElementById("order-success-cancel");
+    var btn = document.getElementById("order-success-cancel-btn");
+    var result = document.getElementById("order-success-cancel-result");
+    if (!wrap || !btn) return;
+    if (!orderId || !(window.NostalgiaAPI && window.NostalgiaAPI.isAvailable())) {
+      wrap.hidden = true;
+      return;
+    }
+    wrap.hidden = false;
+    btn.hidden = false;
+    btn.disabled = false;
+    if (result) { result.hidden = true; result.textContent = ""; }
+    btn.onclick = function () {
+      if (!window.confirm(t("checkout_cancel_confirm"))) return;
+      btn.disabled = true;
+      window.NostalgiaAPI.post("/api/orders/" + encodeURIComponent(orderId) + "/cancel", {}).then(function (res) {
+        if (res && res.ok) {
+          btn.hidden = true;
+          if (result) {
+            result.hidden = false;
+            result.textContent = res.refunded ? t("checkout_cancel_done_refund") : t("checkout_cancel_done_cod");
+          }
+        } else {
+          btn.disabled = false;
+          if (result) {
+            result.hidden = false;
+            result.textContent = res && res.error === "not_cancellable"
+              ? t("checkout_cancel_too_late")
+              : t("checkout_cancel_fail");
+          }
+        }
+      }).catch(function () {
+        btn.disabled = false;
+        if (result) { result.hidden = false; result.textContent = t("checkout_cancel_fail"); }
+      });
+    };
+  }
+
+  var COURIER_LABELS = {
+    acs: "ACS Courier",
+    elta: "ELTA Courier",
+    speedex: "Speedex",
+    geniki: "Γενική Ταχυδρομική",
+    box: "BOX NOW",
+  };
+
+  function courierLabel(key) {
+    var id = String(key || "").toLowerCase();
+    return COURIER_LABELS[id] || (key ? String(key) : "—");
+  }
+
+  function setSuccessValue(id, value) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = value || "—";
+  }
+
+  /* Offer account creation after purchase — only to guests (not logged in),
+     never revealing whether the email already has an account. */
+  function setupCreateAccountCard(email, firstname, lastname) {
+    var card = document.getElementById("order-success-account");
+    if (!card) return;
+    if (!email || !(window.NostalgiaAPI && typeof window.NostalgiaAPI.ready === "function")) {
+      card.hidden = true;
+      return;
+    }
+    window.NostalgiaAPI.ready().then(function (ok) {
+      if (!ok) { card.hidden = true; return; }
+      window.NostalgiaAPI.get("/api/auth/me").then(function (data) {
+        if (data && data.ok && data.user) { card.hidden = true; return; } // already signed in
+        var btn = document.getElementById("order-success-account-btn");
+        if (btn) {
+          var q = "?email=" + encodeURIComponent(email) +
+            (firstname ? "&fn=" + encodeURIComponent(firstname) : "") +
+            (lastname ? "&ln=" + encodeURIComponent(lastname) : "");
+          btn.href = "/account/register" + q;
+        }
+        card.hidden = false;
+      }).catch(function () { card.hidden = true; });
+    });
+  }
+
+  function showOrderSuccess(lines, payment, orderNumber, orderId, extra) {
+    extra = extra || {};
     var success = document.getElementById("order-success");
     var payIcon = document.getElementById("order-success-pay-icon");
-    var payText = document.getElementById("order-success-payment");
     var productsEl = document.getElementById("order-success-products");
 
-    var numberWrap = document.getElementById("order-success-number");
-    var numberValue = document.getElementById("order-success-number-value");
-    if (numberWrap && numberValue) {
-      if (orderNumber) {
-        numberValue.textContent = orderNumber;
-        numberWrap.hidden = false;
-      } else {
-        numberWrap.hidden = true;
-      }
+    /* summary details box */
+    setSuccessValue("order-success-number-value", orderNumber ? "#" + orderNumber : "—");
+    var d = extra.date ? new Date(extra.date) : new Date();
+    var locale = getLang() === "en" ? "en-GB" : "el-GR";
+    setSuccessValue(
+      "order-success-date",
+      d.toLocaleDateString(locale) + " · " + d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
+    );
+    setSuccessValue("order-success-pay-method", payment === "cod" ? t("pay_method_cod") : t("pay_method_card"));
+    var courierRow = document.getElementById("order-success-courier-row");
+    if (extra.courier) {
+      setSuccessValue("order-success-courier", courierLabel(extra.courier));
+      if (courierRow) courierRow.hidden = false;
+    } else if (courierRow) {
+      courierRow.hidden = true;
     }
 
     if (payIcon) {
       payIcon.className = "order-success__pay-icon order-success__pay-icon--" + payment;
       payIcon.innerHTML = payment === "cod" ? PAY_ICON_COD : PAY_ICON_STRIPE;
-    }
-
-    if (payText) {
-      payText.textContent =
-        payment === "cod" ? t("checkout_success_payment_cod") : t("checkout_success_payment_stripe");
     }
 
     if (productsEl) {
@@ -715,6 +882,9 @@
         success.classList.add("is-active");
       });
     }
+
+    setupOrderCancel(orderId, payment);
+    setupCreateAccountCard(extra.email, extra.firstname, extra.lastname);
 
     if (window.NostalgiaI18n && window.NostalgiaI18n.applyLang) {
       window.NostalgiaI18n.applyLang(window.NostalgiaI18n.getLang());
@@ -948,7 +1118,7 @@
     }
   }
 
-  function showSuccessFromPending(pending) {
+  function showSuccessFromPending(pending, orderId) {
     document.getElementById("checkout-step-shipping").hidden = true;
     document.getElementById("checkout-step-payment").hidden = true;
     var sidebar = document.getElementById("checkout-sidebar");
@@ -965,8 +1135,85 @@
     var lines = (pending.lines || []).map(function (l) {
       return { qty: l.qty, product: { image: l.image, title: l.title } };
     });
-    showOrderSuccess(lines, pending.payment || "stripe", pending.orderNumber);
+    showOrderSuccess(lines, pending.payment || "stripe", pending.orderNumber, orderId || pending.orderId, {
+      courier: pending.courier,
+      date: pending.date,
+      email: pending.email,
+      firstname: pending.firstname,
+      lastname: pending.lastname,
+    });
     window.NostalgiaCart.clearCart();
+  }
+
+  function applyV2PaymentState(pending, status) {
+    var title = document.querySelector(".order-success__title");
+    var lead = document.querySelector(".order-success__lead");
+    var eyebrow = document.querySelector(".order-success__eyebrow");
+    var details = document.getElementById("order-success-details");
+    var cancel = document.getElementById("order-success-cancel");
+    if (cancel) cancel.hidden = true;
+    [title, lead, eyebrow].forEach(function (element) {
+      if (element) element.removeAttribute("data-i18n");
+    });
+    var paid = status && status.paymentStatus === "paid";
+    var failed = status && status.paymentStatus === "failed";
+    var cancelled = status && status.paymentStatus === "cancelled";
+    if (eyebrow) eyebrow.textContent = paid
+      ? (getLang() === "en" ? "Payment confirmed" : "Η πληρωμή επιβεβαιώθηκε")
+      : (getLang() === "en" ? "Order received" : "Η παραγγελία καταχωρίστηκε");
+    if (title) title.textContent = paid
+      ? (getLang() === "en" ? "Your payment is complete" : "Η πληρωμή ολοκληρώθηκε")
+      : (failed || cancelled)
+        ? (getLang() === "en" ? "The payment was not completed" : "Η πληρωμή δεν ολοκληρώθηκε")
+        : (getLang() === "en" ? "Your payment is being confirmed"
+          : "Η πληρωμή επιβεβαιώνεται");
+    if (lead) lead.textContent = paid
+      ? (getLang() === "en" ? "Your order is confirmed and will proceed for fulfilment."
+        : "Η παραγγελία επιβεβαιώθηκε και θα προχωρήσει για εκτέλεση.")
+      : failed
+        ? (getLang() === "en" ? "You can retry securely without creating a second order."
+          : "Μπορείτε να δοκιμάσετε ξανά με ασφάλεια, χωρίς δεύτερη παραγγελία.")
+        : cancelled
+          ? (getLang() === "en" ? "The payment session has closed. Your card was not marked paid."
+            : "Η συνεδρία πληρωμής έκλεισε και η κάρτα δεν σημειώθηκε ως πληρωμένη.")
+        : (getLang() === "en" ? "The order will be marked paid only after the provider webhook is verified."
+          : "Η παραγγελία θα σημειωθεί ως πληρωμένη μόνο μετά την επαλήθευση του webhook.");
+    var oldRetry = document.getElementById("v2-payment-retry");
+    if (oldRetry) oldRetry.remove();
+    if (failed && status.retryAllowed && details) {
+      var retry = document.createElement("button");
+      retry.type = "button";
+      retry.id = "v2-payment-retry";
+      retry.className = "btn-shop btn-shop--primary order-success__retry";
+      retry.textContent = getLang() === "en" ? "Retry card payment" : "Νέα προσπάθεια πληρωμής";
+      retry.addEventListener("click", function () {
+        retry.disabled = true;
+        retry.setAttribute("aria-busy", "true");
+        window.NostalgiaCheckoutV2.createCardSession(pending).then(function (session) {
+          window.location.href = session.checkoutUrl;
+        }).catch(function () {
+          retry.disabled = false;
+          retry.setAttribute("aria-busy", "false");
+          if (lead) lead.textContent = getLang() === "en"
+            ? "The new payment attempt could not start. Please try again."
+            : "Η νέα προσπάθεια πληρωμής δεν ξεκίνησε. Δοκιμάστε ξανά.";
+        });
+      });
+      details.appendChild(retry);
+    }
+    if (paid) {
+      try { sessionStorage.removeItem("nostalgia-pending-order"); } catch (_) {}
+    }
+  }
+
+  function pollV2PaymentState(pending, attempt) {
+    window.NostalgiaCheckoutV2.getPaymentStatus(pending).then(function (res) {
+      if (!res || !res.ok) return;
+      applyV2PaymentState(pending, res);
+      if (res.paymentStatus === "pending" && attempt < 8) {
+        window.setTimeout(function () { pollV2PaymentState(pending, attempt + 1); }, 2000);
+      }
+    }).catch(function () {});
   }
 
   /**
@@ -984,7 +1231,10 @@
     } catch (e) {}
 
     if (stripe === "cancel") {
-      try { sessionStorage.removeItem("nostalgia-pending-order"); } catch (e) {}
+      var cancelledPending = getPendingOrder();
+      if (!cancelledPending || !cancelledPending.v2) {
+        try { sessionStorage.removeItem("nostalgia-pending-order"); } catch (e) {}
+      }
       alert(
         getLang() === "en"
           ? "Payment was cancelled. Your cart is still saved."
@@ -996,12 +1246,18 @@
     if (stripe === "success") {
       var pending = getPendingOrder();
       var sessionId = params.get("session_id");
+      if (pending && pending.v2 && window.NostalgiaCheckoutV2) {
+        showSuccessFromPending(pending, pending.orderId);
+        applyV2PaymentState(pending, { paymentStatus: "pending" });
+        pollV2PaymentState(pending, 0);
+        return true;
+      }
       if (window.NostalgiaAPI && window.NostalgiaAPI.isAvailable() && sessionId) {
         window.NostalgiaAPI.get(
           "/api/orders/confirm?session_id=" + encodeURIComponent(sessionId)
         ).then(function (res) {
-          if (res.ok && pending) showSuccessFromPending(pending);
-          else if (pending) showSuccessFromPending(pending);
+          var oid = res && res.order && res.order.id;
+          if (pending) showSuccessFromPending(pending, oid);
         }).catch(function () {
           if (pending) showSuccessFromPending(pending);
         });
@@ -1012,6 +1268,69 @@
       return true;
     }
     return false;
+  }
+
+  /* Only fill blank fields, so we never overwrite what the visitor typed. */
+  function prefillField(id, val) {
+    var el = document.getElementById(id);
+    if (el && val != null && val !== "" && !el.value) el.value = val;
+  }
+
+  function prefillFromAccount(user) {
+    if (!user) return;
+    prefillField("checkout-firstname", user.firstname);
+    prefillField("checkout-lastname", user.lastname);
+    prefillField("checkout-email", user.email);
+    var a = user.address || {};
+    prefillField("checkout-phone", a.phone);
+    prefillField("checkout-mobile", a.mobile);
+    prefillField("checkout-postal", a.postal);
+    prefillField("checkout-street", a.street);
+    prefillField("checkout-street-number", a.streetNumber);
+    prefillField("checkout-city", a.city);
+    prefillField("checkout-prefecture", a.prefecture);
+    prefillField("checkout-floor", a.floor);
+    prefillField("checkout-location-type", a.locationType);
+    var country = document.getElementById("checkout-country");
+    if (country && a.country && !country.value) {
+      country.value = a.country;
+    }
+    updateCountryField();
+    updateGrFields();
+  }
+
+  /* Account banner: [Σύνδεση] or [Συνέχεια ως επισκέπτης] for guests; a
+     "logged in as …" note + auto-prefill for signed-in customers. */
+  function initAccountBanner() {
+    var banner = document.getElementById("checkout-account-banner");
+    if (!banner) return;
+    var guestBox = document.getElementById("checkout-account-guest");
+    var userBox = document.getElementById("checkout-account-user");
+    var guestBtn = document.getElementById("checkout-continue-guest");
+    if (guestBtn) guestBtn.addEventListener("click", function () { banner.hidden = true; });
+
+    function showGuest() {
+      banner.hidden = false;
+      if (guestBox) guestBox.hidden = false;
+      if (userBox) userBox.hidden = true;
+    }
+    function showUser(user) {
+      banner.hidden = false;
+      if (guestBox) guestBox.hidden = true;
+      if (userBox) userBox.hidden = false;
+      var emailEl = document.getElementById("checkout-account-email");
+      if (emailEl) emailEl.textContent = user.email || "";
+      prefillFromAccount(user);
+    }
+
+    if (!(window.NostalgiaAPI && typeof window.NostalgiaAPI.ready === "function")) return;
+    window.NostalgiaAPI.ready().then(function (ok) {
+      if (!ok) return; // no backend → stays a plain guest checkout, no banner
+      window.NostalgiaAPI.get("/api/auth/me").then(function (data) {
+        if (data && data.ok && data.user) showUser(data.user);
+        else showGuest();
+      }).catch(showGuest);
+    });
   }
 
   function init() {
@@ -1030,6 +1349,10 @@
     updateDocTypeUI();
     updateGiftUI();
     bindEvents();
+    initAccountBanner();
+    if (window.NostalgiaCheckoutV2) {
+      window.NostalgiaCheckoutV2.loadConfig().then(renderSummary);
+    }
     if (window.NostalgiaCaptcha) {
       orderCaptcha = window.NostalgiaCaptcha.mount(document.getElementById("checkout-captcha"));
     }

@@ -27,10 +27,15 @@
 
   var readyPromise = probe();
 
-  function request(method, path, body) {
+  function request(method, path, body, customHeaders) {
+    var headers = {};
+    if (body) headers["Content-Type"] = "application/json";
+    Object.keys(customHeaders || {}).forEach(function (key) {
+      headers[key] = customHeaders[key];
+    });
     return fetch(path, {
       method: method,
-      headers: body ? { "Content-Type": "application/json" } : undefined,
+      headers: Object.keys(headers).length ? headers : undefined,
       body: body ? JSON.stringify(body) : undefined,
       credentials: "same-origin",
     }).then(function (res) {
@@ -108,8 +113,14 @@
     get: function (path) {
       return request("GET", path);
     },
+    getWithHeaders: function (path, headers) {
+      return request("GET", path, null, headers || {});
+    },
     post: function (path, body) {
       return request("POST", path, body || {});
+    },
+    postWithHeaders: function (path, body, headers) {
+      return request("POST", path, body || {}, headers || {});
     },
     patch: function (path, body) {
       return request("PATCH", path, body || {});

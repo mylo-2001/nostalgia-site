@@ -1,0 +1,22 @@
+{
+  "$comment": "Type-check safety net for the vanilla storefront JS. It only CHECKS — noEmit means it never produces output or changes how the site runs. Start light: a few critical files, lenient rules. Add files to `include` as you harden them.",
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ES2020",
+    "moduleResolution": "bundler",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": false,
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": [
+    "types/globals.d.ts",
+    "js/order-fees.js",
+    "js/api.js",
+    "js/products.js"
+  ]
+}

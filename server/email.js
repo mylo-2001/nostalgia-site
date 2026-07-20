@@ -88,6 +88,8 @@ const T = {
     payCard: "Κάρτα (Stripe)",
     payCod: "Αντικαταβολή",
     receipt: "Ηλεκτρονική απόδειξη",
+    trackBtn: "Παρακολούθηση παραγγελίας",
+    trackHint: "Δες την κατάσταση της παραγγελίας σου οποιαδήποτε στιγμή — χωρίς σύνδεση.",
     footer: "Nostalgia Collection · Χειροποίητα κεριά",
   },
   en: {
@@ -110,6 +112,8 @@ const T = {
     payCard: "Card (Stripe)",
     payCod: "Cash on delivery",
     receipt: "Electronic receipt",
+    trackBtn: "Track your order",
+    trackHint: "Check your order status anytime — no login needed.",
     footer: "Nostalgia Collection · Handmade candles",
   },
 };
@@ -172,6 +176,12 @@ function buildHtml(order, lang) {
     '<div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#8a7a5e">' + esc(tr.orderCode) + "</div>" +
     '<div style="font-size:26px;color:#c5a060;font-weight:bold;letter-spacing:1px;margin-top:4px">' + esc(order.number) + "</div>" +
     "</div>" +
+    (order.accessToken
+      ? '<div style="text-align:center;margin:18px 0">' +
+        '<a href="' + esc(base + "/track?token=" + order.accessToken) + '" style="background:#15110e;color:#c5a060;text-decoration:none;display:inline-block;padding:12px 28px;border-radius:8px;font-size:14px;letter-spacing:1px">' + esc(tr.trackBtn) + "</a>" +
+        '<p style="font-size:12px;color:#8a7a5e;margin:8px 0 0">' + esc(tr.trackHint) + "</p>" +
+        "</div>"
+      : "") +
     '<h3 style="font-size:14px;letter-spacing:1px;text-transform:uppercase;color:#8a7a5e;margin:24px 0 8px">' + esc(tr.products) + "</h3>" +
     '<table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid #eee;border-radius:8px;overflow:hidden">' +
     itemsRows +
@@ -510,6 +520,19 @@ async function sendPasswordCode(to, code, lang) {
   }
 }
 
+async function sendTransactionalEmail(to, subject, html) {
+  if (!emailConfigured()) {
+    throw new Error("email_not_configured");
+  }
+  if (resendConfigured()) return sendViaResend(to, subject, html);
+  return getTransporter().sendMail({
+    from: process.env.SMTP_FROM || process.env.SMTP_USER,
+    to,
+    subject,
+    html,
+  });
+}
+
 module.exports = {
   sendOrderConfirmation,
   emailConfigured,
@@ -519,4 +542,5 @@ module.exports = {
   sendSaleBroadcast,
   sendCouponBroadcast,
   sendPasswordCode,
+  sendTransactionalEmail,
 };

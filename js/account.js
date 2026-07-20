@@ -365,26 +365,99 @@
   }
 
   var ORDER_STATUS_LABELS = {
-    el: {
-      new: "Νέα",
-      processing: "Σε επεξεργασία",
-      shipped: "Απεστάλη",
-      completed: "Ολοκληρώθηκε",
-      cancelled: "Ακυρώθηκε",
-    },
-    en: {
-      new: "New",
-      processing: "Processing",
-      shipped: "Shipped",
-      completed: "Completed",
-      cancelled: "Cancelled",
-    },
+    el: { new: "Νέα", processing: "Σε προετοιμασία", ready: "Έτοιμη για αποστολή", completed: "Ολοκληρώθηκε", cancelled: "Ακυρώθηκε", review: "Χρειάζεται έλεγχος", shipped: "Απεστάλη", delivered: "Παραδόθηκε" },
+    en: { new: "New", processing: "Processing", ready: "Ready to ship", completed: "Completed", cancelled: "Cancelled", review: "Needs review", shipped: "Shipped", delivered: "Delivered" },
   };
+  var PAY_STATUS_LABELS = {
+    el: { pending: "Εκκρεμεί", paid: "Πληρώθηκε", failed: "Απέτυχε", refunded: "Επιστροφή χρημάτων", partial_refund: "Μερική επιστροφή", offline: "Offline", cod_pending: "Δεν εισπράχθηκε", cod_collected: "Εισπράχθηκε", cod_not_delivered: "Δεν παραδόθηκε", cod_awaiting_remittance: "Αναμονή απόδοσης", cod: "Δεν εισπράχθηκε" },
+    en: { pending: "Pending", paid: "Paid", failed: "Failed", refunded: "Refunded", partial_refund: "Partial refund", offline: "Offline", cod_pending: "Not collected", cod_collected: "Collected", cod_not_delivered: "Not delivered", cod_awaiting_remittance: "Awaiting remittance", cod: "Not collected" },
+  };
+  var SHIP_STATUS_LABELS = {
+    el: { not_ready: "Δεν ετοιμάστηκε", ready_courier: "Έτοιμη για courier", handed: "Στο courier", transit: "Σε μεταφορά", delivered: "Παραδόθηκε", failed: "Αποτυχία παράδοσης", returning: "Επιστρέφεται", returned: "Επιστράφηκε" },
+    en: { not_ready: "Not prepared", ready_courier: "Ready for courier", handed: "Handed to courier", transit: "In transit", delivered: "Delivered", failed: "Delivery failed", returning: "Returning", returned: "Returned" },
+  };
+  var COURIER_LABELS_ACC = { acs: "ACS Courier", elta: "ELTA Courier", speedex: "Speedex", geniki: "Γενική Ταχυδρομική", box: "BOX NOW" };
 
-  function orderStatusLabel(status) {
-    var labels = ORDER_STATUS_LABELS[isEnglish() ? "en" : "el"];
-    return labels[status] || status;
+  function pickStatusLabel(map, status) {
+    var m = map[isEnglish() ? "en" : "el"];
+    return m[status] || status || "—";
   }
+  function orderStatusLabel(status) { return pickStatusLabel(ORDER_STATUS_LABELS, status); }
+  function payStatusLabel(status) { return pickStatusLabel(PAY_STATUS_LABELS, status); }
+  function shipStatusLabel(status) { return pickStatusLabel(SHIP_STATUS_LABELS, status); }
+  function payMethodLabel(o) { return o.payment === "cod" ? (isEnglish() ? "Cash on delivery" : "Αντικαταβολή") : (isEnglish() ? "Card" : "Κάρτα"); }
+  function courierLabelAcc(key) { var id = String(key || "").toLowerCase(); return COURIER_LABELS_ACC[id] || (key ? String(key) : ""); }
+  function orderCancellable(o) {
+    if (o.status === "cancelled" || o.status === "completed") return false;
+    if (["handed", "transit", "delivered"].indexOf(o.shippingStatus) !== -1) return false;
+    if (["shipped", "delivered"].indexOf(o.status) !== -1) return false;
+    return true;
+  }
+  var accountOrders = [];
+  function findAccountOrder(id) {
+    for (var i = 0; i < accountOrders.length; i++) if (accountOrders[i].id === id) return accountOrders[i];
+    return null;
+  }
+
+  /* Prefill the register form from ?email=&fn=&ln= (post-purchase account
+     offer). We never reveal whether the email already exists — the register
+     endpoint returns a neutral error the visitor can act on. */
+  function prefillRegisterFromQuery(root) {
+    try {
+      var params = new URLSearchParams(window.location.search);
+      var map = { email: params.get("email"), firstname: params.get("fn"), lastname: params.get("ln") };
+      Object.keys(map).forEach(function (name) {
+        if (!map[name]) return;
+        var el = root.querySelector('[name="' + name + '"]');
+        if (el && !el.value) el.value = map[name];
+      });
+    } catch (e) {}
+  }
+
+  function acctToast(msg) {
+    var el = document.createElement("div");
+    el.className = "account-toast";
+    el.setAttribute("role", "status");
+    el.textContent = msg;
+    document.body.appendChild(el);
+    window.requestAnimationFrame(function () { el.classList.add("is-on"); });
+    window.setTimeout(function () {
+      el.classList.remove("is-on");
+      window.setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 320);
+    }, 2600);
+  }
+
+  /* Reorder + cancel actions on account order cards (delegated, bound once). */
+  document.addEventListener("click", function (e) {
+    if (!e.target || !e.target.closest) return;
+    var reorderBtn = e.target.closest("[data-reorder]");
+    if (reorderBtn) {
+      var ro = findAccountOrder(reorderBtn.getAttribute("data-reorder"));
+      if (ro && window.NostalgiaCart && typeof window.NostalgiaCart.addItem === "function") {
+        (ro.items || []).forEach(function (it) { if (it.id) window.NostalgiaCart.addItem(it.id, it.qty); });
+        acctToast(t("account_order_reordered"));
+      }
+      return;
+    }
+    var cancelBtn = e.target.closest("[data-cancel-order]");
+    if (cancelBtn) {
+      if (!window.confirm(t("account_order_cancel_confirm"))) return;
+      if (!(window.NostalgiaAPI && window.NostalgiaAPI.isAvailable())) return;
+      cancelBtn.disabled = true;
+      window.NostalgiaAPI.post("/api/orders/" + cancelBtn.getAttribute("data-cancel-order") + "/cancel", {}).then(function (res) {
+        if (res && res.ok) {
+          acctToast(t("account_order_cancelled_ok"));
+          renderMyOrders();
+        } else {
+          cancelBtn.disabled = false;
+          acctToast(res && res.error === "not_cancellable"
+            ? t("account_order_cancel_toolate")
+            : (isEnglish() ? "Could not cancel the order." : "Δεν ήταν δυνατή η ακύρωση."));
+        }
+      }).catch(function () { cancelBtn.disabled = false; });
+      return;
+    }
+  });
 
   function escapeHtml(str) {
     return String(str == null ? "" : str)
@@ -1302,6 +1375,7 @@
           "</div>";
         return;
       }
+      accountOrders = res.orders;
       list.innerHTML = res.orders
         .map(function (o, idx) {
           var d = new Date(o.createdAt);
@@ -1323,39 +1397,36 @@
               );
             })
             .join("");
+          var courier = o.courier || (o.customer && o.customer.courier) || "";
           return (
-            '<article class="account-order account-order--reveal" style="--reveal-i:' +
+            '<article class="account-order account-order--reveal" data-order-id="' + escapeHtml(o.id) + '" style="--reveal-i:' +
             idx +
             '">' +
             '  <header class="account-order__head">' +
-            '    <span class="account-order__num">' +
-            escapeHtml(o.number) +
-            "</span>" +
-            '    <span class="account-order__status account-order__status--' +
-            escapeHtml(o.status) +
-            '">' +
-            escapeHtml(orderStatusLabel(o.status)) +
-            "</span>" +
-            '    <time class="account-order__date" datetime="' +
-            d.toISOString() +
-            '">' +
-            d.toLocaleDateString(isEnglish() ? "en-GB" : "el-GR", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            }) +
+            '    <span class="account-order__num">' + escapeHtml(o.number) + "</span>" +
+            '    <time class="account-order__date" datetime="' + d.toISOString() + '">' +
+            d.toLocaleDateString(isEnglish() ? "en-GB" : "el-GR", { day: "numeric", month: "short", year: "numeric" }) +
             "</time>" +
             "  </header>" +
-            '  <ul class="account-order__items">' +
-            items +
-            "</ul>" +
+            '  <div class="account-order__badges">' +
+            '    <span class="account-order__badge account-order__badge--order account-order__status--' + escapeHtml(o.status) + '">' + escapeHtml(orderStatusLabel(o.status)) + "</span>" +
+            '    <span class="account-order__badge account-order__badge--pay">' + escapeHtml(payMethodLabel(o) + " · " + payStatusLabel(o.paymentStatus)) + "</span>" +
+            '    <span class="account-order__badge account-order__badge--ship">' + escapeHtml(shipStatusLabel(o.shippingStatus)) + "</span>" +
+            "  </div>" +
+            (o.tracking
+              ? '  <p class="account-order__tracking">' + t("account_order_tracking") + ": <strong>" + escapeHtml(o.tracking) + "</strong>" +
+                (courier ? " · " + escapeHtml(courierLabelAcc(courier)) : "") + "</p>"
+              : (courier ? '  <p class="account-order__tracking">' + t("account_order_courier") + ": <strong>" + escapeHtml(courierLabelAcc(courier)) + "</strong></p>" : "")) +
+            '  <ul class="account-order__items">' + items + "</ul>" +
             (o.total
-              ? '<p class="account-order__total">' +
-                (isEnglish() ? "Total" : "Σύνολο") +
-                ": <strong>€" +
-                Number(o.total).toFixed(2) +
-                "</strong></p>"
+              ? '<p class="account-order__total">' + (isEnglish() ? "Total" : "Σύνολο") + ": <strong>€" + Number(o.total).toFixed(2) + "</strong></p>"
               : "") +
+            '  <div class="account-order__actions">' +
+            '    <button type="button" class="account-order__btn account-order__btn--reorder" data-reorder="' + escapeHtml(o.id) + '">' + t("account_order_reorder") + "</button>" +
+            (orderCancellable(o)
+              ? '    <button type="button" class="account-order__btn account-order__btn--cancel" data-cancel-order="' + escapeHtml(o.id) + '">' + t("account_order_cancel") + "</button>"
+              : "") +
+            "  </div>" +
             "</article>"
           );
         })
@@ -1594,6 +1665,7 @@
       if (window.NostalgiaI18n && window.NostalgiaI18n.applyLang) {
         window.NostalgiaI18n.applyLang(window.NostalgiaI18n.getLang(), { restartStory: false });
       }
+      prefillRegisterFromQuery(root);
       bindPasswordToggles(root);
       enhanceDateInputs(root);
       registerCaptcha = mountCaptcha("account-register-captcha");
@@ -1900,7 +1972,7 @@
     bindNewsletter();
     ensurePanelRoot();
     setupHeaderAccount();
-    /* Footer newsletter is primary — popup only via data-newsletter-open */
+    /* Newsletter band above footer — popup only via data-newsletter-open */
 
     window.addEventListener("load", ensureHeaderAccountVisible);
     document.addEventListener("nostalgia-side-nav-ready", ensureHeaderAccountVisible);

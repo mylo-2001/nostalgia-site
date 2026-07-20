@@ -11,9 +11,7 @@
   }
 
   function getSystemTheme() {
-    if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      return "dark";
-    }
+    /* Kept for compatibility — site default is always light. */
     return "light";
   }
 
@@ -63,7 +61,7 @@
   function applyTheme(theme, opts) {
     opts = opts || {};
     if (theme !== "light" && theme !== "dark") {
-      theme = getSystemTheme();
+      theme = "light";
     }
     root.setAttribute("data-theme", theme);
     updateThemeToggleUi(theme, opts.animateToggle);
@@ -138,7 +136,7 @@
 
   function init() {
     var stored = getStoredTheme();
-    applyTheme(stored || getSystemTheme(), { animateToggle: false });
+    applyTheme(stored === "dark" ? "dark" : "light", { animateToggle: false });
 
     var toggle = document.getElementById("theme-toggle");
     if (toggle) {
@@ -152,20 +150,9 @@
       });
     }
 
-    if (window.matchMedia) {
-      window
-        .matchMedia("(prefers-color-scheme: dark)")
-        .addEventListener("change", function () {
-          if (!getStoredTheme()) {
-            applyTheme(getSystemTheme(), { animateToggle: false });
-          }
-        });
-    }
-
     initMobileNav();
     initBackToTop();
     initSeo();
-    initAnalytics();
     initSiteChrome();
     initBreadcrumbs();
     initSitePolish();
@@ -182,10 +169,6 @@
 
   function initSeo() {
     loadScriptOnce("js/seo.js?v=1", "data-seo", "1");
-  }
-
-  function initAnalytics() {
-    loadScriptOnce("js/analytics.js?v=1", "data-analytics", "1");
   }
 
   function initBreadcrumbs() {
@@ -232,7 +215,7 @@
     }
     if (document.querySelector('script[data-site-chrome="1"]')) return;
     var script = document.createElement("script");
-    script.src = "js/site-chrome.js?v=announce-insert-fix";
+    script.src = "js/site-chrome.js?v=newsletter-band-1";
     script.async = false;
     script.setAttribute("data-site-chrome", "1");
     script.onload = function () {

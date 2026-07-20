@@ -1529,6 +1529,81 @@ body[data-page="account"].account-view--logged .account-page__panel {
   color: var(--ink-muted);
 }
 
+/* 3-axis badges + tracking + actions on account order cards */
+.account-order__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.5rem;
+  margin: 0 0 0.7rem;
+}
+.account-order__badge {
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid var(--rule-strong);
+  border-radius: 99px;
+  padding: 0.2rem 0.6rem;
+  color: var(--ink-muted);
+}
+.account-order__badge--pay { color: var(--ink); border-color: var(--rule-strong); }
+.account-order__badge--ship { color: #4a6270; border-color: color-mix(in srgb, #4a6270 40%, transparent); }
+.account-order__badge--order.account-order__status--completed { color: #4f7048; border-color: color-mix(in srgb, #4f7048 55%, transparent); }
+.account-order__badge--order.account-order__status--cancelled { color: #a35043; border-color: color-mix(in srgb, #a35043 55%, transparent); }
+.account-order__badge--order.account-order__status--review { color: #a35043; border-color: color-mix(in srgb, #a35043 55%, transparent); }
+.account-order__badge--order.account-order__status--ready { color: #6a4f86; border-color: color-mix(in srgb, #6a4f86 45%, transparent); }
+
+.account-order__tracking {
+  margin: 0 0 0.7rem;
+  font-size: 0.82rem;
+  color: var(--ink-muted);
+}
+.account-order__tracking strong { color: var(--ink); }
+
+.account-order__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+.account-order__btn {
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  font-family: var(--font-nav);
+  font-size: 0.62rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  padding: 0.42rem 0.85rem;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.account-order__btn--reorder:hover { background: var(--accent); color: #fff; }
+.account-order__btn--cancel {
+  border-color: color-mix(in srgb, #a35043 55%, transparent);
+  color: #a35043;
+}
+.account-order__btn--cancel:hover { background: #a35043; color: #fff; }
+.account-order__btn:disabled { opacity: 0.5; cursor: default; }
+
+.account-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 1.5rem;
+  transform: translate(-50%, 1rem);
+  z-index: 9999;
+  background: var(--ink, #2b2621);
+  color: #fff;
+  padding: 0.7rem 1.2rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+.account-toast.is-on { opacity: 1; transform: translate(-50%, 0); }
+
 .account-order__items {
   list-style: none;
   margin: 0;

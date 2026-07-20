@@ -12,13 +12,15 @@
   function readConsent() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : null;
+      var parsed = raw ? JSON.parse(raw) : null;
+      return consentExpired(parsed) ? null : parsed;
     } catch (e) {
       return null;
     }
   }
 
   function saveConsent(data) {
+    var previous = readConsent();
     try {
       localStorage.setItem(
         STORAGE_KEY,
@@ -30,7 +32,14 @@
         })
       );
     } catch (e) {}
-    document.dispatchEvent(new CustomEvent("nostalgia-cookie-consent-set"));
+    var revoked = !!(previous &&
+      ((previous.analytics && !data.analytics) || (previous.marketing && !data.marketing)));
+    document.dispatchEvent(new CustomEvent("nostalgia-cookie-consent-set", {
+      detail: { analytics: !!data.analytics, marketing: !!data.marketing, revoked: revoked },
+    }));
+    if (revoked) {
+      window.setTimeout(function () { window.location.reload(); }, 50);
+    }
   }
 
   function consentExpired(consent) {
@@ -45,6 +54,37 @@
 
   var bannerEl;
   var settingsEl;
+  var lastFocused;
+
+  function focusDialog(root) {
+    if (!root) return;
+    if (!lastFocused ||
+        !(bannerEl && bannerEl.contains(document.activeElement)) &&
+        !(settingsEl && settingsEl.contains(document.activeElement))) {
+      lastFocused = document.activeElement;
+    }
+    var first = root.querySelector("button, a[href], input, select, textarea, [tabindex]:not([tabindex='-1'])");
+    if (first) window.setTimeout(function () { first.focus(); }, 0);
+  }
+
+  function trapFocus(event, root) {
+    if (event.key !== "Tab" || !root || root.hidden) return;
+    var focusable = Array.prototype.filter.call(root.querySelectorAll(
+      "button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), " +
+      "textarea:not([disabled]), [tabindex]:not([tabindex='-1'])"), function (element) {
+        return element.offsetParent !== null;
+      });
+    if (!focusable.length) return;
+    var first = focusable[0];
+    var last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
 
   function ensureUI() {
     if (bannerEl) return;
@@ -184,6 +224,7 @@
     });
 
     document.addEventListener("keydown", function (e) {
+      trapFocus(e, settingsEl && !settingsEl.hidden ? settingsEl : bannerEl);
       if (e.key === "Escape") {
         if (settingsEl && !settingsEl.hidden) closeSettings();
         else if (bannerEl && !bannerEl.hidden) closeSettings();
@@ -213,12 +254,14 @@
     applyI18n();
     bannerEl.hidden = false;
     document.body.classList.add("cookie-banner-open");
+    focusDialog(bannerEl);
   }
 
   function hideAll() {
     if (bannerEl) bannerEl.hidden = true;
     if (settingsEl) settingsEl.hidden = true;
     document.body.classList.remove("cookie-banner-open", "cookie-settings-open");
+    if (lastFocused && typeof lastFocused.focus === "function") lastFocused.focus();
   }
 
   function openSettings() {
@@ -233,6 +276,7 @@
     document.body.classList.remove("cookie-banner-open");
     document.body.classList.add("cookie-settings-open");
     applyI18n();
+    focusDialog(settingsEl);
   }
 
   function closeSettings() {

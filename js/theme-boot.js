@@ -12,18 +12,24 @@
   } catch (e) {}
   try {
     var t = localStorage.getItem("nostalgia-theme");
-    if (t === "light" || t === "dark") {
-      document.documentElement.setAttribute("data-theme", t);
-    } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      document.documentElement.setAttribute("data-theme", "dark");
-    } else {
-      document.documentElement.setAttribute("data-theme", "light");
-    }
-  } catch (e) {}
+    /* Default is always light. Dark only if the visitor chose it. */
+    document.documentElement.setAttribute(
+      "data-theme",
+      t === "dark" ? "dark" : "light"
+    );
+  } catch (e) {
+    document.documentElement.setAttribute("data-theme", "light");
+  }
   try {
     var l = localStorage.getItem("nostalgia-lang");
     if (l === "en" || l === "el") {
       document.documentElement.lang = l;
+    }
+  } catch (e) {}
+  /* Temporarily hide curtain until home JS scrolls past it on return visits. */
+  try {
+    if (sessionStorage.getItem("nostalgia-intro-seen") === "1") {
+      document.documentElement.classList.add("intro-resume");
     }
   } catch (e) {}
 })();

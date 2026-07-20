@@ -6,12 +6,16 @@
  * loads until you fill in the IDs below AND the visitor consents.
  *
  * ┌─────────────────────────────────────────────────────────────┐
- * │  FILL IN YOUR REAL IDS HERE (leave "" to keep a tool off):    │
+ * │  Google Analytics 4 is configured from the server: set        │
+ * │  GA_MEASUREMENT_ID in .env (single source of truth). The id    │
+ * │  is fetched from /api/public-config at runtime — no need to    │
+ * │  edit this file. Meta Pixel / Klaviyo (marketing) are still    │
+ * │  filled in below (leave "" to keep a tool off).                │
  * └─────────────────────────────────────────────────────────────┘
  */
 (function () {
   var CONFIG = {
-    ga4: "",        // Google Analytics 4 — Measurement ID, e.g. "G-XXXXXXXXXX"
+    ga4: "",        // GA4 Measurement ID — normally left "" (comes from server / .env GA_MEASUREMENT_ID)
     metaPixel: "",  // Meta / Facebook Pixel — ID, e.g. "1234567890123456"
     klaviyo: "",    // Klaviyo — Public API key (company id), e.g. "ABC123"
   };
@@ -72,19 +76,43 @@
 
   function apply() {
     var c = consent();
-    if (c.analytics) loadGA();
+    if (c.analytics) {
+      if (CONFIG.ga4) window["ga-disable-" + CONFIG.ga4] = false;
+      if (window.gtag) window.gtag("consent", "update", { analytics_storage: "granted" });
+      loadGA();
+    } else {
+      if (CONFIG.ga4) window["ga-disable-" + CONFIG.ga4] = true;
+      if (window.gtag) window.gtag("consent", "update", { analytics_storage: "denied" });
+    }
     if (c.marketing) {
+      if (window.fbq) window.fbq("consent", "grant");
       loadMeta();
       loadKlaviyo();
+    } else if (window.fbq) {
+      window.fbq("consent", "revoke");
     }
+  }
+
+  /* Pull the GA4 Measurement ID from the server (.env GA_MEASUREMENT_ID) unless
+     one was hardcoded above. Consent still gates whether GA actually loads. */
+  function init() {
+    fetch("/api/public-config", { credentials: "same-origin" })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data && data.ok && !CONFIG.ga4 && data.gaMeasurementId) {
+          CONFIG.ga4 = data.gaMeasurementId;
+        }
+      })
+      .catch(function () {})
+      .then(apply);
   }
 
   document.addEventListener("nostalgia-cookie-consent-set", apply);
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", apply);
+    document.addEventListener("DOMContentLoaded", init);
   } else {
-    apply();
+    init();
   }
 
   window.NostalgiaTracking = { apply: apply, config: CONFIG };

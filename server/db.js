@@ -39,6 +39,11 @@ function qRead(text, params) {
   return (readPool || pool).query(text, params);
 }
 
+function getPool() {
+  if (!pool) throw new Error("database_not_initialised");
+  return pool;
+}
+
 function pageOpts(opts, fallbackLimit) {
   opts = opts || {};
   const page = Math.max(1, parseInt(opts.page, 10) || 1);
@@ -207,6 +212,17 @@ ALTER TABLE products             ADD COLUMN IF NOT EXISTS images TEXT;
    Empty = fall back to the Greek value on the storefront. */
 ALTER TABLE products             ADD COLUMN IF NOT EXISTS title_en TEXT NOT NULL DEFAULT '';
 ALTER TABLE products             ADD COLUMN IF NOT EXISTS description_en TEXT NOT NULL DEFAULT '';
+/* order fulfillment / operations fields — added after the original schema shipped */
+ALTER TABLE orders               ADD COLUMN IF NOT EXISTS tracking TEXT NOT NULL DEFAULT '';
+ALTER TABLE orders               ADD COLUMN IF NOT EXISTS courier  TEXT NOT NULL DEFAULT '';
+ALTER TABLE orders               ADD COLUMN IF NOT EXISTS assignee TEXT NOT NULL DEFAULT '';
+ALTER TABLE orders               ADD COLUMN IF NOT EXISTS notes    TEXT NOT NULL DEFAULT '';
+ALTER TABLE orders               ADD COLUMN IF NOT EXISTS events   JSONB NOT NULL DEFAULT '[]'::jsonb;
+/* shipping status is a separate axis from order status and payment status */
+ALTER TABLE orders               ADD COLUMN IF NOT EXISTS shipping_status TEXT NOT NULL DEFAULT 'not_ready';
+/* random capability token for guest order tracking (no login, no guessable id) */
+ALTER TABLE orders               ADD COLUMN IF NOT EXISTS access_token TEXT;
+CREATE INDEX IF NOT EXISTS orders_access_token_idx ON orders (access_token);
 CREATE INDEX IF NOT EXISTS users_created_at_idx ON users (created_at DESC);
 CREATE INDEX IF NOT EXISTS products_active_created_at_idx ON products (active, created_at ASC);
 CREATE INDEX IF NOT EXISTS coupons_created_at_idx ON coupons (created_at DESC);
@@ -832,6 +848,18 @@ async function variantColorExists(productId, color, excludeId) {
   return r.rowCount > 0;
 }
 
+/* SKU identifies the exact purchasable unit, so it must be unique across all
+   variants. Matching is case-insensitive to avoid visually duplicate SKUs. */
+async function variantSkuExists(sku, excludeId) {
+  const norm = String(sku || "").trim().toLowerCase();
+  if (!norm) return false;
+  const r = await q(
+    "SELECT id FROM product_variants WHERE lower(trim(sku)) = $1 AND ($2::text IS NULL OR id <> $2) LIMIT 1",
+    [norm, excludeId || null]
+  );
+  return r.rowCount > 0;
+}
+
 async function createVariant(v) {
   const r = await q(
     "SELECT COALESCE(MAX(position), -1) + 1 AS pos FROM product_variants WHERE product_id = $1",
@@ -1097,10 +1125,36 @@ function rowToOrder(r) {
     customer: r.customer,
     gift: r.gift,
     items: r.items,
+    tracking: r.tracking || "",
+    courier: r.courier || "",
+    assignee: r.assignee || "",
+    notes: r.notes || "",
+    events: Array.isArray(r.events) ? r.events : [],
+    shippingStatus: r.shipping_status || "not_ready",
+    accessToken: r.access_token || "",
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
 }
+
+/* A "needs attention" order (used by the review tab + active view). */
+const ORDER_ATTENTION_SQL =
+  "(status = 'review' OR payment_status IN ('failed','cod_not_delivered') OR shipping_status IN ('failed','returning','returned'))";
+
+/* Admin order tabs → SQL condition. Values are literals (no user input),
+   so they are safe to inline. Order status ≠ payment status ≠ shipping status. */
+const ORDER_TAB_SQL = {
+  active: "(status IN ('new','processing','ready','review') OR " + ORDER_ATTENTION_SQL + ")",
+  new: "status = 'new'",
+  card_paid: "(payment <> 'cod' AND payment_status = 'paid')",
+  cod: "payment = 'cod'",
+  processing: "status = 'processing'",
+  ready: "status = 'ready'",
+  transit: "shipping_status = 'transit'",
+  delivered: "shipping_status = 'delivered'",
+  review: ORDER_ATTENTION_SQL,
+  cancelled: "status = 'cancelled'",
+};
 
 async function nextOrderNumber() {
   const r = await q("SELECT nextval('order_number_seq') AS n");
@@ -1109,8 +1163,8 @@ async function nextOrderNumber() {
 
 async function createOrder(o) {
   await q(
-    `INSERT INTO orders (id, number, status, payment, payment_status, coupon, discount, total, lang, user_email, customer, gift, items)
-     VALUES ($1,$2,'new',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+    `INSERT INTO orders (id, number, status, payment, payment_status, coupon, discount, total, lang, user_email, customer, gift, items, access_token)
+     VALUES ($1,$2,'new',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
     [
       o.id,
       o.number,
@@ -1124,8 +1178,15 @@ async function createOrder(o) {
       JSON.stringify(o.customer),
       JSON.stringify(o.gift),
       JSON.stringify(o.items),
+      o.accessToken || null,
     ]
   );
+}
+
+async function getOrderByAccessToken(token) {
+  if (!token) return null;
+  const r = await q("SELECT * FROM orders WHERE access_token = $1", [token]);
+  return r.rowCount ? rowToOrder(r.rows[0]) : null;
 }
 
 async function listOrders() {
@@ -1156,26 +1217,110 @@ async function monthlyBestSellerIds(limit, opts) {
 }
 
 async function listOrdersPage(opts) {
+  opts = opts || {};
   const p = pageOpts(opts, 50);
-  const where = opts && opts.status ? "WHERE status = $3" : "";
-  const params = [p.limit, p.offset];
-  const countParams = [];
-  if (opts && opts.status) {
+  const conds = [];
+  const params = [];
+  let i = 1;
+
+  /* tab (cross-axis) or an explicit single order status (back-compat) */
+  if (opts.status) {
+    conds.push(`status = $${i++}`);
     params.push(opts.status);
-    countParams.push(opts.status);
+  } else if (opts.tab && opts.tab !== "all" && ORDER_TAB_SQL[opts.tab]) {
+    conds.push(ORDER_TAB_SQL[opts.tab]);
   }
-  const total = await q(
-    "SELECT COUNT(*)::int AS total FROM orders " + (where ? "WHERE status = $1" : ""),
-    countParams
-  );
+
+  /* payment filter: method ("card"/"cod") or a specific payment_status value */
+  if (opts.payment) {
+    if (opts.payment === "cod") {
+      conds.push(`payment = 'cod'`);
+    } else if (opts.payment === "card") {
+      conds.push(`payment <> 'cod'`);
+    } else {
+      conds.push(`payment_status = $${i++}`);
+      params.push(opts.payment);
+    }
+  }
+
+  /* shipping status filter */
+  if (opts.shipping) {
+    conds.push(`shipping_status = $${i++}`);
+    params.push(opts.shipping);
+  }
+
+  /* courier filter — effective courier is the admin column, else customer JSON */
+  if (opts.courier) {
+    conds.push(`LOWER(COALESCE(NULLIF(courier, ''), customer->>'courier', '')) = $${i++}`);
+    params.push(String(opts.courier).toLowerCase());
+  }
+
+  if (opts.from) { conds.push(`created_at >= $${i++}`); params.push(opts.from); }
+  if (opts.to) { conds.push(`created_at < $${i++}`); params.push(opts.to); }
+
+  /* search: order number, tracking, customer name / email / phone */
+  if (opts.q && String(opts.q).trim()) {
+    const like = `%${String(opts.q).trim().toLowerCase()}%`;
+    conds.push(
+      `(LOWER(number) LIKE $${i} OR LOWER(tracking) LIKE $${i}` +
+      ` OR LOWER(COALESCE(customer->>'firstname','') || ' ' || COALESCE(customer->>'lastname','')) LIKE $${i}` +
+      ` OR LOWER(COALESCE(customer->>'email','')) LIKE $${i}` +
+      ` OR LOWER(COALESCE(customer->>'mobile','')) LIKE $${i}` +
+      ` OR LOWER(COALESCE(customer->>'phone','')) LIKE $${i})`
+    );
+    params.push(like);
+    i++;
+  }
+
+  const where = conds.length ? "WHERE " + conds.join(" AND ") : "";
+
+  let order;
+  switch (opts.sort) {
+    case "oldest": order = "created_at ASC"; break;
+    case "amount-desc": order = "total DESC, created_at DESC"; break;
+    case "amount-asc": order = "total ASC, created_at DESC"; break;
+    case "recent": order = "created_at DESC"; break;
+    case "priority":
+    default:
+      /* problems first, then new, then oldest-waiting first */
+      order = ORDER_ATTENTION_SQL + " DESC, (status = 'new') DESC, created_at ASC";
+  }
+  /* on a specific tab (not the action-oriented default views) show newest first */
+  if (!opts.sort && opts.tab && opts.tab !== "active" && opts.tab !== "all") {
+    order = "created_at DESC";
+  }
+
+  const total = await q(`SELECT COUNT(*)::int AS total FROM orders ${where}`, params);
+  const listParams = params.slice();
+  listParams.push(p.limit);
+  listParams.push(p.offset);
   const r = await q(
-    "SELECT * FROM orders " + where + " ORDER BY created_at DESC LIMIT $1 OFFSET $2",
-    params
+    `SELECT * FROM orders ${where} ORDER BY ${order} LIMIT $${i++} OFFSET $${i++}`,
+    listParams
   );
   return {
     orders: r.rows.map(rowToOrder),
     pagination: pagination(total.rows[0].total, p.page, p.limit),
   };
+}
+
+/* Order counts per admin tab (cross-axis), computed in one pass. */
+async function orderTabCounts() {
+  const selects = ["COUNT(*)::int AS all"];
+  Object.keys(ORDER_TAB_SQL).forEach((tab) => {
+    selects.push(`COUNT(*) FILTER (WHERE ${ORDER_TAB_SQL[tab]})::int AS "${tab}"`);
+  });
+  const r = await q(`SELECT ${selects.join(", ")} FROM orders`);
+  return r.rows[0] || { all: 0 };
+}
+
+/* Append one entry to an order's event history (audit log). */
+async function appendOrderEvent(id, event) {
+  const r = await q(
+    "UPDATE orders SET events = events || $2::jsonb, updated_at = now() WHERE id = $1",
+    [id, JSON.stringify([event])]
+  );
+  return r.rowCount > 0;
 }
 
 async function listRecentOrders(limit) {
@@ -1199,7 +1344,10 @@ async function getOrder(id) {
 }
 
 async function updateOrder(id, fields) {
-  const ALLOWED = new Set(["status", "payment_status", "stripe_session_id", "payment"]);
+  const ALLOWED = new Set([
+    "status", "payment_status", "shipping_status", "stripe_session_id", "payment",
+    "tracking", "courier", "assignee", "notes",
+  ]);
   const sets = [];
   const vals = [id];
   let i = 2;
@@ -1291,6 +1439,35 @@ async function reserveStock(items) {
   }
 }
 
+/* Give stock back (order cancelled). Only touches limited-stock rows. */
+async function releaseStock(items) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    for (const it of items || []) {
+      const qty = Math.max(0, parseInt(it.qty, 10) || 0);
+      if (!qty || !it.id) continue;
+      if (typeof it.id === "string" && it.id.indexOf("pv-") === 0) {
+        await client.query(
+          "UPDATE product_variants SET stock = stock + $2 WHERE id = $1 AND stock IS NOT NULL",
+          [it.id, qty]
+        );
+      } else {
+        await client.query(
+          "UPDATE catalog_overrides SET stock = stock + $2 WHERE id = $1 AND stock IS NOT NULL",
+          [it.id, qty]
+        );
+      }
+    }
+    await client.query("COMMIT");
+  } catch (e) {
+    await client.query("ROLLBACK");
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
 /* ---------- audit log ---------- */
 
 /* Fire-and-forget: an audit write must never break the request it records. */
@@ -1371,6 +1548,7 @@ async function deleteUserAccount(email) {
 
 module.exports = {
   init,
+  getPool,
   DATA_DIR,
   logEvent,
   listAuditLog,
@@ -1414,6 +1592,7 @@ module.exports = {
   listVariants,
   getAllVariants,
   variantColorExists,
+  variantSkuExists,
   createVariant,
   updateVariant,
   deleteVariant,
@@ -1437,12 +1616,16 @@ module.exports = {
   createOrder,
   listOrders,
   listOrdersPage,
+  orderTabCounts,
+  appendOrderEvent,
   monthlyBestSellerIds,
   listRecentOrders,
   ordersByEmail,
   getOrder,
   updateOrder,
   getOrderByStripeSession,
+  getOrderByAccessToken,
   overviewCounts,
   reserveStock,
+  releaseStock,
 };

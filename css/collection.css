@@ -1802,10 +1802,15 @@ body.collection-products-open .site-footer {
 
 .collection-product {
   min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .collection-product__link {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
   color: inherit;
   text-decoration: none;
 }
@@ -1835,6 +1840,9 @@ body.collection-products-open .site-footer {
 }
 
 .collection-product__meta {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
   padding: 0.85rem 0.25rem 0;
   text-align: center;
 }

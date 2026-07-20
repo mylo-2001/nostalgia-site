@@ -1,0 +1,50 @@
+DROP TABLE coupon_redemptions;
+DROP TABLE tax_rates;
+DROP TABLE shipping_methods;
+DROP TABLE pricing_policies;
+
+ALTER TABLE coupons
+  DROP CONSTRAINT coupons_version_phase3_check,
+  DROP CONSTRAINT coupons_currency_phase3_check,
+  DROP CONSTRAINT coupons_per_customer_phase3_check,
+  DROP CONSTRAINT coupons_allowed_variants_phase3_check,
+  DROP CONSTRAINT coupons_allowed_products_phase3_check,
+  DROP CONSTRAINT coupons_max_discount_phase3_check,
+  DROP CONSTRAINT coupons_min_subtotal_phase3_check,
+  DROP CONSTRAINT coupons_window_phase3_check,
+  DROP CONSTRAINT coupons_max_uses_phase3_check,
+  DROP CONSTRAINT coupons_uses_phase3_check,
+  DROP CONSTRAINT coupons_value_phase3_check,
+  DROP COLUMN updated_at,
+  DROP COLUMN version,
+  DROP COLUMN currency,
+  DROP COLUMN per_customer_limit,
+  DROP COLUMN allowed_variant_ids,
+  DROP COLUMN allowed_product_ids,
+  DROP COLUMN max_discount,
+  DROP COLUMN min_subtotal,
+  DROP COLUMN ends_at,
+  DROP COLUMN starts_at;
+
+ALTER TABLE product_variants
+  DROP CONSTRAINT product_variants_tax_category_phase3_check,
+  DROP CONSTRAINT product_variants_vat_rate_phase3_check,
+  DROP CONSTRAINT product_variants_stock_phase3_check,
+  DROP COLUMN tax_category,
+  DROP COLUMN vat_rate;
+
+ALTER TABLE catalog_overrides
+  DROP CONSTRAINT catalog_overrides_tax_category_phase3_check,
+  DROP CONSTRAINT catalog_overrides_vat_rate_phase3_check,
+  DROP CONSTRAINT catalog_overrides_stock_phase3_check,
+  DROP COLUMN tax_category,
+  DROP COLUMN vat_rate,
+  DROP COLUMN sku,
+  DROP COLUMN active;
+
+ALTER TABLE products
+  DROP CONSTRAINT products_tax_category_phase3_check,
+  DROP CONSTRAINT products_vat_rate_phase3_check,
+  DROP COLUMN tax_category,
+  DROP COLUMN vat_rate,
+  DROP COLUMN sku;

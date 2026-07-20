@@ -657,7 +657,7 @@
     return catalog
       .filter(isNew)
       .sort(function (a, b) {
-        return new Date(b.createdAt) - new Date(a.createdAt);
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       });
   }
 

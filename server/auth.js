@@ -313,9 +313,26 @@ function getUserSession(req) {
   return payload && payload.role === "user" ? payload : null;
 }
 
-function startAdminSession(res, username) {
-  const token = createToken({ sub: username, role: "admin" }, ADMIN_SESSION_MS);
+function startAdminSession(res, username, options) {
+  const csrfToken = crypto.randomBytes(32).toString("base64url");
+  const sessionId = crypto.randomUUID();
+  const sessionFamilyId = crypto.randomUUID();
+  const token = createToken({
+    sub: username,
+    role: "admin",
+    sid: sessionId,
+    sfid: sessionFamilyId,
+    mfa: !!(options && options.mfaVerified),
+    csrfHash: crypto.createHash("sha256").update(csrfToken).digest("hex"),
+  }, ADMIN_SESSION_MS);
   setCookie(res, ADMIN_COOKIE, token, ADMIN_SESSION_MS, { sameSite: "Strict" });
+  return {
+    csrfToken,
+    csrfHash: crypto.createHash("sha256").update(csrfToken).digest("hex"),
+    sessionId,
+    sessionFamilyId,
+    expiresAt: new Date(Date.now() + ADMIN_SESSION_MS),
+  };
 }
 
 function endAdminSession(res) {

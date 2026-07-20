@@ -19,6 +19,11 @@ function isProduction() {
   return process.env.NODE_ENV === "production";
 }
 
+/** MFA is mandatory unless development explicitly opts out. */
+function admin2faRequired() {
+  return String(process.env.ADMIN_2FA_REQUIRED || "true").trim().toLowerCase() !== "false";
+}
+
 /** True when cookies must be Secure and HSTS is enabled. */
 function isSecureEnv() {
   return (
@@ -210,7 +215,7 @@ function assertStrongSessionSecret(secret) {
 
 function rateLimit(req, res, next) {
   if (req.path === "/api/stripe/webhook") return next();
-  if (req.path.startsWith("/admin/assets/")) return next();
+  if (require("./admin-ui-path").isAdminUiAssetPath(req.path)) return next();
 
   const now = Date.now();
   const windowMs = intEnv("RATE_LIMIT_WINDOW_MS", 60 * 1000);
@@ -257,6 +262,7 @@ module.exports = {
   MAX_PASSWORD_LEN,
   MIN_STRONG_PASSWORD_LEN,
   isProduction,
+  admin2faRequired,
   isSecureEnv,
   cookiesSecure,
   trustProxyEnabled,

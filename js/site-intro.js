@@ -2,6 +2,7 @@
   var body = document.body;
   if (!body || body.getAttribute("data-page") !== "home") return;
 
+  var INTRO_SEEN_KEY = "nostalgia-intro-seen";
   var intro = document.getElementById("site-intro");
   var pageWrap = document.querySelector(".page-wrap");
   var hero = document.querySelector(".hero-home");
@@ -14,6 +15,30 @@
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   if (!intro || !pageWrap) return;
+
+  function hasSeenIntro() {
+    try {
+      return sessionStorage.getItem(INTRO_SEEN_KEY) === "1";
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function markIntroSeen() {
+    try {
+      sessionStorage.setItem(INTRO_SEEN_KEY, "1");
+    } catch (e) {}
+  }
+
+  /* Returning to home: land past the curtain (don't replay entry).
+     Intro stays available if the user scrolls back to the top. */
+  var resumePastIntro = hasSeenIntro() && !reduce;
+
+  if (resumePastIntro) {
+    try {
+      if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+    } catch (e) {}
+  }
 
   /* Kick off the wordmark letter reveal once the first paint is ready */
   if (logos) {
@@ -43,6 +68,7 @@
   var syncFrame = 0;
   var lastSyncY = -1;
   var stableFrames = 0;
+  var seenMarked = false;
 
   function scrollTop() {
     return window.scrollY || document.documentElement.scrollTop || 0;
@@ -56,6 +82,17 @@
     if (window.__lenis && typeof window.__lenis.resize === "function") {
       try { window.__lenis.resize(); } catch (e) {}
     }
+  }
+
+  function scrollToY(y, smooth) {
+    y = Math.max(0, y);
+    if (window.__lenis && typeof window.__lenis.scrollTo === "function") {
+      try {
+        window.__lenis.scrollTo(y, { immediate: !smooth });
+        return;
+      } catch (e) {}
+    }
+    window.scrollTo({ top: y, behavior: smooth ? "smooth" : "auto" });
   }
 
   function measurePage() {
@@ -119,14 +156,17 @@
 
     if (pin > 0.5) {
       setPagePinned(true);
-    } else if (heroActive) {
-      setPagePinned(false);
     } else {
       setPagePinned(false);
     }
 
     body.classList.toggle("intro-past", open);
     body.classList.toggle("intro-hero-active", heroActive);
+
+    if (open && !seenMarked) {
+      seenMarked = true;
+      markIntroSeen();
+    }
   }
 
   function syncIntro() {
@@ -167,12 +207,14 @@
     intro.setAttribute("aria-hidden", "true");
     body.classList.add("intro-past");
     body.classList.add("intro-hero-active");
+    markIntroSeen();
     return;
   }
 
   if (enterBtn) {
     enterBtn.addEventListener("click", function () {
-      window.scrollTo({ top: lead, behavior: "smooth" });
+      markIntroSeen();
+      scrollToY(lead, true);
     });
   }
 
@@ -181,5 +223,15 @@
   window.addEventListener("load", measure, { passive: true });
 
   measure();
+
+  if (resumePastIntro) {
+    markIntroSeen();
+    scrollToY(lead, false);
+    update();
+    try {
+      document.documentElement.classList.remove("intro-resume");
+    } catch (e) {}
+  }
+
   startSync();
 })();

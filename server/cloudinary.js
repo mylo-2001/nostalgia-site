@@ -3,7 +3,7 @@
 /**
  * Product image uploads via Cloudinary (CDN).
  * When CLOUDINARY_* env vars are set, new admin uploads go to Cloudinary
- * instead of product photo/uploads/ — only the URL is stored in PostgreSQL.
+ * instead of images/product photo/uploads/ — only the URL is stored in PostgreSQL.
  */
 
 const cloudinary = require("cloudinary").v2;

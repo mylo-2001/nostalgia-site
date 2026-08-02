@@ -31,6 +31,8 @@ export function NewProduct() {
   const [images, setImages] = useState<{ name: string; data: string }[]>([]);
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  const [publish, setPublish] = useState(true);
+  const [sendMarketingEmail, setSendMarketingEmail] = useState(true);
 
   async function onFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
@@ -65,6 +67,9 @@ export function NewProduct() {
       descriptionEn: content.descriptionEn,
       imagesData: images.map((i) => i.data),
       details: productDetailsPayload(content),
+      publish,
+      sendMarketingEmail: publish && sendMarketingEmail,
+      audienceType: "newsletter",
     });
     setBusy(false);
     if (res.ok) {
@@ -111,6 +116,8 @@ export function NewProduct() {
         )}
 
         <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 8 }}>
+          <label className="field" style={{ flexDirection: "row", alignItems: "center", gap: 6 }}><input type="checkbox" checked={publish} onChange={(e) => setPublish(e.target.checked)} style={{ width: "auto" }} /><span>Κατάσταση: Δημοσιευμένο</span></label>
+          <label className="field" style={{ flexDirection: "row", alignItems: "center", gap: 6 }}><input type="checkbox" checked={sendMarketingEmail} onChange={(e) => setSendMarketingEmail(e.target.checked)} style={{ width: "auto" }} /><span>Ενημέρωση συνδρομητών με email</span></label>
           <button className="btn btn--primary" type="submit" disabled={busy}>{busy ? "Δημιουργία…" : "Δημιουργία προϊόντος"}</button>
           {msg && <span className="muted">{msg}</span>}
         </div>

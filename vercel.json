@@ -6,7 +6,7 @@
   "functions": {
     "api/**/*.js": {
       "maxDuration": 30,
-      "includeFiles": "{html/**,css/**,js/**,logo/**,admin/dist/**,product photo/**,home page photo/**,home-photo-beforemenu/**,collections-hero/**,4-epoxes-photo/**,fonts/**}"
+      "includeFiles": "{html/**,css/**,js/**,images/logo/**,admin/dist/**,images/product photo/**,images/home page photo/**,images/home-photo-beforemenu/**,images/collections-hero/**,images/4-epoxes-photo/**,fonts/**}"
     }
   },
   "crons": [

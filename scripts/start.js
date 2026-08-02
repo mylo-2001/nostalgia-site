@@ -22,11 +22,11 @@ const adminDir = path.join(root, "admin");
 
 function step(msg) { console.log("\x1b[36m[start]\x1b[0m " + msg); }
 
-function runSync(cmd, cwd) {
+function runSync(cmd, cwd, env) {
   // Pass the whole command as a string with shell:true so "npm" resolves to
   // npm.cmd on Windows / npm on POSIX (and it avoids the DEP0190 warning that
   // shell:true + an args array triggers).
-  const r = spawnSync(cmd, { stdio: "inherit", cwd, shell: true });
+  const r = spawnSync(cmd, { stdio: "inherit", cwd, shell: true, env: env || process.env });
   if (r.status !== 0) {
     console.error("\x1b[31m[start]\x1b[0m command failed: " + cmd);
     process.exit(r.status || 1);
@@ -40,7 +40,21 @@ if (!existsSync(path.join(adminDir, "node_modules"))) {
 }
 
 // 2) Build the React admin → admin/dist (served at /admin-react).
-step("building React admin…");
+step("applying database migrations...");
+runSync("npm run migrate:up", root, {
+  ...process.env,
+  /* npm start is an explicit operator action; keep the standalone migration
+     command guarded, but allow this startup path to prepare a remote dev DB. */
+  ALLOW_REMOTE_MIGRATIONS: "true",
+});
+
+step("checking backend syntax...");
+runSync("node --check server/server.js", root);
+
+step("checking backend tests...");
+runSync("npm run test:unit", root);
+
+step("building React admin...");
 runSync("npm run build", adminDir);
 
 // 3) Start the Express server (frontend + API + admin) in this process group.

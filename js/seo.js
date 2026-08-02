@@ -152,7 +152,7 @@
       name: SITE.name,
       description: SITE.taglineEl,
       url: baseUrl.replace(/\/[^/]*$/, "/"),
-      image: baseUrl.replace(/\/[^/]*$/, "/") + "logo/logo.png",
+      image: baseUrl.replace(/\/[^/]*$/, "/") + "images/logo/logo.png",
       telephone: SITE.phone,
       email: SITE.email,
       areaServed: "GR",
@@ -194,7 +194,7 @@
     upsertMeta("property", "og:description", info.desc);
     upsertMeta("property", "og:url", url);
     upsertMeta("property", "og:locale", document.documentElement.lang === "en" ? "en_GR" : "el_GR");
-    upsertMeta("property", "og:image", url.replace(/\/[^/]*$/, "/") + "logo/logo.png");
+    upsertMeta("property", "og:image", url.replace(/\/[^/]*$/, "/") + "images/logo/logo.png");
     upsertMeta("name", "twitter:card", "summary_large_image");
     upsertMeta("name", "twitter:title", info.title);
     upsertMeta("name", "twitter:description", info.desc);

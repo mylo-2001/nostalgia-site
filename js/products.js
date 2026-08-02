@@ -2,19 +2,19 @@
   var CAT_IDS = ["cat1", "cat2", "cat3", "cat4", "cat5", "cat6", "cat7", "cat8", "cat9"];
 
   function muranoImg(n) {
-    return "product%20photo/art%20class%20murano%20candle/product%20" + n + ".png";
+    return "images/product%20photo/art%20class%20murano%20candle/product%20" + n + ".png";
   }
   function driftwoodImg(name) {
-    return "product%20photo/driftwood%20beeswax%20flame/" + name;
+    return "images/product%20photo/driftwood%20beeswax%20flame/" + name;
   }
   function liquidImg(n) {
-    return "product%20photo/liquid%20eternal/product%20" + n + ".png";
+    return "images/product%20photo/liquid%20eternal/product%20" + n + ".png";
   }
   function vesselImg(n) {
-    return "product%20photo/unique%20art%20vessel/product%20" + n + ".png";
+    return "images/product%20photo/unique%20art%20vessel/product%20" + n + ".png";
   }
   function terraImg(n) {
-    return "product%20photo/Ni%20Terra/product%20" + n + ".png";
+    return "images/product%20photo/Ni%20Terra/product%20" + n + ".png";
   }
 
   /* A product folder with photo1..photoN.png → gallery array (first = main). */
@@ -23,10 +23,10 @@
     for (var i = 1; i <= (n || 3); i++) imgs.push(folder + "/photo" + i + ".png");
     return imgs;
   }
-  var MURANO_DIR = "product%20photo/art%20class%20murano%20candle/";
-  var GIFT_DIR = "product%20photo/Gift%20Sets/";
-  var MIRROR_DIR = "product%20photo/Nostalgia%20Exclusive%20Mirror%20Candles/";
-  var LIQUID_DIR = "product%20photo/liquid%20eternal/";
+  var MURANO_DIR = "images/product%20photo/art%20class%20murano%20candle/";
+  var GIFT_DIR = "images/product%20photo/Gift%20Sets/";
+  var MIRROR_DIR = "images/product%20photo/Nostalgia%20Exclusive%20Mirror%20Candles/";
+  var LIQUID_DIR = "images/product%20photo/liquid%20eternal/";
   /* Each colour is its OWN product; they are linked as a variant group so the
      product page shows swatches that navigate between the colour-products. */
   var MIRROR_REGULAR = [

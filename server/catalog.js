@@ -44,9 +44,9 @@ const DEFAULT_STOCK = {
   "cat5-1": 4,
 };
 
-const MURANO_DIR = "product%20photo/art%20class%20murano%20candle/";
-const GIFT_DIR = "product%20photo/Gift%20Sets/";
-const MIRROR_DIR = "product%20photo/Nostalgia%20Exclusive%20Mirror%20Candles/";
+const MURANO_DIR = "images/product%20photo/art%20class%20murano%20candle/";
+const GIFT_DIR = "images/product%20photo/Gift%20Sets/";
+const MIRROR_DIR = "images/product%20photo/Nostalgia%20Exclusive%20Mirror%20Candles/";
 /* Mirror candles: each colour is its own product (own price/stock). */
 const MIRROR_VARIANTS = [
   { folder: "Mirror%20Candles-asimi", label: "Ασημί" },
@@ -63,16 +63,16 @@ function folderMain(folder) {
   return folder + "/photo1.png";
 }
 function driftwoodImg(name) {
-  return "product%20photo/driftwood%20beeswax%20flame/" + name;
+  return "images/product%20photo/driftwood%20beeswax%20flame/" + name;
 }
 function liquidImg(n) {
-  return "product%20photo/liquid%20eternal/product%20" + n + ".png";
+  return "images/product%20photo/liquid%20eternal/product%20" + n + ".png";
 }
 function vesselImg(n) {
-  return "product%20photo/unique%20art%20vessel/product%20" + n + ".png";
+  return "images/product%20photo/unique%20art%20vessel/product%20" + n + ".png";
 }
 function terraImg(n) {
-  return "product%20photo/Ni%20Terra/product%20" + n + ".png";
+  return "images/product%20photo/Ni%20Terra/product%20" + n + ".png";
 }
 
 const CAT_IMAGES = {
@@ -106,7 +106,7 @@ const CAT_IMAGES = {
     "product%2013.png",
   ].map(driftwoodImg),
   cat3: Array.from({ length: 7 }, (_, i) =>
-    folderMain("product%20photo/liquid%20eternal/liquid-" + (i + 1))
+    folderMain("images/product%20photo/liquid%20eternal/liquid-" + (i + 1))
   ),
   cat4: Array.from({ length: 8 }, (_, i) => vesselImg(i + 1)),
   cat5: Array.from({ length: 4 }, (_, i) => terraImg(i + 1)),

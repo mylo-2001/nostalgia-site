@@ -253,7 +253,7 @@
   function buildForgotHTML() {
     return (
       '<div class="account-panel account-panel--login account-panel--auth">' +
-      '  <div class="account-auth__brand" aria-hidden="true"><span class="account-auth__mark"><img class="account-auth__logo account-auth__logo--dark" src="logo/logo.png" alt="" /><img class="account-auth__logo account-auth__logo--light" src="logo/logo%20light.png?v=2" alt="" /></span></div>' +
+      '  <div class="account-auth__brand" aria-hidden="true"><span class="account-auth__mark"><img class="account-auth__logo account-auth__logo--dark" src="images/logo/logo.png" alt="" /><img class="account-auth__logo account-auth__logo--light" src="images/logo/logo%20light.png?v=2" alt="" /></span></div>' +
       '  <h2 class="account-panel__title" data-i18n="account_forgot_title">' + t("account_forgot_title") + "</h2>" +
       '  <p class="account-auth__lead" data-i18n="account_forgot_lead">' + t("account_forgot_lead") + "</p>" +
       '  <form class="account-form account-form--auth" id="account-forgot-form" novalidate>' +
@@ -298,7 +298,7 @@
     return (
       '<div class="account-panel account-panel--login account-panel--auth">' +
       '  <div class="account-auth__brand" aria-hidden="true">' +
-      '    <span class="account-auth__mark"><img class="account-auth__logo account-auth__logo--dark" src="logo/logo.png" alt="" /><img class="account-auth__logo account-auth__logo--light" src="logo/logo%20light.png?v=2" alt="" /></span>' +
+      '    <span class="account-auth__mark"><img class="account-auth__logo account-auth__logo--dark" src="images/logo/logo.png" alt="" /><img class="account-auth__logo account-auth__logo--light" src="images/logo/logo%20light.png?v=2" alt="" /></span>' +
       "  </div>" +
       '  <h2 class="account-panel__title" data-i18n="account_login_title">Σύνδεση</h2>' +
       '  <p class="account-auth__lead" data-i18n="account_login_lead">Συνδέσου για να δεις τις παραγγελίες και τον λογαριασμό σου.</p>' +

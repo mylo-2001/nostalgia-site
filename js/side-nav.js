@@ -17,7 +17,7 @@
     return hoverCapable && hoverMenuMq.matches;
   }
 
-  var MENU_HOVER_DIR = "collections-hero/menu-hover-photo/";
+  var MENU_HOVER_DIR = "images/collections-hero/menu-hover-photo/";
 
   function menuHoverImage(filename) {
     return MENU_HOVER_DIR + filename;
@@ -92,7 +92,7 @@
       ctaKey: "side_nav_discover",
     },
     cat9: {
-      image: "collections-hero/collection-photo/Nostalgia Exclusive Mirror Candles-photo.png",
+      image: "images/collections-hero/collection-photo/Nostalgia Exclusive Mirror Candles-photo.png",
       titleKey: "collection_cat9",
       descKey: "side_nav_visual_cat_desc",
       href: "/collection/mirror-candles",

@@ -47,6 +47,7 @@ function emptyForm() {
     discountValue: "",
     maxDiscountPerProduct: "",
     status: "draft",
+    sendMarketingEmail: true,
     startsAt: "",
     endsAt: "",
     priority: "100",
@@ -75,6 +76,7 @@ function promotionToForm(p: Promotion): FormState {
     discountType: p.discountType, discountValue: String(p.discountValue),
     maxDiscountPerProduct: p.maxDiscountPerProduct != null ? String(p.maxDiscountPerProduct) : "",
     status: p.status,
+    sendMarketingEmail: false,
     startsAt: p.startsAt ? toLocalInputValue(p.startsAt) : "",
     endsAt: p.endsAt ? toLocalInputValue(p.endsAt) : "",
     priority: String(p.priority),
@@ -103,6 +105,7 @@ function formToPayload(f: FormState): Record<string, unknown> {
     discountValue: f.discountValue,
     maxDiscountPerProduct: f.maxDiscountPerProduct || undefined,
     status: f.status,
+    sendMarketingEmail: f.sendMarketingEmail,
     startsAt: f.startsAt ? new Date(f.startsAt).toISOString() : null,
     endsAt: f.endsAt ? new Date(f.endsAt).toISOString() : null,
     priority: f.priority ? Number(f.priority) : 100,
@@ -331,6 +334,7 @@ export function Promotions() {
                   <option value="active">Ενεργή</option>
                   {editing.id != null && <option value="paused">Παύση</option>}
                 </select>
+                <label className="field" style={{ flexDirection: "row", alignItems: "center", gap: 6 }}><input type="checkbox" checked={editing.sendMarketingEmail} onChange={(e) => patchForm({ sendMarketingEmail: e.target.checked })} style={{ width: "auto" }} /><span>Αποστολή ενημερωτικού email όταν ενεργοποιηθεί</span></label>
                 <p className="field-hint">
                   <strong>Πρόχειρη:</strong> δεν εφαρμόζεται πουθενά ακόμα, μόνο αποθηκεύεται. <strong>Προγραμματισμένη:</strong> θα ενεργοποιηθεί μόνη της στην ημερομηνία έναρξης (βήμα 4). <strong>Ενεργή:</strong> εφαρμόζεται στο κατάστημα αμέσως μόλις πατήσεις «Δημιουργία».
                 </p>

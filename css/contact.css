@@ -82,6 +82,43 @@
   gap: 1rem;
 }
 
+/* On desktop the form shares the first screen with the image. Contact details
+   and trust information sit beneath the image instead of pushing the form
+   below a long right-hand column. */
+@media (min-width: 721px) {
+  .contact-stack {
+    display: contents;
+  }
+
+  /* The image is decorative here; it must stay in document flow so it never
+     covers the contact details while the visitor scrolls. */
+  .contact-split__photo {
+    position: relative;
+    top: auto;
+  }
+
+  .contact-split__photo {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .contact-stack > .contact-card:first-child {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .contact-stack > .contact-trust {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .contact-stack > .contact-form-card {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    align-self: start;
+  }
+}
+
 .contact-split__photo {
   position: sticky;
   top: 5.5rem;
@@ -517,6 +554,14 @@ body[data-page="contact"] .home-reveal--d2.is-visible {
 @media (max-width: 720px) {
   .contact-split {
     grid-template-columns: 1fr;
+  }
+
+  .contact-stack {
+    display: grid;
+  }
+
+  .contact-form-card {
+    order: -1;
   }
 
   .contact-split__photo {

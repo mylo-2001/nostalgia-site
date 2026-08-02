@@ -16,7 +16,7 @@ test("exposes the NostalgiaImages API", () => {
 
 test("webp() builds a responsive -Nw.webp path for catalog PNGs", () => {
   const I = loadImages();
-  const out = I.webp("product%20photo/art/photo1.png", 960);
+  const out = I.webp("images/product%20photo/art/photo1.png", 960);
   assert.match(out, /photo1-960w\.webp$/);
   // spaces stay percent-encoded
   assert.ok(out.indexOf(" ") === -1);
@@ -24,12 +24,12 @@ test("webp() builds a responsive -Nw.webp path for catalog PNGs", () => {
 
 test("hasDerivatives() is TRUE for built-in catalog images", () => {
   const I = loadImages();
-  assert.equal(I.hasDerivatives("product%20photo/art%20class/photo1.png"), true);
+  assert.equal(I.hasDerivatives("images/product%20photo/art%20class/photo1.png"), true);
 });
 
 test("hasDerivatives() is FALSE for admin uploads (no pre-built webp)", () => {
   const I = loadImages();
-  assert.equal(I.hasDerivatives("product%20photo/uploads/cu-5.png"), false);
+  assert.equal(I.hasDerivatives("images/product%20photo/uploads/cu-5.png"), false);
 });
 
 test("hasDerivatives() is FALSE for absolute / CDN URLs", () => {

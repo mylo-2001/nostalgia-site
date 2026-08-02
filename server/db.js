@@ -198,6 +198,10 @@ CREATE TABLE IF NOT EXISTS messages (
   subject    TEXT NOT NULL DEFAULT '',
   message    TEXT NOT NULL,
   lang       TEXT NOT NULL DEFAULT 'el',
+  attachment_name TEXT NOT NULL DEFAULT '',
+  attachment_mime TEXT NOT NULL DEFAULT '',
+  attachment_size INTEGER NOT NULL DEFAULT 0,
+  attachment_storage_name TEXT NOT NULL DEFAULT '',
   is_read    BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -640,9 +644,86 @@ async function listMarketingRecipients() {
   const r = await q(
     `SELECT email, firstname FROM newsletter
       WHERE status = 'subscribed' AND email IS NOT NULL AND btrim(email) <> ''
-      ORDER BY created_at DESC`
+     UNION
+     SELECT email, firstname FROM users
+      WHERE active = TRUE AND newsletter_optin = TRUE AND email IS NOT NULL AND btrim(email) <> ''
+      ORDER BY email`
   );
   return r.rows.map((x) => ({ email: x.email, firstname: x.firstname || "" }));
+}
+
+async function listCampaignRecipients(audience) {
+  const a = audience || {};
+  if (a.type === "specific_email") {
+    const email = String(a.email || "").trim().toLowerCase();
+    if (!email) return [];
+    const r = await q("SELECT email, firstname FROM users WHERE lower(email) = $1 AND active = TRUE", [email]);
+    return r.rows.length ? r.rows.map((x) => ({ email: x.email, firstname: x.firstname || "" })) : [{ email, firstname: "" }];
+  }
+  if (a.type === "newsletter") return listMarketingRecipients();
+  if (a.type === "accounts_optin") {
+    const r = await q("SELECT email, firstname FROM users WHERE active = TRUE AND newsletter_optin = TRUE AND email IS NOT NULL AND btrim(email) <> '' ORDER BY created_at DESC");
+    return r.rows.map((x) => ({ email: x.email, firstname: x.firstname || "" }));
+  }
+  if (a.type === "no_orders") {
+    const r = await q(`SELECT u.email, u.firstname FROM users u WHERE u.active = TRUE AND u.newsletter_optin = TRUE AND NOT EXISTS (SELECT 1 FROM orders o WHERE lower(btrim(coalesce(o.user_email, o.customer->>'email', ''))) = lower(u.email)) ORDER BY u.created_at DESC`);
+    return r.rows.map((x) => ({ email: x.email, firstname: x.firstname || "" }));
+  }
+  if (a.type === "past_customers") {
+    const r = await q(`SELECT DISTINCT ON (lower(btrim(coalesce(o.user_email, o.customer->>'email', '')))) coalesce(o.user_email, o.customer->>'email') AS email, coalesce(o.customer->>'firstname', '') AS firstname FROM orders o WHERE coalesce(o.user_email, o.customer->>'email') IS NOT NULL ORDER BY lower(btrim(coalesce(o.user_email, o.customer->>'email', ''))), o.created_at DESC`);
+    return r.rows.map((x) => ({ email: x.email, firstname: x.firstname || "" }));
+  }
+  return listMarketingRecipients();
+}
+
+function rowToMarketingCampaign(r) {
+  return { id: r.id, eventId: r.event_id, kind: r.kind, sourceId: r.source_id, subject: r.subject, snapshot: r.snapshot, audience: r.audience, status: r.status, recipientCount: r.recipient_count, sentCount: r.sent_count, failedCount: r.failed_count, createdBy: r.created_by, createdAt: r.created_at, finishedAt: r.finished_at };
+}
+
+async function createMarketingCampaign(campaign, recipients) {
+  const existing = await q("SELECT * FROM marketing_campaigns WHERE event_id = $1", [campaign.eventId]);
+  if (existing.rowCount) return { campaign: rowToMarketingCampaign(existing.rows[0]), created: false };
+  const unique = new Map((recipients || []).map((r) => [String(r.email || "").trim().toLowerCase(), r])).entries();
+  const list = [...unique].filter(([email]) => email).map(([, r]) => ({ email: String(r.email).trim().toLowerCase(), firstname: r.firstname || "" }));
+  let inserted;
+  try {
+    inserted = await q(`INSERT INTO marketing_campaigns (id,event_id,kind,source_id,subject,snapshot,audience,recipient_count,created_by) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`, [campaign.id, campaign.eventId, campaign.kind, campaign.sourceId, campaign.subject, JSON.stringify(campaign.snapshot), JSON.stringify(campaign.audience), list.length, campaign.createdBy || null]);
+  } catch (error) {
+    if (error && error.code === "23505") {
+      const race = await q("SELECT * FROM marketing_campaigns WHERE event_id = $1", [campaign.eventId]);
+      if (race.rowCount) return { campaign: rowToMarketingCampaign(race.rows[0]), created: false };
+    }
+    throw error;
+  }
+  for (const r of list) await q("INSERT INTO marketing_campaign_recipients (campaign_id,email,firstname) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING", [campaign.id, r.email, r.firstname]);
+  return { campaign: rowToMarketingCampaign(inserted.rows[0]), created: true };
+}
+
+async function claimMarketingRecipient(campaignId) {
+  const r = await q(`UPDATE marketing_campaign_recipients SET status='sending', attempts=attempts+1 WHERE id = (SELECT id FROM marketing_campaign_recipients WHERE campaign_id=$1 AND status='queued' ORDER BY id FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING *`, [campaignId]);
+  return r.rows[0] || null;
+}
+
+async function requeueMarketingRecipients(campaignId) {
+  await q("UPDATE marketing_campaign_recipients SET status='queued' WHERE campaign_id=$1 AND status='sending'", [campaignId]);
+}
+
+async function finishMarketingRecipient(id, ok, error) {
+  const r = await q("UPDATE marketing_campaign_recipients SET status=$2, last_error=$3, sent_at=CASE WHEN $2='sent' THEN now() ELSE sent_at END WHERE id=$1 RETURNING *", [id, ok ? "sent" : "failed", error ? String(error).slice(0, 1000) : null]);
+  if (r.rows[0]) {
+    await q("UPDATE marketing_campaigns SET sent_count = sent_count + CASE WHEN $2='sent' THEN 1 ELSE 0 END, failed_count = failed_count + CASE WHEN $2='failed' THEN 1 ELSE 0 END WHERE id = $1", [r.rows[0].campaign_id, ok ? "sent" : "failed"]);
+  }
+  return r.rows[0] || null;
+}
+
+async function finishMarketingCampaign(id) {
+  const r = await q(`UPDATE marketing_campaigns SET status=CASE WHEN failed_count=0 AND sent_count=recipient_count THEN 'sent' WHEN sent_count > 0 THEN 'partial' ELSE 'failed' END, finished_at=now() WHERE id=$1 RETURNING *`, [id]);
+  return r.rows[0] ? rowToMarketingCampaign(r.rows[0]) : null;
+}
+
+async function listQueuedMarketingCampaigns(limit) {
+  const r = await q("SELECT * FROM marketing_campaigns WHERE status IN ('queued','sending') ORDER BY created_at ASC LIMIT $1", [Math.min(Math.max(parseInt(limit, 10) || 10, 1), 50)]);
+  return r.rows.map(rowToMarketingCampaign);
 }
 
 /** Service-notice audience: active account holders. */
@@ -737,9 +818,9 @@ async function deleteSubscriber(email) {
 
 async function addMessage(m) {
   await q(
-    `INSERT INTO messages (id, last_name, first_name, email, phone, country, subject, message, lang)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-    [m.id, m.lastName, m.firstName, m.email, m.phone, m.country, m.subject, m.message, m.lang]
+    `INSERT INTO messages (id, last_name, first_name, email, phone, country, subject, message, lang, attachment_name, attachment_mime, attachment_size, attachment_storage_name)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+    [m.id, m.lastName, m.firstName, m.email, m.phone, m.country, m.subject, m.message, m.lang, m.attachmentName || "", m.attachmentMime || "", m.attachmentSize || 0, m.attachmentStorageName || ""]
   );
 }
 
@@ -755,9 +836,18 @@ async function listMessages() {
     subject: x.subject,
     message: x.message,
     lang: x.lang,
+    attachmentName: x.attachment_name || "",
+    attachmentMime: x.attachment_mime || "",
+    attachmentSize: Number(x.attachment_size || 0),
+    attachmentStorageName: x.attachment_storage_name || "",
     read: x.is_read,
     at: x.created_at,
   }));
+}
+
+async function getMessage(id) {
+  const r = await q("SELECT * FROM messages WHERE id = $1 LIMIT 1", [id]);
+  return r.rows[0] ? rowToMessage(r.rows[0]) : null;
 }
 
 function rowToMessage(x) {
@@ -771,6 +861,10 @@ function rowToMessage(x) {
     subject: x.subject,
     message: x.message,
     lang: x.lang,
+    attachmentName: x.attachment_name || "",
+    attachmentMime: x.attachment_mime || "",
+    attachmentSize: Number(x.attachment_size || 0),
+    attachmentStorageName: x.attachment_storage_name || "",
     read: x.is_read,
     at: x.created_at,
   };
@@ -854,7 +948,7 @@ async function nextProductId() {
 async function createCustomProduct(p) {
   await q(
     `INSERT INTO products (id, cat_id, title, title_en, description, description_en, price, sale_price, sale_until, image, images, active)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,TRUE)`,
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
     [
       p.id,
       p.catId,
@@ -867,6 +961,7 @@ async function createCustomProduct(p) {
       p.saleUntil != null ? p.saleUntil : null,
       p.image,
       Array.isArray(p.images) && p.images.length ? JSON.stringify(p.images) : null,
+      p.active !== false,
     ]
   );
 }
@@ -1224,6 +1319,7 @@ function rowToPromotion(r) {
     endsAt: r.ends_at,
     timezone: r.timezone,
     priority: r.priority,
+    sendMarketingEmail: !!r.send_marketing_email,
     createdBy: r.created_by,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
@@ -1316,14 +1412,14 @@ async function createPromotion(p) {
     const ins = await client.query(
       `INSERT INTO promotions
          (name, code, discount_type, discount_value, max_discount_per_product,
-          status, starts_at, ends_at, timezone, priority, created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+         status, starts_at, ends_at, timezone, priority, send_marketing_email, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
        RETURNING id`,
       [
         p.name, p.code || null, p.discountType, p.discountValue,
         p.maxDiscountPerProduct ?? null, p.status || "draft",
         p.startsAt || null, p.endsAt || null, p.timezone || "Europe/Athens",
-        p.priority ?? 100, p.createdBy || null,
+        p.priority ?? 100, !!p.sendMarketingEmail, p.createdBy || null,
       ]
     );
     const id = ins.rows[0].id;
@@ -1355,7 +1451,7 @@ async function updatePromotion(id, fields) {
   const colMap = {
     name: "name", code: "code", discountType: "discount_type", discountValue: "discount_value",
     maxDiscountPerProduct: "max_discount_per_product", status: "status", startsAt: "starts_at",
-    endsAt: "ends_at", timezone: "timezone", priority: "priority",
+    endsAt: "ends_at", timezone: "timezone", priority: "priority", sendMarketingEmail: "send_marketing_email",
   };
   const sets = [];
   const vals = [id];
@@ -2279,6 +2375,13 @@ module.exports = {
   addSubscriber,
   listSubscribers,
   listMarketingRecipients,
+  listCampaignRecipients,
+  createMarketingCampaign,
+  claimMarketingRecipient,
+  requeueMarketingRecipients,
+  finishMarketingRecipient,
+  finishMarketingCampaign,
+  listQueuedMarketingCampaigns,
   listServiceRecipients,
   createAnnouncement,
   finishAnnouncement,
@@ -2288,6 +2391,7 @@ module.exports = {
   deleteSubscriber,
   addMessage,
   listMessages,
+  getMessage,
   listMessagesPage,
   setMessageRead,
   deleteMessage,

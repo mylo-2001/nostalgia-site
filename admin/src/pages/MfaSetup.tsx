@@ -48,7 +48,7 @@ export function MfaSetup({ onComplete, onLogout }: MfaSetupProps) {
   return (
     <div className="login">
       <form className="login__card" onSubmit={enable}>
-        <img className="login__logo" src="/logo/logo.png" alt="Nostalgia Collection" />
+        <img className="login__logo" src="/images/logo/logo.png" alt="Nostalgia Collection" />
         <h1 className="login__title">Υποχρεωτική ενεργοποίηση 2FA</h1>
         <p className="muted">
           Για την προστασία του διαχειριστικού, συνδέστε μια εφαρμογή authenticator

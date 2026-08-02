@@ -21,7 +21,7 @@
       if (match) form.subject.value = subjectParam;
     }
 
-    form.addEventListener("submit", function (e) {
+    form.addEventListener("submit", async function (e) {
       e.preventDefault();
       if (!form.reportValidity()) return;
 
@@ -36,8 +36,29 @@
         ? form.subject.selectedOptions[0].text.trim()
         : "";
       var message = (form.message.value || "").trim();
-
       var lang = document.documentElement.lang === "en" ? "en" : "el";
+      var file = form.attachment && form.attachment.files ? form.attachment.files[0] : null;
+      var attachment = null;
+      if (file) {
+        var allowed = ["image/png", "image/jpeg", "image/webp", "application/pdf"];
+        if (allowed.indexOf(file.type) === -1 || file.size > 750 * 1024) {
+          if (statusEl) statusEl.textContent = lang === "en"
+            ? "Choose a PNG, JPEG, WEBP or PDF file up to 750 KB."
+            : "Επιλέξτε αρχείο PNG, JPEG, WEBP ή PDF έως 750 KB.";
+          return;
+        }
+        attachment = await new Promise(function (resolve) {
+          var reader = new FileReader();
+          reader.onload = function () { resolve({ name: file.name, mime: file.type, data: reader.result }); };
+          reader.onerror = function () { resolve(null); };
+          reader.readAsDataURL(file);
+        });
+        if (!attachment) {
+          if (statusEl) statusEl.textContent = lang === "en" ? "The file could not be read." : "Το αρχείο δεν μπόρεσε να διαβαστεί.";
+          return;
+        }
+      }
+
       var labels = lang === "en"
         ? {
             lastName: "Last name",
@@ -90,6 +111,7 @@
           subject: subject,
           message: message,
           lang: lang,
+          attachment: attachment,
           captchaToken: window.NostalgiaCaptcha ? window.NostalgiaCaptcha.getToken(captcha) : "",
         }).then(function (res) {
           if (res.ok) {

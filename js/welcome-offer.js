@@ -107,8 +107,8 @@
       '<div class="welcome-offer__panel" role="dialog" aria-modal="true" aria-labelledby="welcome-offer-title">' +
       '  <button type="button" class="welcome-offer__close" data-offer-close aria-label="' +
       esc(isEn() ? "Close" : "Κλείσιμο") + '">&times;</button>' +
-      '  <img class="welcome-offer__logo brand-logo brand-logo--dark" src="/logo/logo.png" alt="Nostalgia Collection" />' +
-      '  <img class="welcome-offer__logo brand-logo brand-logo--light" src="/logo/logo%20light.png?v=2" alt="Nostalgia Collection" />'
+      '  <img class="welcome-offer__logo brand-logo brand-logo--dark" src="/images/logo/logo.png" alt="Nostalgia Collection" />' +
+      '  <img class="welcome-offer__logo brand-logo brand-logo--light" src="/images/logo/logo%20light.png?v=2" alt="Nostalgia Collection" />'
     );
   }
 

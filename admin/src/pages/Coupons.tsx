@@ -21,6 +21,9 @@ export function Coupons() {
   const [firstOrderOnly, setFirstOrderOnly] = useState(false);
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  const [sendMarketingEmail, setSendMarketingEmail] = useState(false);
+  const [audienceType, setAudienceType] = useState("newsletter");
+  const [specificEmail, setSpecificEmail] = useState("");
 
   const load = useCallback(() => {
     api.get("/api/admin/coupons").then((res) => { if (res.ok) setCoupons((res.coupons as Coupon[]) || []); });
@@ -33,12 +36,14 @@ export function Coupons() {
     const res = await api.post("/api/admin/coupons", {
       code, name, type, value, freeShipping, oncePerCustomer, firstOrderOnly,
       maxUses: maxUses || undefined, durationDays: durationDays || undefined,
+      sendMarketingEmail, audienceType, audienceEmail: specificEmail,
     });
     setBusy(false);
     if (res.ok) {
       setMsg("Το κουπόνι δημιουργήθηκε.");
       setCode(""); setName(""); setValue(""); setMaxUses(""); setDurationDays(""); setFreeShipping(false);
       setOncePerCustomer(false); setFirstOrderOnly(false);
+      setSendMarketingEmail(false); setAudienceType("newsletter"); setSpecificEmail("");
       load();
     } else setMsg("Σφάλμα: " + (res.error || res.status));
   }
@@ -72,6 +77,9 @@ export function Coupons() {
         <label className="field" style={{ flexDirection: "row", alignItems: "center", gap: 6 }} title="Κάθε πελάτης (με βάση το email της παραγγελίας) μπορεί να το εξαργυρώσει μία μόνο φορά">
           <input type="checkbox" checked={oncePerCustomer} onChange={(e) => setOncePerCustomer(e.target.checked)} style={{ width: "auto" }} /><span>Μία χρήση ανά πελάτη</span>
         </label>
+        <label className="field" style={{ flexDirection: "row", alignItems: "center", gap: 6 }}><input type="checkbox" checked={sendMarketingEmail} onChange={(e) => setSendMarketingEmail(e.target.checked)} style={{ width: "auto" }} /><span>Αποστολή με email</span></label>
+        {sendMarketingEmail ? <label className="field"><span>Κοινό</span><select value={audienceType} onChange={(e) => setAudienceType(e.target.value)}><option value="newsletter">Όλοι οι newsletter subscribers</option><option value="accounts_optin">Λογαριασμοί με marketing opt-in</option><option value="no_orders">Πελάτες χωρίς παραγγελία</option><option value="past_customers">Παλιές πελατείες</option><option value="specific_email">Συγκεκριμένος πελάτης</option></select></label> : null}
+        {sendMarketingEmail && audienceType === "specific_email" ? <label className="field"><span>Email πελάτη</span><input type="email" value={specificEmail} onChange={(e) => setSpecificEmail(e.target.value)} required /></label> : null}
         <label className="field" style={{ flexDirection: "row", alignItems: "center", gap: 6 }} title="Ισχύει μόνο αν ο πελάτης δεν έχει καμία προηγούμενη παραγγελία">
           <input type="checkbox" checked={firstOrderOnly} onChange={(e) => setFirstOrderOnly(e.target.checked)} style={{ width: "auto" }} /><span>Μόνο 1η παραγγελία</span>
         </label>

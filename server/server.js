@@ -52,6 +52,7 @@ const { processPaymentWebhook } = require("./services/payment-service");
 const { processRefundWebhook } = require("./services/return-refund-service");
 const { expireInventoryReservations } = require("./services/inventory-service");
 const { processNotificationBatch } = require("./services/notification-outbox-service");
+const { enqueueCampaign, processQueuedCampaigns } = require("./services/marketing-campaign-service");
 const { EmailNotificationSender } = require("./notifications/email-notification-sender");
 const { collectOperationalMetrics, evaluateOperationalAlerts, runTrackedJob } =
   require("./services/monitoring-service");
@@ -62,6 +63,7 @@ const ROOT = path.join(__dirname, "..");
    URLs are unchanged — only the files moved — so nothing in the pages breaks. */
 const HTML_DIR = path.join(ROOT, "html");
 const UPLOADS_DIR = path.join(ROOT, "product photo", "uploads");
+const CONTACT_ATTACHMENTS_DIR = path.join(ROOT, ".private", "contact-attachments");
 
 const app = express();
 app.disable("x-powered-by");
@@ -715,7 +717,7 @@ function escapeHtml(s) {
 }
 
 function absImage(base, image) {
-  if (!image) return base + "/logo/logo.png";
+  if (!image) return base + "/images/logo/logo.png";
   if (/^https?:\/\//i.test(image)) return image;
   return base + "/" + String(image).replace(/^\//, "");
 }
@@ -791,22 +793,61 @@ async function accountRecipients() {
   return db.listMarketingRecipients();
 }
 
-function notifyNewProduct(product) {
-  accountRecipients()
-    .then((rec) => mailer.sendNewProductBroadcast(rec, product))
-    .catch((e) => console.error("[notify] new product:", e.message));
+function notifyNewProduct(product, opts) {
+  const o = opts || {};
+  enqueueCampaign({
+    kind: "new_product",
+    sourceId: product.id,
+    eventId: o.eventId || "product-published:" + product.id,
+    subject: "Νέο προϊόν — Nostalgia Candle",
+    snapshot: product,
+    audience: o.audience || { type: "newsletter" },
+    createdBy: o.createdBy,
+  }).catch((e) => console.error("[notify] new product:", e.message));
 }
 
-function notifySale(product) {
-  accountRecipients()
-    .then((rec) => mailer.sendSaleBroadcast(rec, product))
-    .catch((e) => console.error("[notify] sale:", e.message));
+function notifySale(product, opts) {
+  const o = opts || {};
+  enqueueCampaign({
+    kind: "sale",
+    sourceId: product.id,
+    eventId: o.eventId || "sale-activated:" + product.id + ":" + String(product.saleUntil || ""),
+    subject: "Νέα προσφορά — Nostalgia Candle",
+    snapshot: product,
+    audience: o.audience || { type: "newsletter" },
+    createdBy: o.createdBy,
+  }).catch((e) => console.error("[notify] sale:", e.message));
 }
 
-function notifyCoupon(coupon) {
-  accountRecipients()
-    .then((rec) => mailer.sendCouponBroadcast(rec, coupon))
-    .catch((e) => console.error("[notify] coupon:", e.message));
+async function promotionEmailSnapshot(promotion) {
+  const ids = (promotion.targets || []).filter((t) => t.type === "product" && t.id).map((t) => t.id);
+  const candidates = ids.length ? ids : (await allSellableProductsForPromotions()).map((p) => p.id).slice(0, 3);
+  const products = [];
+  for (const id of candidates.slice(0, 3)) {
+    const p = (await db.getCustomProduct(id)) || staticProduct(id);
+    if (!p || p.price == null) continue;
+    const salePrice = promotion.discountType === "percentage"
+      ? Math.max(0.01, Number(p.price) * (1 - Number(promotion.discountValue) / 100))
+      : promotion.discountType === "fixed_amount"
+        ? Math.max(0.01, Number(p.price) - Number(promotion.discountValue))
+        : Number(promotion.discountValue);
+    products.push({ ...p, salePrice, saleUntil: promotion.endsAt || null });
+  }
+  const first = products[0];
+  return first ? { ...first, relatedProducts: products.slice(1) } : null;
+}
+
+function notifyCoupon(coupon, opts) {
+  const o = opts || {};
+  enqueueCampaign({
+    kind: "coupon",
+    sourceId: coupon.code,
+    eventId: o.eventId || "coupon-sent:" + coupon.code,
+    subject: "Νέο κουπόνι — Nostalgia Candle",
+    snapshot: coupon,
+    audience: o.audience || { type: "newsletter" },
+    createdBy: o.createdBy,
+  }).catch((e) => console.error("[notify] coupon:", e.message));
 }
 
 /* Welcome offer: 10% on newsletter signup, extra 5% on account creation.
@@ -872,7 +913,40 @@ async function saveProductImage(id, dataUrl, slot) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
   const filename = key + "." + ext;
   fs.writeFileSync(path.join(UPLOADS_DIR, filename), buf);
-  return "product%20photo/uploads/" + encodeURIComponent(filename);
+  return "images/product%20photo/uploads/" + encodeURIComponent(filename);
+}
+
+/* Contact uploads are deliberately kept outside the public static tree. The
+   browser sends a small data URL; we validate both its declared MIME and its
+   magic bytes before writing a UUID-only filename. Admin downloads are served
+   through the authenticated route below, never as public static files. */
+function saveContactAttachment(attachment) {
+  if (!attachment || typeof attachment !== "object") return null;
+  const originalName = str(attachment.name, 160).replace(/[\\/\0]/g, "_").trim();
+  const declaredMime = String(attachment.mime || "").toLowerCase().trim();
+  const match = /^data:([^;,]+);base64,([a-z0-9+/=\r\n]+)$/i.exec(String(attachment.data || ""));
+  if (!match || !originalName) return null;
+  const buf = Buffer.from(match[2].replace(/\s/g, ""), "base64");
+  if (!buf.length || buf.length > 750 * 1024) return null;
+
+  let mime = "";
+  let ext = "";
+  if (buf.subarray(0, 4).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47])) && declaredMime === "image/png") { mime = "image/png"; ext = "png"; }
+  else if (buf.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff])) && declaredMime === "image/jpeg") { mime = "image/jpeg"; ext = "jpg"; }
+  else if (buf.subarray(0, 4).toString("ascii") === "RIFF" && buf.subarray(8, 12).toString("ascii") === "WEBP" && declaredMime === "image/webp") { mime = "image/webp"; ext = "webp"; }
+  else if (buf.subarray(0, 5).toString("ascii") === "%PDF-" && declaredMime === "application/pdf") { mime = "application/pdf"; ext = "pdf"; }
+  else return null;
+
+  fs.mkdirSync(CONTACT_ATTACHMENTS_DIR, { recursive: true, mode: 0o700 });
+  const storageName = crypto.randomUUID() + "." + ext;
+  fs.writeFileSync(path.join(CONTACT_ATTACHMENTS_DIR, storageName), buf, { mode: 0o600 });
+  return { name: originalName, mime, size: buf.length, storageName };
+}
+
+function removeContactAttachment(attachment) {
+  if (!attachment || !attachment.attachmentStorageName) return;
+  if (!/^[a-f0-9-]+\.(png|jpg|webp|pdf)$/i.test(attachment.attachmentStorageName)) return;
+  try { fs.unlinkSync(path.join(CONTACT_ATTACHMENTS_DIR, attachment.attachmentStorageName)); } catch (_) {}
 }
 
 /** Save up to `MAX_PRODUCT_IMAGES` gallery photos; returns the stored URLs.
@@ -1040,13 +1114,25 @@ app.get("/api/cron/maintenance", requireCron, ah(async (req, res) => {
         ? await processNotificationBatch({ pool, workerId,
           sender: new EmailNotificationSender(pool), batchSize: 25 })
         : { claimed: 0, skipped: "email_not_configured" };
+      const promotionsActivated = [];
+      if (mailer.emailConfigured()) {
+        const promotionsNow = await db.listPromotions();
+        for (const promotion of promotionsNow) {
+          if (!promotion.sendMarketingEmail || promotions.effectiveStatus(promotion, new Date()) !== "active") continue;
+          const snapshot = await promotionEmailSnapshot(promotion);
+          if (snapshot) {
+            notifySale(snapshot, { eventId: "promotion-activated:" + promotion.id, audience: { type: "newsletter" }, createdBy: promotion.createdBy });
+            promotionsActivated.push(promotion.id);
+          }
+        }
+      }
       const monitoring = await evaluateOperationalAlerts({ pool });
       /* Only ping on a newly-opened alert. An alert that is still open just
          keeps counting up — re-sending it every 5 minutes would be spam. */
       (monitoring.alerts || [])
         .filter((a) => Number(a.occurrences) === 1)
         .forEach((a) => notify.notifyAlert(a));
-      return { inventory, stalePending, notifications, monitoring };
+      return { inventory, stalePending, notifications, promotionsActivated, monitoring };
     } });
   res.json({ ok: true, result, requestId: req.requestId });
 }));
@@ -1443,6 +1529,8 @@ app.post("/api/contact", ah(async (req, res) => {
   const email = normEmail(b.email);
   const message = str(b.message, 4000);
   if (!isEmail(email) || !message) return bad(res, 400, "missing_fields");
+  const attachment = b.attachment ? saveContactAttachment(b.attachment) : null;
+  if (b.attachment && !attachment) return bad(res, 400, "attachment_invalid");
   const msg = {
     id: crypto.randomUUID(),
     lastName: str(b.name, 80),
@@ -1453,8 +1541,17 @@ app.post("/api/contact", ah(async (req, res) => {
     subject: str(b.subject, 160),
     message,
     lang: b.lang === "en" ? "en" : "el",
+    attachmentName: attachment ? attachment.name : "",
+    attachmentMime: attachment ? attachment.mime : "",
+    attachmentSize: attachment ? attachment.size : 0,
+    attachmentStorageName: attachment ? attachment.storageName : "",
   };
-  await db.addMessage(msg);
+  try {
+    await db.addMessage(msg);
+  } catch (error) {
+    removeContactAttachment(msg);
+    throw error;
+  }
   mailer.sendContactNotification(msg).catch((e) => console.error("[contact]", e.message));
   mailer.sendContactAutoReply(msg).catch((e) => console.error("[contact]", e.message));
   res.json({ ok: true });
@@ -1810,6 +1907,17 @@ app.post("/api/orders", ah(async (req, res) => {
       image: product.image,
       price: product.price != null ? product.price : null,
     };
+    /* Size ("100ml") for the receipt line, snapshotted like title and price so
+       the order keeps showing what was bought even if the product is edited
+       later. Only diffusers carry a capacity today — candles have no size
+       field, so the line simply doesn't appear for them. */
+    try {
+      const details = await db.getProductDetails(id);
+      const capacity = details && details.diffuser && details.diffuser.capacity;
+      if (capacity) item.size = String(capacity).trim();
+    } catch (_) {
+      /* never let a cosmetic lookup block an order */
+    }
     /* Snapshot the discount attribution NOW — if a promotion later changes or
        expires, this order must keep showing what was actually charged. */
     if (product.regularPrice != null && product.price != null && product.regularPrice !== product.price) {
@@ -3123,6 +3231,21 @@ app.get("/api/admin/messages", requireAdmin, ah(async (req, res) => {
   res.json({ ok: true, messages: data.messages, pagination: data.pagination });
 }));
 
+app.get("/api/admin/messages/:id/attachment", requireAdmin, ah(async (req, res) => {
+  const message = await db.getMessage(req.params.id);
+  if (!message || !message.attachmentStorageName) return bad(res, 404, "not_found");
+  if (!/^[a-f0-9-]+\.(png|jpg|webp|pdf)$/i.test(message.attachmentStorageName)) return bad(res, 404, "not_found");
+  const filePath = path.join(CONTACT_ATTACHMENTS_DIR, message.attachmentStorageName);
+  if (!fs.existsSync(filePath)) return bad(res, 404, "not_found");
+  res.set({
+    "Content-Type": "application/octet-stream",
+    "Content-Disposition": "attachment; filename*=UTF-8''" + encodeURIComponent(message.attachmentName || "attachment"),
+    "X-Content-Type-Options": "nosniff",
+    "Cache-Control": "private, no-store",
+  });
+  fs.createReadStream(filePath).pipe(res);
+}));
+
 app.patch("/api/admin/messages/:id", requireAdmin, ah(async (req, res) => {
   if (typeof (req.body && req.body.read) !== "boolean") {
     return bad(res, 400, "invalid_body");
@@ -3132,9 +3255,21 @@ app.patch("/api/admin/messages/:id", requireAdmin, ah(async (req, res) => {
   res.json({ ok: true });
 }));
 
+app.post("/api/admin/messages/:id/reply", requireAdmin, ah(async (req, res) => {
+  const message = await db.getMessage(req.params.id);
+  if (!message) return bad(res, 404, "not_found");
+  const body = String((req.body && req.body.body) || "").trim();
+  if (!body || body.length > 20000) return bad(res, 400, "invalid_body");
+  await mailer.sendContactReply(message, body);
+  audit(req, "admin.message.replied", req.admin && req.admin.sub, { messageId: message.id, to: message.email });
+  res.json({ ok: true });
+}));
+
 app.delete("/api/admin/messages/:id", requireAdmin, ah(async (req, res) => {
+  const message = await db.getMessage(req.params.id);
   const deleted = await db.deleteMessage(req.params.id);
   if (!deleted) return bad(res, 404, "not_found");
+  removeContactAttachment(message);
   res.json({ ok: true });
 }));
 
@@ -3211,6 +3346,7 @@ app.post("/api/admin/products", requireAdmin, ah(async (req, res) => {
     saleUntil: salePrice != null ? saleUntil : null,
     image,
     images,
+    active: b.publish !== false,
   };
   await db.createCustomProduct(product);
 
@@ -3225,9 +3361,13 @@ app.post("/api/admin/products", requireAdmin, ah(async (req, res) => {
     }
   }
 
-  /* Notify account holders. The new-product email already shows the sale
-     price, so we don't also send a separate sale email for brand-new items. */
-  notifyNewProduct(product);
+  if (product.active && b.sendMarketingEmail === true) {
+    notifyNewProduct(product, {
+      eventId: "product-published:" + id,
+      audience: { type: b.audienceType || "newsletter" },
+      createdBy: req.admin && req.admin.sub,
+    });
+  }
 
   clearReadCache();
   audit(req, "admin.product.created", req.admin && req.admin.sub,
@@ -3243,6 +3383,7 @@ app.patch("/api/admin/products/:id", requireAdmin, ah(async (req, res) => {
   if (!custom && !isStatic) return bad(res, 404, "not_found");
 
   if (custom) {
+    const wasActive = custom.active !== false;
     const wasOnSale = saleActive(custom.price, custom.salePrice, custom.saleUntil);
     const fields = {};
     if (b.title !== undefined) {
@@ -3300,6 +3441,13 @@ app.patch("/api/admin/products/:id", requireAdmin, ah(async (req, res) => {
 
     /* fire a sale email only when the discount newly becomes active */
     const updated = await db.getCustomProduct(id);
+    if (updated && updated.active !== false && !wasActive && b.sendMarketingEmail === true) {
+      notifyNewProduct(updated, {
+        eventId: "product-published:" + id,
+        audience: { type: b.audienceType || "newsletter" },
+        createdBy: req.admin && req.admin.sub,
+      });
+    }
     if (updated && updated.active !== false &&
         saleActive(updated.price, updated.salePrice, updated.saleUntil) && !wasOnSale) {
       notifySale(updated);
@@ -3651,8 +3799,16 @@ app.post("/api/admin/coupons", requireAdmin, ah(async (req, res) => {
   });
   const coupon = await db.getCoupon(code);
 
-  /* email the code to every account holder */
-  notifyCoupon(coupon);
+  if (b.sendMarketingEmail === true) {
+    notifyCoupon(coupon, {
+      eventId: "coupon-sent:" + coupon.code,
+      audience: {
+        type: b.audienceType || "newsletter",
+        email: b.audienceEmail || "",
+      },
+      createdBy: req.admin && req.admin.sub,
+    });
+  }
 
   res.json({ ok: true, coupon });
 }));
@@ -3773,7 +3929,7 @@ function parsePromotionInput(b, sellableIds) {
       name, code, discountType, discountValue, maxDiscountPerProduct, status,
       startsAt: startsAt ? startsAt.toISOString() : null,
       endsAt: endsAt ? endsAt.toISOString() : null,
-      timezone, priority, targets: normTargets, exclusions: normExclusions,
+      timezone, priority, sendMarketingEmail: b.sendMarketingEmail === true, targets: normTargets, exclusions: normExclusions,
     },
   };
 }
@@ -3859,6 +4015,11 @@ app.post("/api/admin/promotions", requireAdmin, ah(async (req, res) => {
   audit(req, "promotion.created", req.admin && req.admin.sub, { promotionId: String(id), name: draft.name, status: draft.status });
   clearReadCache();
   const promo = await db.getPromotion(id);
+  if (b.sendMarketingEmail === true && effectiveStatus === "active") {
+    promotionEmailSnapshot(promo).then((snapshot) => {
+      if (snapshot) notifySale(snapshot, { eventId: "promotion-activated:" + id, audience: { type: "newsletter" }, createdBy: req.admin && req.admin.sub });
+    }).catch((e) => console.error("[notify] promotion:", e.message));
+  }
   res.json({ ok: true, promotion: promo });
 }));
 
@@ -3866,6 +4027,7 @@ app.patch("/api/admin/promotions/:id", requireAdmin, ah(async (req, res) => {
   const id = parseInt(req.params.id, 10);
   const existing = await db.getPromotion(id);
   if (!existing) return bad(res, 404, "not_found");
+  const wasEffectiveStatus = promotions.effectiveStatus(existing, new Date());
   const b = req.body || {};
 
   const allProducts = await allSellableProductsForPromotions();
@@ -3884,6 +4046,7 @@ app.patch("/api/admin/promotions/:id", requireAdmin, ah(async (req, res) => {
     endsAt: b.endsAt !== undefined ? b.endsAt : existing.endsAt,
     timezone: b.timezone !== undefined ? b.timezone : existing.timezone,
     priority: b.priority !== undefined ? b.priority : existing.priority,
+    sendMarketingEmail: b.sendMarketingEmail !== undefined ? !!b.sendMarketingEmail : existing.sendMarketingEmail,
     targets: b.targets !== undefined ? b.targets : existing.targets,
     exclusions: b.exclusions !== undefined ? b.exclusions : existing.exclusions,
   };
@@ -3922,6 +4085,11 @@ app.patch("/api/admin/promotions/:id", requireAdmin, ah(async (req, res) => {
   });
   clearReadCache();
   const promo = await db.getPromotion(id);
+  if (promo.sendMarketingEmail && wasEffectiveStatus !== "active" && effectiveStatus === "active") {
+    promotionEmailSnapshot(promo).then((snapshot) => {
+      if (snapshot) notifySale(snapshot, { eventId: "promotion-activated:" + id, audience: { type: "newsletter" }, createdBy: req.admin && req.admin.sub });
+    }).catch((e) => console.error("[notify] promotion:", e.message));
+  }
   res.json({ ok: true, promotion: promo });
 }));
 
@@ -4626,6 +4794,9 @@ function initialize() {
       await db.init();
       await ensureSecret();
       await ensureAdmin();
+      if (mailer.emailConfigured()) {
+        processQueuedCampaigns(10).catch((error) => console.error("[marketing-campaign] startup recovery failed:", error.message));
+      }
     })();
   }
   return initializationPromise;

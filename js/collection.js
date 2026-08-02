@@ -16,16 +16,16 @@
   };
 
   function muranoImg(n) {
-    return "product%20photo/art%20class%20murano%20candle/product%20" + n + ".png";
+    return "images/product%20photo/art%20class%20murano%20candle/product%20" + n + ".png";
   }
   function driftwoodImg(name) {
-    return "product%20photo/driftwood%20beeswax%20flame/" + name;
+    return "images/product%20photo/driftwood%20beeswax%20flame/" + name;
   }
   function liquidImg(n) {
-    return "product%20photo/liquid%20eternal/product%20" + n + ".png";
+    return "images/product%20photo/liquid%20eternal/product%20" + n + ".png";
   }
   function vesselImg(n) {
-    return "product%20photo/unique%20art%20vessel/product%20" + n + ".png";
+    return "images/product%20photo/unique%20art%20vessel/product%20" + n + ".png";
   }
 
   var CAT_PRODUCTS = {
@@ -63,15 +63,15 @@
   };
 
   var CAT_HERO = {
-    cat1: "collections-hero/Art%20Class%20Murano%20Candle-hero-photo.png",
-    cat2: "collections-hero/Driftwood%20Beeswax%20Flame-hero-photo.png",
-    cat3: "collections-hero/Liquid%20Eternal-hero-photo.png",
-    cat4: "collections-hero/Unique%20Art%20Objects-hero-photo.png",
-    cat5: "collections-hero/NI%20Terra-hero-photo.png",
-    cat6: "collections-hero/Perfume-hero-photo.png",
-    cat7: "collections-hero/Diffusers-hero-photo.png",
-    cat8: "collections-hero/Gift%20Sets-hero-photo.png",
-    cat9: "collections-hero/Nostalgia%20Exclusive%20Mirror%20Candles-hero.png",
+    cat1: "images/collections-hero/Art%20Class%20Murano%20Candle-hero-photo.png",
+    cat2: "images/collections-hero/Driftwood%20Beeswax%20Flame-hero-photo.png",
+    cat3: "images/collections-hero/Liquid%20Eternal-hero-photo.png",
+    cat4: "images/collections-hero/Unique%20Art%20Objects-hero-photo.png",
+    cat5: "images/collections-hero/NI%20Terra-hero-photo.png",
+    cat6: "images/collections-hero/Perfume-hero-photo.png",
+    cat7: "images/collections-hero/Diffusers-hero-photo.png",
+    cat8: "images/collections-hero/Gift%20Sets-hero-photo.png",
+    cat9: "images/collections-hero/Nostalgia%20Exclusive%20Mirror%20Candles-hero.png",
   };
 
   var CAT_HERO_META = {

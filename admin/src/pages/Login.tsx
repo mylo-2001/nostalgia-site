@@ -92,7 +92,7 @@ export function Login({ onLoggedIn }: { onLoggedIn: () => void }) {
   return (
     <div className="login">
       <form className="login__card" onSubmit={submit}>
-        <img className="login__logo" src="/logo/logo.png" alt="Nostalgia Collection" />
+        <img className="login__logo" src="/images/logo/logo.png" alt="Nostalgia Collection" />
         <h1 className="login__title">Πίνακας Διαχείρισης</h1>
         <label className="field"><span>Όνομα χρήστη</span>
           <input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" required />

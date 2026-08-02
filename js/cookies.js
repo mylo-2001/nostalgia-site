@@ -112,7 +112,7 @@
       '<div class="cookie-banner__backdrop"></div>' +
       '<div class="cookie-banner__panel">' +
       '  <div class="cookie-banner__brand">' +
-      '    <img class="cookie-banner__logo" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />' +
+      '    <img class="cookie-banner__logo" src="images/logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />' +
       "  </div>" +
       '  <button type="button" class="cookie-banner__skip" data-cookie-continue-without data-i18n="cookie_continue_without">Συνέχεια χωρίς αποδοχή</button>' +
       '  <h2 class="cookie-banner__title" id="cookie-banner-title">' + COOKIE_ICON +

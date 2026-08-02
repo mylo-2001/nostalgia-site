@@ -109,8 +109,8 @@
       '<div class="site-footer__layout site-footer__layout--rich">' +
       '  <div class="site-footer__center site-footer__center--brand">' +
       '    <a class="site-footer__logo" href="/" data-i18n-aria="logo_aria">' +
-      '      <img class="brand-logo brand-logo--dark" src="logo/logo.png" width="240" height="70" alt="Nostalgia Collection" />' +
-      '      <img class="brand-logo brand-logo--light" src="logo/logo%20light.png?v=2" width="240" height="70" alt="Nostalgia Collection" />' +
+      '      <img class="brand-logo brand-logo--dark" src="images/logo/logo.png" width="240" height="70" alt="Nostalgia Collection" />' +
+      '      <img class="brand-logo brand-logo--light" src="images/logo/logo%20light.png?v=2" width="240" height="70" alt="Nostalgia Collection" />' +
       "    </a>" +
       '    <p class="site-footer__tagline" data-i18n="footer_tagline">' + t("footer_tagline") + "</p>" +
       '    <ul class="site-footer__lines">' +
@@ -235,8 +235,8 @@
       '<section class="site-newsletter" id="site-newsletter" aria-labelledby="site-newsletter-title">' +
       '  <div class="site-newsletter__media" aria-hidden="true">' +
       "    <picture>" +
-      '      <source type="image/webp" srcset="home%20page%20photo/gift-set-home-photo-480w.webp 480w, home%20page%20photo/gift-set-home-photo-960w.webp 960w, home%20page%20photo/gift-set-home-photo-1440w.webp 1440w" sizes="100vw" />' +
-      '      <img src="home%20page%20photo/gift-set-home-photo.webp" alt="" width="1440" height="900" loading="lazy" decoding="async" />' +
+      '      <source type="image/webp" srcset="images/home%20page%20photo/gift-set-home-photo-480w.webp 480w, images/home%20page%20photo/gift-set-home-photo-960w.webp 960w, images/home%20page%20photo/gift-set-home-photo-1440w.webp 1440w" sizes="100vw" />' +
+      '      <img src="images/home%20page%20photo/gift-set-home-photo.webp" alt="" width="1440" height="900" loading="lazy" decoding="async" />' +
       "    </picture>" +
       "  </div>" +
       '  <div class="site-newsletter__veil" aria-hidden="true"></div>' +

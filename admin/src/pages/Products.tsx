@@ -44,7 +44,8 @@ function ProductRow({ p, onSaved }: { p: AdminProduct; onSaved: () => void }) {
 
   async function toggleActive() {
     setBusy(true);
-    const res = await api.patch("/api/admin/products/" + p.id, { active: p.active === false });
+    const activating = p.active === false;
+    const res = await api.patch("/api/admin/products/" + p.id, { active: activating, sendMarketingEmail: activating });
     setBusy(false);
     if (res.ok) onSaved();
   }

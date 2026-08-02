@@ -97,16 +97,16 @@ test("applyServerProducts merges a custom product with a multi-image gallery", (
       catId: "cat1",
       title: "Custom",
       price: 40,
-      image: "product%20photo/uploads/cu-1.png",
+      image: "images/product%20photo/uploads/cu-1.png",
       images: [
-        "product%20photo/uploads/cu-1.png",
-        "product%20photo/uploads/cu-1-2.png",
-        "product%20photo/uploads/cu-1-3.png",
+        "images/product%20photo/uploads/cu-1.png",
+        "images/product%20photo/uploads/cu-1-2.png",
+        "images/product%20photo/uploads/cu-1-3.png",
       ],
     },
   ]);
   const cu = P.getById("cu-1");
   assert.ok(cu);
   assert.equal(cu.images.length, 3);
-  assert.equal(cu.image, "product%20photo/uploads/cu-1.png");
+  assert.equal(cu.image, "images/product%20photo/uploads/cu-1.png");
 });

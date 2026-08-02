@@ -925,93 +925,249 @@
       .replace(/'/g, "&#39;");
   }
 
-  function reviewListHTML(reviews) {
-    if (!reviews.length) {
-      return '<li class="product-reviews__empty">' + t("reviews_empty") + "</li>";
+  /* Anonymous per-browser session used only to prevent trivial repeat votes
+     on "was this helpful?" — no account needed. */
+  function voterKey() {
+    var KEY = "nostalgia-voter-key";
+    try {
+      var v = localStorage.getItem(KEY);
+      if (v) return v;
+      v = "v" + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+      localStorage.setItem(KEY, v);
+      return v;
+    } catch (e) {
+      return "v-session";
     }
-    return reviews
-      .slice(0, 12)
-      .map(function (r) {
-        var title = r.title ? '<strong class="product-reviews__item-title">' + escapeHtml(r.title) + "</strong>" : "";
-        var link = r.id
-          ? ' <a class="product-reviews__read-more" href="/review/' + encodeURIComponent(r.id) + '">' + escapeHtml(t("reviews_read_more")) + "</a>"
-          : "";
-        return (
-          "<li>" +
-          '<span class="product-reviews__stars" aria-hidden="true">' +
-          "★".repeat(r.rating) +
-          "</span> " +
-          "<strong>" +
-          escapeHtml(r.name) +
-          "</strong>" +
-          title +
-          "<p>" +
-          escapeHtml(r.text) +
-          link +
-          "</p></li>"
-        );
-      })
-      .join("");
+  }
+  function votedReviewIds() {
+    try {
+      return JSON.parse(localStorage.getItem("nostalgia-helpful-voted") || "[]");
+    } catch (e) {
+      return [];
+    }
+  }
+  function markVoted(id) {
+    try {
+      var ids = votedReviewIds();
+      if (ids.indexOf(id) === -1) {
+        ids.push(id);
+        localStorage.setItem("nostalgia-helpful-voted", JSON.stringify(ids));
+      }
+    } catch (e) {}
   }
 
-  function reviewSummaryText(reviews) {
-    var avg = reviews.length
-      ? (reviews.reduce(function (s, r) {
-          return s + r.rating;
-        }, 0) / reviews.length).toFixed(1)
-      : "0.0";
-    return t("reviews_avg") + ": " + avg + " · " + reviews.length + " " + t("reviews_count");
+  /* The logged-in session api.js already syncs into localStorage — reused
+     here only to auto-fill/lock the reviewer name, never to skip server-side
+     verification (that always re-checks the account's own delivered orders). */
+  function currentSession() {
+    try {
+      var raw = localStorage.getItem("nostalgia-session");
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /* A "rate your order" link (e.g. from the order-tracking page) can carry
+     ?reviewToken=... — the same guest order-access token already used for
+     tracking, reused here to verify the purchase without a new email flow. */
+  function reviewTokenFromUrl() {
+    try {
+      return new URLSearchParams(location.search).get("reviewToken") || "";
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function starsHTML(rating, cls) {
+    var full = Math.max(0, Math.min(5, Math.round(rating)));
+    return '<span class="' + (cls || "product-reviews__stars") + '" aria-hidden="true">' +
+      "★".repeat(full) + "☆".repeat(5 - full) + "</span>";
+  }
+
+  function distributionHTML(distribution, total) {
+    if (!total) return "";
+    var rows = [5, 4, 3, 2, 1].map(function (n) {
+      var count = (distribution && distribution[n]) || 0;
+      var pct = total ? Math.round((count / total) * 100) : 0;
+      return (
+        '<div class="product-reviews__dist-row">' +
+        '<span class="product-reviews__dist-label">' + n + " ★</span>" +
+        '<span class="product-reviews__dist-bar"><span style="width:' + pct + '%"></span></span>' +
+        '<span class="product-reviews__dist-count">' + count + "</span>" +
+        "</div>"
+      );
+    }).join("");
+    return '<div class="product-reviews__dist">' + rows + "</div>";
+  }
+
+  function reviewItemHTML(r) {
+    var title = r.title ? '<h3 class="product-reviews__card-title">' + escapeHtml(r.title) + "</h3>" : "";
+    var verified = r.isVerifiedPurchase
+      ? '<span class="product-reviews__verified-pill">✓ ' + escapeHtml(t("reviews_verified_purchase_short")) + "</span>"
+      : "";
+    var date = r.createdAt
+      ? '<span class="product-reviews__date">' + escapeHtml(new Date(r.createdAt).toLocaleDateString(document.documentElement.lang === "en" ? "en-GB" : "el-GR")) + "</span>"
+      : "";
+    var reply = r.reply
+      ? '<div class="product-reviews__reply"><strong>' + escapeHtml(t("reviews_store_reply")) + "</strong><p>" + escapeHtml(r.reply.body) + "</p></div>"
+      : "";
+    var voted = votedReviewIds().indexOf(r.id) !== -1;
+    var helpful =
+      '<button type="button" class="product-reviews__helpful" data-helpful-id="' + escapeHtml(r.id) + '"' + (voted ? " disabled" : "") + ">" +
+      escapeHtml(t("reviews_helpful_question")) + " " + escapeHtml(t("reviews_helpful_yes")) +
+      ' <span class="product-reviews__helpful-count">' + (r.helpfulCount || 0) + "</span></button>";
+    return (
+      '<article class="product-reviews__card">' +
+      starsHTML(r.rating, "product-reviews__card-stars") +
+      title +
+      "<p class=\"product-reviews__card-text\">" + escapeHtml(r.text) + "</p>" +
+      '<div class="product-reviews__card-meta">' +
+      '<span><strong class="product-reviews__name">' + escapeHtml(r.name) + "</strong> · " + date + "</span>" +
+      verified +
+      "</div>" +
+      reply +
+      helpful +
+      "</article>"
+    );
+  }
+
+  function reviewListHTML(reviews) {
+    if (!reviews.length) {
+      return '<p class="product-reviews__empty">' + t("reviews_empty") + "</p>";
+    }
+    return reviews.map(reviewItemHTML).join("");
   }
 
   function renderReviewsHTML(product) {
     return (
       '<section class="product-reviews">' +
-      "  <h2>" +
-      t("reviews_title") +
-      "</h2>" +
-      '  <p class="product-reviews__summary" id="product-reviews-summary">' +
-      reviewSummaryText([]) +
-      "</p>" +
-      '  <form class="product-reviews__form" id="product-review-form">' +
-      '    <input id="review-name" type="text" placeholder="' +
-      t("reviews_name") +
-      '" required />' +
-      '    <input id="review-title" type="text" placeholder="' +
-      t("reviews_title_field") +
-      '" maxlength="120" />' +
-      '    <select id="review-rating"><option value="5">5 ★</option><option value="4">4 ★</option><option value="3">3 ★</option><option value="2">2 ★</option><option value="1">1 ★</option></select>' +
-      '    <textarea id="review-text" placeholder="' +
-      t("reviews_placeholder") +
-      '" required></textarea>' +
-      '    <button type="submit" class="btn-shop btn-shop--primary">' +
-      t("reviews_submit") +
-      "</button>" +
+      "  <h2>" + t("reviews_title") + "</h2>" +
+      '  <div class="product-reviews__top">' +
+      '    <div class="product-reviews__rating-block" id="product-reviews-summary">' +
+      '      <div class="product-reviews__avg-row"><span class="product-reviews__avg">0.0</span><span class="product-reviews__avg-max">/5</span></div>' +
+      starsHTML(0, "product-reviews__avg-stars") +
+      '      <span class="product-reviews__total">0 ' + t("reviews_count") + "</span>" +
+      '      <span class="product-reviews__trust-badge">' + t("reviews_trust_badge") + "</span>" +
+      "    </div>" +
+      '    <div class="product-reviews__dist" id="product-reviews-dist"></div>' +
+      '    <div class="product-reviews__cta">' +
+      '      <p class="product-reviews__cta-note">' + t("reviews_verified_purchase_note") +
+      ' <a href="/review-policy">' + t("reviews_moderation_link") + "</a></p>" +
+      '      <button type="button" class="btn-shop btn-shop--primary" id="review-toggle" aria-expanded="false">' + t("reviews_write_review_cta") + "</button>" +
+      "    </div>" +
+      "  </div>" +
+
+      '  <form class="product-reviews__form" id="product-review-form" hidden>' +
+      '    <div class="product-reviews__star-input" id="review-star-input" role="radiogroup" aria-label="' + t("reviews_select_rating") + '">' +
+      [1, 2, 3, 4, 5].map(function (n) {
+        return '<button type="button" class="product-reviews__star-btn" data-star="' + n + '" aria-label="' + n + ' ★">☆</button>';
+      }).join("") +
+      '      <span class="product-reviews__star-hint" id="review-star-hint">' + t("reviews_select_rating") + "</span>" +
+      "    </div>" +
+      '    <input type="hidden" id="review-rating" value="0" />' +
+
+      '    <label class="product-reviews__field"><span>' + t("reviews_name") + '</span><input id="review-name" type="text" maxlength="80" /></label>' +
+      '    <label class="product-reviews__field"><span>' + t("reviews_title_field") + '</span>' +
+      '      <input id="review-title" type="text" maxlength="80" />' +
+      '      <span class="product-reviews__hint">' + t("reviews_title_hint") + "</span>" +
+      "    </label>" +
+      '    <label class="product-reviews__field"><span>' + t("reviews_placeholder") + '</span>' +
+      '      <textarea id="review-text" maxlength="2000"></textarea>' +
+      '      <span class="product-reviews__hint">' + t("reviews_text_hint") + "</span>" +
+      "    </label>" +
+
+      '    <button type="submit" class="btn-shop btn-shop--primary">' + t("reviews_submit") + "</button>" +
+      '    <button type="button" class="product-reviews__cancel" id="review-cancel">' + t("reviews_close_form") + "</button>" +
       '    <p class="product-reviews__feedback" id="review-feedback" hidden></p>' +
       "  </form>" +
-      '  <ul class="product-reviews__list" id="product-reviews-list"></ul>' +
+
+      '  <div class="product-reviews__controls" id="product-reviews-controls" hidden>' +
+      '    <label>' + t("reviews_sort_label") + ':' +
+      '      <select id="review-sort">' +
+      '        <option value="rating_high" selected>' + t("reviews_sort_rating") + "</option>" +
+      '        <option value="newest">' + t("reviews_sort_date") + "</option>" +
+      '        <option value="rating_low">' + t("reviews_sort_rating_low") + "</option>" +
+      '        <option value="helpful">' + t("reviews_sort_helpful") + "</option>" +
+      "      </select>" +
+      "    </label>" +
+      '    <label class="product-reviews__verified-filter"><input type="checkbox" id="review-verified-only" /> ' + t("reviews_verified_only") +
+      ' <span class="product-reviews__info-icon" title="' + t("reviews_verified_purchase_note") + '">ⓘ</span></label>' +
+      "  </div>" +
+
+      '  <div class="product-reviews__grid" id="product-reviews-list"></div>' +
+      '  <button type="button" class="product-reviews__show-more" id="review-show-more" hidden>' + t("reviews_show_more") + "</button>" +
+      '  <p class="product-reviews__footnote">🔒 ' + t("reviews_verified_purchase_note") + "</p>" +
       "</section>"
     );
   }
 
-  function paintReviews(reviews) {
-    var summary = document.getElementById("product-reviews-summary");
+  function paintReviews(product, data) {
+    var summaryEl = document.getElementById("product-reviews-summary");
+    var distEl = document.getElementById("product-reviews-dist");
     var list = document.getElementById("product-reviews-list");
-    if (summary) summary.textContent = reviewSummaryText(reviews);
+    var controls = document.getElementById("product-reviews-controls");
+    var showMore = document.getElementById("review-show-more");
+    var summary = data.summary || { average: 0, total: 0, distribution: {} };
+    var reviews = data.reviews || [];
+
+    if (summaryEl) {
+      summaryEl.innerHTML =
+        '<div class="product-reviews__avg-row"><span class="product-reviews__avg">' + summary.average.toFixed(1) + '</span><span class="product-reviews__avg-max">/5</span></div>' +
+        starsHTML(summary.average, "product-reviews__avg-stars") +
+        '<span class="product-reviews__total">' + summary.total + " " + t("reviews_count") + "</span>" +
+        '<span class="product-reviews__trust-badge">' + t("reviews_trust_badge") + "</span>";
+    }
+    if (distEl) distEl.innerHTML = distributionHTML(summary.distribution, summary.total);
+    if (controls) controls.hidden = summary.total === 0;
     if (list) list.innerHTML = reviewListHTML(reviews);
+    /* "Show more" reveals everything in one click (limit widened) — once
+       every review is already showing, the button just disappears. */
+    if (showMore) showMore.hidden = reviews.length >= summary.total;
+    bindHelpfulButtons();
   }
 
+  function bindHelpfulButtons() {
+    document.querySelectorAll("[data-helpful-id]").forEach(function (btn) {
+      if (btn.dataset.bound) return;
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-helpful-id");
+        if (!window.NostalgiaAPI || !window.NostalgiaAPI.isAvailable()) return;
+        window.NostalgiaAPI.post("/api/reviews/" + encodeURIComponent(id) + "/helpful", { voterKey: voterKey() })
+          .then(function (res) {
+            if (!res.ok) return;
+            markVoted(id);
+            btn.disabled = true;
+            var countEl = btn.querySelector(".product-reviews__helpful-count");
+            if (countEl) countEl.textContent = res.helpfulCount;
+          })
+          .catch(function () {});
+      });
+    });
+  }
+
+  /* Shows the 3 best (highest-rated) reviews by default. "Show more" widens
+     the limit in one step rather than paging 3-at-a-time, so one click
+     reveals the rest instead of many small clicks. */
+  var REVIEWS_DEFAULT_LIMIT = 3;
+  var REVIEWS_EXPANDED_LIMIT = 200;
+  var reviewQuery = { limit: REVIEWS_DEFAULT_LIMIT, sort: "rating_high", verifiedOnly: false };
+
   function loadReviews(product) {
-    if (window.NostalgiaAPI && window.NostalgiaAPI.isAvailable()) {
-      window.NostalgiaAPI.get("/api/reviews?productId=" + encodeURIComponent(product.id))
-        .then(function (res) {
-          paintReviews(res.ok && res.reviews ? res.reviews : []);
-        })
-        .catch(function () {
-          paintReviews(getReviews(product.id));
-        });
-    } else {
-      paintReviews(getReviews(product.id));
+    if (!(window.NostalgiaAPI && window.NostalgiaAPI.isAvailable())) {
+      /* Offline fallback — best-effort local reviews, no pagination/summary. */
+      var local = getReviews(product.id);
+      var avg = local.length ? local.reduce(function (s, r) { return s + r.rating; }, 0) / local.length : 0;
+      paintReviews(product, { summary: { average: avg, total: local.length, distribution: {} }, reviews: local });
+      return;
     }
+    var qs = "page=1&limit=" + reviewQuery.limit + "&sort=" + reviewQuery.sort + (reviewQuery.verifiedOnly ? "&verifiedOnly=true" : "");
+    window.NostalgiaAPI.get("/api/products/" + encodeURIComponent(product.id) + "/reviews?" + qs)
+      .then(function (res) {
+        if (res.ok) paintReviews(product, res);
+      })
+      .catch(function () {});
   }
 
   function showReviewFeedback(message, isError) {
@@ -1023,52 +1179,140 @@
     fb.classList.toggle("is-success", !isError);
   }
 
+  var REVIEW_ERROR_KEYS = {
+    invalid_rating: "reviews_error_rating",
+    title_too_short: "reviews_error_title_short",
+    text_too_short: "reviews_error_text_short",
+    already_reviewed: "reviews_error_duplicate",
+    contains_link: "reviews_error_content",
+    contains_personal_data: "reviews_error_content",
+    too_many_attempts: "reviews_error_generic",
+  };
+
   function bindReviews(product) {
     var form = document.getElementById("product-review-form");
-    if (!form) return;
+    var toggle = document.getElementById("review-toggle");
+    var cancel = document.getElementById("review-cancel");
+    var starInput = document.getElementById("review-star-input");
+    var starHint = document.getElementById("review-star-hint");
+    var ratingEl = document.getElementById("review-rating");
+    var nameEl = document.getElementById("review-name");
+    var sortEl = document.getElementById("review-sort");
+    var verifiedOnlyEl = document.getElementById("review-verified-only");
+    var showMoreBtn = document.getElementById("review-show-more");
+    if (!form || !toggle) return;
+
+    /* Logged-in shoppers get a locked, auto-filled display name — their
+       account is what gets checked server-side for a verified purchase, so
+       the name shown must match it (no impersonating a different name). */
+    var session = currentSession();
+    if (session && nameEl) {
+      var display = [session.firstname, (session.lastname || "").slice(0, 1)].filter(Boolean).join(" ");
+      nameEl.value = display || session.email;
+      nameEl.readOnly = true;
+    }
+
+    toggle.addEventListener("click", function () {
+      var opening = form.hidden;
+      form.hidden = !opening;
+      toggle.setAttribute("aria-expanded", String(opening));
+      toggle.hidden = opening;
+      if (opening) {
+        var textEl = document.getElementById("review-text");
+        if (textEl) textEl.focus();
+      }
+    });
+    if (cancel) {
+      cancel.addEventListener("click", function () {
+        form.hidden = true;
+        toggle.hidden = false;
+        toggle.setAttribute("aria-expanded", "false");
+      });
+    }
+
+    if (starInput) {
+      var stars = Array.prototype.slice.call(starInput.querySelectorAll("[data-star]"));
+      function paintStars(n) {
+        stars.forEach(function (s) {
+          var v = parseInt(s.getAttribute("data-star"), 10);
+          s.textContent = v <= n ? "★" : "☆";
+          s.classList.toggle("is-filled", v <= n);
+        });
+      }
+      stars.forEach(function (s) {
+        s.addEventListener("click", function () {
+          var v = parseInt(s.getAttribute("data-star"), 10);
+          ratingEl.value = String(v);
+          paintStars(v);
+          if (starHint) starHint.textContent = v + " ★";
+        });
+      });
+    }
+
+    if (sortEl) {
+      sortEl.addEventListener("change", function () {
+        reviewQuery.sort = sortEl.value;
+        loadReviews(product);
+      });
+    }
+    if (verifiedOnlyEl) {
+      verifiedOnlyEl.addEventListener("change", function () {
+        reviewQuery.verifiedOnly = verifiedOnlyEl.checked;
+        loadReviews(product);
+      });
+    }
+    if (showMoreBtn) {
+      showMoreBtn.addEventListener("click", function () {
+        reviewQuery.limit = REVIEWS_EXPANDED_LIMIT;
+        loadReviews(product);
+      });
+    }
+
     form.addEventListener("submit", function (e) {
       e.preventDefault();
-      var nameEl = document.getElementById("review-name");
       var titleEl = document.getElementById("review-title");
-      var ratingEl = document.getElementById("review-rating");
       var textEl = document.getElementById("review-text");
-      var review = {
-        name: (nameEl.value || "").trim() || "Guest",
-        title: titleEl ? (titleEl.value || "").trim() : "",
-        rating: Math.max(1, Math.min(5, parseInt(ratingEl.value, 10) || 5)),
-        text: (textEl.value || "").trim(),
-      };
-      if (!review.text) return;
+      var rating = parseInt(ratingEl.value, 10) || 0;
+      var title = (titleEl.value || "").trim();
+      var text = (textEl.value || "").trim();
+      var name = (nameEl.value || "").trim() || "Guest";
 
-      if (window.NostalgiaAPI && window.NostalgiaAPI.isAvailable()) {
-        window.NostalgiaAPI.post("/api/reviews", {
-          productId: product.id,
-          name: review.name,
-          title: review.title,
-          rating: review.rating,
-          text: review.text,
-        })
-          .then(function (res) {
-            if (res.ok) {
-              form.reset();
-              showReviewFeedback(t("reviews_thanks"), false);
-            } else {
-              showReviewFeedback(t("reviews_thanks"), false);
-            }
-          })
-          .catch(function () {
-            saveReview(product.id, review);
-            form.reset();
-            showReviewFeedback(t("reviews_thanks"), false);
-            paintReviews(getReviews(product.id));
-          });
+      if (!rating) return showReviewFeedback(t("reviews_error_rating"), true);
+      if (title.length < 5) return showReviewFeedback(t("reviews_error_title_short"), true);
+      if (text.length < 20) return showReviewFeedback(t("reviews_error_text_short"), true);
+
+      if (!(window.NostalgiaAPI && window.NostalgiaAPI.isAvailable())) {
+        saveReview(product.id, { name: name, title: title, rating: rating, text: text });
+        form.reset();
+        showReviewFeedback(t("reviews_thanks"), false);
+        loadReviews(product);
         return;
       }
 
-      saveReview(product.id, review);
-      form.reset();
-      showReviewFeedback(t("reviews_thanks"), false);
-      paintReviews(getReviews(product.id));
+      window.NostalgiaAPI.post("/api/reviews", {
+        productId: product.id,
+        name: session ? undefined : name,
+        title: title,
+        rating: rating,
+        text: text,
+        orderToken: reviewTokenFromUrl(),
+      })
+        .then(function (res) {
+          if (res.ok) {
+            form.reset();
+            if (starInput) form.querySelectorAll("[data-star]").forEach(function (s) { s.textContent = "☆"; s.classList.remove("is-filled"); });
+            if (starHint) starHint.textContent = t("reviews_select_rating");
+            ratingEl.value = "0";
+            if (session && nameEl) nameEl.value = [session.firstname, (session.lastname || "").slice(0, 1)].filter(Boolean).join(" ");
+            showReviewFeedback(t("reviews_thanks"), false);
+          } else {
+            var key = REVIEW_ERROR_KEYS[res.error] || "reviews_error_generic";
+            showReviewFeedback(t(key), true);
+          }
+        })
+        .catch(function () {
+          showReviewFeedback(t("reviews_error_generic"), true);
+        });
     });
   }
 

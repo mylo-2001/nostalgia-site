@@ -18,6 +18,24 @@ const CATEGORIES = {
   cat9: { name: "Nostalgia Exclusive Mirror Candles", count: 8 },
 };
 
+/* Crawlable, human-readable URL per category — /collection/:slug — instead
+   of the old #cat1 hash (which Google never indexes as a separate page). */
+const CATEGORY_SLUGS = {
+  cat1: "art-class-murano-candle",
+  cat2: "driftwood-beeswax-flame",
+  cat3: "liquid-eternal",
+  cat4: "vintage-unique-objects",
+  cat5: "ni-terra",
+  cat6: "perfume",
+  cat7: "diffusers",
+  cat8: "gift-sets",
+  cat9: "mirror-candles",
+};
+const CAT_ID_BY_SLUG = {};
+Object.keys(CATEGORY_SLUGS).forEach((catId) => {
+  CAT_ID_BY_SLUG[CATEGORY_SLUGS[catId]] = catId;
+});
+
 /* Default limited stock — matches LIMITED_STOCK in js/products.js */
 const DEFAULT_STOCK = {
   "cat1-1": 4,
@@ -123,4 +141,4 @@ function buildCatalog() {
 const PRODUCTS = buildCatalog();
 const PRODUCT_IDS = new Set(PRODUCTS.map((p) => p.id));
 
-module.exports = { CATEGORIES, DEFAULT_STOCK, PRODUCTS, PRODUCT_IDS };
+module.exports = { CATEGORIES, DEFAULT_STOCK, PRODUCTS, PRODUCT_IDS, CATEGORY_SLUGS, CAT_ID_BY_SLUG };

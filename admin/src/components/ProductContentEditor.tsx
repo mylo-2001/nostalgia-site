@@ -30,6 +30,7 @@ export interface ProductContentDraft {
   longDescriptionEn: string;
   specs: string;
   specsEn: string;
+  weightKg: string;
   care: string;
   careEn: string;
   shipping: string;
@@ -86,6 +87,7 @@ export function emptyProductContent(): ProductContentDraft {
     features: "", featuresEn: "",
     longDescription: "", longDescriptionEn: "",
     specs: "", specsEn: "",
+    weightKg: "",
     care: "", careEn: "",
     shipping: "", shippingEn: "",
     includes: "", includesEn: "",
@@ -116,6 +118,7 @@ export function createProductContentDraft(
     features: lines(details.features), featuresEn: lines(details.featuresEn),
     longDescription: text(details.longDescription), longDescriptionEn: text(details.longDescriptionEn),
     specs: specs(details.specs), specsEn: specs(details.specsEn),
+    weightKg: details.weightKg == null ? "" : String(details.weightKg),
     care: lines(details.care, "\n\n"), careEn: lines(details.careEn, "\n\n"),
     shipping: lines(details.shipping), shippingEn: lines(details.shippingEn),
     includes: lines(details.includes), includesEn: lines(details.includesEn),
@@ -146,6 +149,7 @@ export function productDetailsPayload(
     longDescriptionEn: draft.longDescriptionEn,
     specs: draft.specs,
     specsEn: draft.specsEn,
+    weightKg: draft.weightKg,
     care: draft.care,
     careEn: draft.careEn,
     shipping: draft.shipping,
@@ -239,6 +243,17 @@ export function ProductContentFields({
       <fieldset className="content-section">
         <legend>Λεπτομέρειες προϊόντος</legend>
         <div className="content-grid">
+          {/* Not localized: a weight is a number, identical in both languages. */}
+          <label className="field"><span>Βάρος αποστολής (kg)</span>
+            <input type="number" min="0" step="0.01" value={value.weightKg}
+              onChange={(event) => set("weightKg", event.target.value)}
+              placeholder="π.χ. 0.75" />
+            <small className="muted">
+              Με τη συσκευασία. Χρησιμοποιείται για τον υπολογισμό του βάρους της
+              αποστολής ACS — η ACS ζυγίζει ξανά κάθε δέμα και χρεώνει το πραγματικό
+              βάρος, οπότε λάθος δήλωση φέρνει μόνο έκπληξη στο τιμολόγιο.
+            </small>
+          </label>
           <label className="field content-wide"><span>Προδιαγραφές, μία ανά γραμμή ως Ετικέτα: Τιμή</span>
             <textarea rows={4} value={localized("specs")} onChange={(event) => setLocalized("specs", event.target.value)} placeholder={language === "el" ? "Υλικό βάσης: Φυσικό ξύλο" : "Base material: Natural wood"} />
           </label>

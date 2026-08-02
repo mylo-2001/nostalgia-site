@@ -10,24 +10,46 @@
   var SESSION_KEY = "nostalgia-session";
   var available = null; // null = unknown, true/false once probed
 
-  function probe() {
+  function healthCheck() {
     return fetch("/api/health", { method: "GET", cache: "no-store" })
       .then(function (res) {
         return res.ok ? res.json() : null;
       })
       .then(function (data) {
-        available = !!(data && data.ok);
-        return available;
+        return !!(data && data.ok);
       })
       .catch(function () {
-        available = false;
         return false;
       });
+  }
+
+  function probe() {
+    return healthCheck().then(function (ok) {
+      if (ok) {
+        available = true;
+        return true;
+      }
+      // A failed first check could mean "no backend at all" (static
+      // preview) or just one dropped request against a real, running
+      // backend. Retry once before deciding — this is the only signal
+      // registerUser/loginUser use to allow the weak localStorage-only
+      // fallback login, so a single network blip must never be enough
+      // to switch a live site into that mode.
+      return new Promise(function (resolve) {
+        setTimeout(function () {
+          healthCheck().then(function (ok2) {
+            available = ok2;
+            resolve(ok2);
+          });
+        }, 800);
+      });
+    });
   }
 
   var readyPromise = probe();
 
   function request(method, path, body, customHeaders) {
+    /** @type {Record<string, string>} */
     var headers = {};
     if (body) headers["Content-Type"] = "application/json";
     Object.keys(customHeaders || {}).forEach(function (key) {

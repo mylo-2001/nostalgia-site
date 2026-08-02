@@ -60,63 +60,63 @@
       image: menuHoverImage("Art Class Murano Candle-menu-hover.png"),
       titleKey: "collection_cat1",
       descKey: "side_nav_visual_cat_desc",
-      href: "/collection#cat1",
+      href: "/collection/art-class-murano-candle",
       ctaKey: "side_nav_discover",
     },
     cat2: {
       image: menuHoverImage("Driftwood Beeswax Flame-menu-hover-photo.png"),
       titleKey: "collection_cat2",
       descKey: "side_nav_visual_cat_desc",
-      href: "/collection#cat2",
+      href: "/collection/driftwood-beeswax-flame",
       ctaKey: "side_nav_discover",
     },
     cat3: {
       image: menuHoverImage("Liquid Eternal-menu-hover-photo.png"),
       titleKey: "collection_cat3",
       descKey: "side_nav_visual_cat_desc",
-      href: "/collection#cat3",
+      href: "/collection/liquid-eternal",
       ctaKey: "side_nav_discover",
     },
     cat4: {
       image: menuHoverImage("Unique Art Objects-menu-hover-photo.png"),
       titleKey: "collection_cat4",
       descKey: "side_nav_visual_cat_desc",
-      href: "/collection#cat4",
+      href: "/collection/vintage-unique-objects",
       ctaKey: "side_nav_discover",
     },
     cat5: {
       image: menuHoverImage("NI Terra-menu-hover-photo.png"),
       titleKey: "collection_cat5",
       descKey: "side_nav_visual_cat_desc",
-      href: "/collection#cat5",
+      href: "/collection/ni-terra",
       ctaKey: "side_nav_discover",
     },
     cat9: {
       image: "collections-hero/collection-photo/Nostalgia Exclusive Mirror Candles-photo.png",
       titleKey: "collection_cat9",
       descKey: "side_nav_visual_cat_desc",
-      href: "/collection#cat9",
+      href: "/collection/mirror-candles",
       ctaKey: "side_nav_discover",
     },
     cat6: {
       image: menuHoverImage("Perfume-menu-hover-photo.png"),
       titleKey: "collection_cat6",
       descKey: "side_nav_visual_cat_desc",
-      href: "/collection#cat6",
+      href: "/collection/perfume",
       ctaKey: "side_nav_discover",
     },
     cat7: {
       image: menuHoverImage("Diffusers-menu-hover-photo.png"),
       titleKey: "collection_cat7",
       descKey: "side_nav_visual_cat_desc",
-      href: "/collection#cat7",
+      href: "/collection/diffusers",
       ctaKey: "side_nav_discover",
     },
     cat8: {
       image: menuHoverImage("Gift Sets-menu-hover-photo.png"),
       titleKey: "collection_cat8",
       descKey: "side_nav_visual_cat_desc",
-      href: "/collection#cat8",
+      href: "/collection/gift-sets",
       ctaKey: "side_nav_discover",
     },
     about: {
@@ -253,17 +253,17 @@
       "          </div>" +
       '          <ul class="side-nav__list side-nav__list--sub">' +
       '            <li class="side-nav__subgroup-label" data-i18n="side_nav_group_candles">Κεριά</li>' +
-      '            <li><a class="side-nav__sublink" href="/collection#cat1" data-visual="cat1"><span class="side-nav__sublink-text"><span data-i18n="collection_cat1">Art Class Murano Candle</span><span class="side-nav__sublink-count" data-cat-count="cat1" aria-hidden="true"></span></span></a></li>' +
-      '            <li><a class="side-nav__sublink" href="/collection#cat2" data-visual="cat2"><span class="side-nav__sublink-text"><span data-i18n="collection_cat2">Driftwood Beeswax Flame</span><span class="side-nav__sublink-count" data-cat-count="cat2" aria-hidden="true"></span></span></a></li>' +
-      '            <li><a class="side-nav__sublink" href="/collection#cat3" data-visual="cat3"><span class="side-nav__sublink-text"><span data-i18n="collection_cat3">Liquid Eternal</span><span class="side-nav__sublink-count" data-cat-count="cat3" aria-hidden="true"></span></span></a></li>' +
-      '            <li><a class="side-nav__sublink" href="/collection#cat4" data-visual="cat4"><span class="side-nav__sublink-text"><span data-i18n="collection_cat4">Vintage Unique Objects</span><span class="side-nav__sublink-count" data-cat-count="cat4" aria-hidden="true"></span></span></a></li>' +
-      '            <li><a class="side-nav__sublink" href="/collection#cat5" data-visual="cat5"><span class="side-nav__sublink-text"><span data-i18n="collection_cat5">NI Terra</span><span class="side-nav__sublink-count" data-cat-count="cat5" aria-hidden="true"></span></span></a></li>' +
-      '            <li><a class="side-nav__sublink" href="/collection#cat9" data-visual="cat9"><span class="side-nav__sublink-text"><span data-i18n="collection_cat9">Nostalgia Exclusive Mirror Candles</span><span class="side-nav__sublink-count" data-cat-count="cat9" aria-hidden="true"></span></span></a></li>' +
+      '            <li><a class="side-nav__sublink" href="/collection/art-class-murano-candle" data-visual="cat1"><span class="side-nav__sublink-text"><span data-i18n="collection_cat1">Art Class Murano Candle</span><span class="side-nav__sublink-count" data-cat-count="cat1" aria-hidden="true"></span></span></a></li>' +
+      '            <li><a class="side-nav__sublink" href="/collection/driftwood-beeswax-flame" data-visual="cat2"><span class="side-nav__sublink-text"><span data-i18n="collection_cat2">Driftwood Beeswax Flame</span><span class="side-nav__sublink-count" data-cat-count="cat2" aria-hidden="true"></span></span></a></li>' +
+      '            <li><a class="side-nav__sublink" href="/collection/liquid-eternal" data-visual="cat3"><span class="side-nav__sublink-text"><span data-i18n="collection_cat3">Liquid Eternal</span><span class="side-nav__sublink-count" data-cat-count="cat3" aria-hidden="true"></span></span></a></li>' +
+      '            <li><a class="side-nav__sublink" href="/collection/vintage-unique-objects" data-visual="cat4"><span class="side-nav__sublink-text"><span data-i18n="collection_cat4">Vintage Unique Objects</span><span class="side-nav__sublink-count" data-cat-count="cat4" aria-hidden="true"></span></span></a></li>' +
+      '            <li><a class="side-nav__sublink" href="/collection/ni-terra" data-visual="cat5"><span class="side-nav__sublink-text"><span data-i18n="collection_cat5">NI Terra</span><span class="side-nav__sublink-count" data-cat-count="cat5" aria-hidden="true"></span></span></a></li>' +
+      '            <li><a class="side-nav__sublink" href="/collection/mirror-candles" data-visual="cat9"><span class="side-nav__sublink-text"><span data-i18n="collection_cat9">Nostalgia Exclusive Mirror Candles</span><span class="side-nav__sublink-count" data-cat-count="cat9" aria-hidden="true"></span></span></a></li>' +
       '            <li class="side-nav__subgroup-divider" aria-hidden="true"></li>' +
       '            <li class="side-nav__subgroup-label" data-i18n="side_nav_group_non_candles">Άλλα προϊόντα</li>' +
-      '            <li><a class="side-nav__sublink" href="/collection#cat6" data-visual="cat6"><span class="side-nav__sublink-text"><span data-i18n="collection_cat6">Perfume</span><span class="side-nav__sublink-count" data-cat-count="cat6" aria-hidden="true"></span></span></a></li>' +
-      '            <li><a class="side-nav__sublink" href="/collection#cat7" data-visual="cat7"><span class="side-nav__sublink-text"><span data-i18n="collection_cat7">Diffusers</span><span class="side-nav__sublink-count" data-cat-count="cat7" aria-hidden="true"></span></span></a></li>' +
-      '            <li><a class="side-nav__sublink" href="/collection#cat8" data-visual="cat8"><span class="side-nav__sublink-text"><span data-i18n="collection_cat8">Gift Sets</span><span class="side-nav__sublink-count" data-cat-count="cat8" aria-hidden="true"></span></span></a></li>' +
+      '            <li><a class="side-nav__sublink" href="/collection/perfume" data-visual="cat6"><span class="side-nav__sublink-text"><span data-i18n="collection_cat6">Perfume</span><span class="side-nav__sublink-count" data-cat-count="cat6" aria-hidden="true"></span></span></a></li>' +
+      '            <li><a class="side-nav__sublink" href="/collection/diffusers" data-visual="cat7"><span class="side-nav__sublink-text"><span data-i18n="collection_cat7">Diffusers</span><span class="side-nav__sublink-count" data-cat-count="cat7" aria-hidden="true"></span></span></a></li>' +
+      '            <li><a class="side-nav__sublink" href="/collection/gift-sets" data-visual="cat8"><span class="side-nav__sublink-text"><span data-i18n="collection_cat8">Gift Sets</span><span class="side-nav__sublink-count" data-cat-count="cat8" aria-hidden="true"></span></span></a></li>' +
       '            <li><a class="side-nav__sublink side-nav__sublink--all" href="/collection" data-visual="collection" data-i18n="side_nav_all_collections">Όλες οι συλλογές</a></li>' +
       "          </ul>" +
       "        </div>" +

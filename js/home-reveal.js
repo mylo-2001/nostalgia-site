@@ -1,100 +1,78 @@
 (function () {
   /* Scroll-reveal for .home-reveal / .site-reveal elements.
 
-     NOTE: this deliberately uses getBoundingClientRect() on a scroll-driven
-     loop instead of IntersectionObserver. The home page moves its content with
-     a CSS transform (inertial/curtain scroll), and IntersectionObserver does
-     NOT reliably fire for transform-based movement — which left every below-the
-     -fold section stuck at opacity:0. getBoundingClientRect() reflects the live
-     transform, so this works for both native and transform scrolling. */
+     Uses IntersectionObserver. (It previously ran a getBoundingClientRect
+     sweep on a scroll-driven rAF loop, because the page used to move its
+     content with a CSS transform — IO does not fire for transform-based
+     movement. That wrapper is gone; Lenis now drives the real window scroll,
+     so IO is both correct and far cheaper.) */
   var SEL = ".home-reveal, .site-reveal";
-  var els = [];
-  var ticking = false;
-  var settleFrames = 0;
+  var observer = null;
 
-  function collect() {
-    var found = document.querySelectorAll(SEL);
-    for (var i = 0; i < found.length; i++) {
-      var el = found[i];
-      if (!el.classList.contains("is-visible") && els.indexOf(el) === -1) {
-        els.push(el);
-      }
-    }
+  function reveal(el) {
+    el.classList.add("is-visible");
   }
 
   function revealAll() {
-    collect();
-    for (var i = 0; i < els.length; i++) els[i].classList.add("is-visible");
-    els = [];
+    var found = document.querySelectorAll(SEL);
+    for (var i = 0; i < found.length; i++) reveal(found[i]);
   }
 
-  function sweep() {
-    if (!els.length) return;
-    var vh = window.innerHeight || document.documentElement.clientHeight;
-    var remaining = [];
-    for (var i = 0; i < els.length; i++) {
-      var el = els[i];
-      var r = el.getBoundingClientRect();
-      /* reveal once the top edge crosses ~90% of the viewport (and it hasn't
-         already scrolled fully past the top) */
-      if (r.top < vh * 0.9 && r.bottom > -40) {
-        el.classList.add("is-visible");
-      } else {
-        remaining.push(el);
-      }
+  /* Elements that carry a data-motion-* attribute are driven by home-motion.js;
+     running the CSS reveal on them too would mean two competing transitions on
+     one element. Note this checks the element itself, not its ancestors — a
+     section can opt into a GSAP entrance while individual children inside it
+     (e.g. .home-retail__frame, which has its own bespoke glow/gleam keyframes
+     keyed on .is-visible) keep the class-based reveal. */
+  var MOTION_ATTRS = ["data-motion-line", "data-motion-copy", "data-motion-item", "data-motion-media"];
+
+  function claimedByMotion(el) {
+    for (var i = 0; i < MOTION_ATTRS.length; i++) {
+      if (el.hasAttribute(MOTION_ATTRS[i])) return true;
     }
-    els = remaining;
+    return false;
   }
 
-  function tick() {
-    ticking = false;
-    sweep();
-    if (els.length && settleFrames > 0) {
-      settleFrames -= 1;
-      schedule();
+  function observeAll() {
+    var found = document.querySelectorAll(SEL);
+    for (var i = 0; i < found.length; i++) {
+      var el = found[i];
+      if (el.classList.contains("is-visible") || el.__revealObserved) continue;
+      if (claimedByMotion(el)) continue;
+      el.__revealObserved = true;
+      observer.observe(el);
     }
-  }
-
-  function schedule() {
-    if (ticking) return;
-    ticking = true;
-    window.requestAnimationFrame(tick);
-  }
-
-  /* Each scroll keeps the loop alive for ~0.8s so the inertial "settle" (the
-     content easing to a stop after you release) still triggers reveals. */
-  function onScroll() {
-    settleFrames = 48;
-    schedule();
   }
 
   function init() {
-    collect();
-
     if (
       window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
-      typeof window.requestAnimationFrame !== "function"
+      typeof window.IntersectionObserver !== "function"
     ) {
       revealAll();
       return;
     }
 
-    sweep();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll, { passive: true });
-    window.addEventListener("load", onScroll);
-    document.addEventListener("nostalgia-products-updated", function () {
-      collect();
-      onScroll();
-    });
-    if (window.__lenis && typeof window.__lenis.on === "function") {
-      window.__lenis.on("scroll", onScroll);
-    }
+    observer = new window.IntersectionObserver(
+      function (entries) {
+        for (var i = 0; i < entries.length; i++) {
+          if (!entries[i].isIntersecting) continue;
+          reveal(entries[i].target);
+          observer.unobserve(entries[i].target);
+        }
+      },
+      {
+        /* fire once the element's top edge crosses ~90% of the viewport —
+           matches the old sweep threshold */
+        rootMargin: "0px 0px -10% 0px",
+        threshold: 0
+      }
+    );
 
-    /* initial watchdog — catches late layout shifts (fonts, images, the
-       inertial wrapper mounting) without waiting for the first scroll */
-    settleFrames = 90;
-    schedule();
+    observeAll();
+
+    /* products render asynchronously; pick up whatever they added */
+    document.addEventListener("nostalgia-products-updated", observeAll);
   }
 
   if (document.readyState === "loading") {

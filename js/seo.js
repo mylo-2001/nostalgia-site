@@ -10,7 +10,7 @@
       "scented candles, handmade candles Greece, home fragrance, candle gift, αρωματικά δώρα, Nostalgia Collection, " +
       "soy candles, κερί σόγια, luxury candles, aromatherapy candles, scent finder",
     phone: "+306939411774",
-    email: "mgerostathi@gmail.com",
+    email: "info@nostalgiacandle.gr",
   };
 
   var PAGES = {
@@ -38,6 +38,59 @@
       title: "Επικοινωνία · Nostalgia Collection",
       desc: "Επικοινωνήστε για παραγγελίες, αρωματικά κεριά, diffusers και ερωτήσεις αποστολής.",
     },
+    "new-arrivals": {
+      title: "Νέα Προϊόντα · Nostalgia Collection",
+      desc: "Οι τελευταίες προσθήκες στη συλλογή χειροποίητων αρωματικών κεριών Nostalgia Collection.",
+    },
+    sale: {
+      title: "Εκπτώσεις · Nostalgia Collection",
+      desc: "Αρωματικά κεριά και diffusers σε έκπτωση — περιορισμένος αριθμός τεμαχίων.",
+    },
+    seasonal: {
+      title: "Seasonal Editions · Nostalgia Collection",
+      desc: "Εποχιακές, περιορισμένες συλλογές χειροποίητων αρωματικών κεριών Nostalgia Collection.",
+    },
+    faq: {
+      title: "Συχνές Ερωτήσεις · Nostalgia Collection",
+      desc: "Απαντήσεις σε συχνές ερωτήσεις για παραγγελίες, αποστολή, πληρωμές και τα χειροποίητα κεριά μας.",
+    },
+    journal: {
+      title: "Journal · Ιστορίες & έμπνευση · Nostalgia Collection",
+      desc: "Άρθρα και ιστορίες πίσω από τις συλλογές χειροποίητων κεριών της Nostalgia Collection.",
+    },
+    shipping: {
+      title: "Αποστολή & Επιστροφές · Nostalgia Collection",
+      desc: "Χρόνοι και κόστος αποστολής, καθώς και πολιτική επιστροφών/αλλαγών για παραγγελίες Nostalgia Collection.",
+    },
+    payments: {
+      title: "Τρόποι Πληρωμής · Nostalgia Collection",
+      desc: "Αποδεκτοί τρόποι πληρωμής, αντικαταβολή και πολιτική επιστροφής χρημάτων στη Nostalgia Collection.",
+    },
+    terms: {
+      title: "Όροι Χρήσης · Nostalgia Collection",
+      desc: "Οι όροι χρήσης του nostalgiacandle.gr και της αγοράς προϊόντων Nostalgia Collection.",
+    },
+    privacy: {
+      title: "Πολιτική Απορρήτου · Nostalgia Collection",
+      desc: "Πώς συλλέγουμε, χρησιμοποιούμε και προστατεύουμε τα προσωπικά σας δεδομένα στη Nostalgia Collection.",
+    },
+    reviews: {
+      title: "Κριτικές Πελατών · Nostalgia Collection",
+      desc: "Πραγματικές κριτικές πελατών για τα χειροποίητα αρωματικά κεριά Nostalgia Collection.",
+    },
+    "review-policy": {
+      title: "Πολιτική Κριτικών · Nostalgia Collection",
+      desc: "Πώς ελέγχονται και εγκρίνονται οι κριτικές πελατών στο nostalgiacandle.gr.",
+    },
+
+    /* Private/utility/thin-content pages — never index these.
+       (track.html, review.html, diag.html, hero-test.html don't load this
+       script at all — they get a hardcoded <meta robots> directly in their
+       own HTML instead; see html/*.html.) */
+    cart: { title: "Καλάθι · Nostalgia Collection", desc: SITE.taglineEl, noindex: true },
+    checkout: { title: "Ολοκλήρωση παραγγελίας · Nostalgia Collection", desc: SITE.taglineEl, noindex: true },
+    account: { title: "Ο λογαριασμός μου · Nostalgia Collection", desc: SITE.taglineEl, noindex: true },
+    wishlist: { title: "Αγαπημένα · Nostalgia Collection", desc: SITE.taglineEl, noindex: true },
   };
 
   function upsertMeta(attr, key, content) {
@@ -68,6 +121,11 @@
     var body = document.body;
     if (body) {
       var page = body.getAttribute("data-page");
+      /* sale and new-arrivals share data-page="showcase" (same template/CSS)
+         — tell them apart by path, same disambiguation as js/breadcrumbs.js. */
+      if (page === "showcase") {
+        return (location.pathname || "").indexOf("sale") !== -1 ? "sale" : "new-arrivals";
+      }
       if (page) return page;
     }
     var path = (location.pathname || "/").replace(/\/$/, "") || "/";
@@ -129,7 +187,7 @@
     document.title = info.title;
     upsertMeta("name", "description", info.desc);
     upsertMeta("name", "keywords", SITE.keywords);
-    upsertMeta("name", "robots", "index, follow, max-image-preview:large");
+    upsertMeta("name", "robots", info.noindex ? "noindex, nofollow" : "index, follow, max-image-preview:large");
     upsertMeta("property", "og:type", "website");
     upsertMeta("property", "og:site_name", SITE.name);
     upsertMeta("property", "og:title", info.title);

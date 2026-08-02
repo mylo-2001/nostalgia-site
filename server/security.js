@@ -5,6 +5,8 @@
  * CSRF-style Origin checks on mutating API calls, and input helpers.
  */
 
+const crypto = require("crypto");
+
 const MAX_PASSWORD_LEN = 128;
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -98,6 +100,26 @@ function validatePasswordStrength(password) {
 
 function isUuid(v) {
   return UUID_RE.test(String(v || ""));
+}
+
+/* ---------- One-click newsletter unsubscribe (no login needed) ----------
+ * A short HMAC of the email, keyed on SESSION_SECRET with a purpose prefix
+ * so it can't be confused with any other token derived from the same
+ * secret. Stateless — no DB column needed, just recomputed and compared. */
+function newsletterUnsubscribeToken(email) {
+  const key = process.env.SESSION_SECRET || "";
+  return crypto
+    .createHmac("sha256", key)
+    .update("newsletter-unsubscribe:" + String(email || "").toLowerCase())
+    .digest("hex")
+    .slice(0, 32);
+}
+
+function verifyNewsletterUnsubscribeToken(email, token) {
+  const expected = newsletterUnsubscribeToken(email);
+  const a = Buffer.from(String(token || ""));
+  const b = Buffer.from(expected);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
 /* ---------- Cloudflare Turnstile (CAPTCHA) ----------
@@ -273,6 +295,8 @@ module.exports = {
   turnstileConfigured,
   verifyTurnstile,
   isUuid,
+  newsletterUnsubscribeToken,
+  verifyNewsletterUnsubscribeToken,
   enforceHttps,
   securityHeaders,
   checkApiOrigin,

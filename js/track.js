@@ -24,6 +24,8 @@
     help: EN ? "Need help?" : "Χρειάζεστε βοήθεια;",
     contact: EN ? "Contact us" : "Επικοινωνία",
     cancelled: EN ? "This order has been cancelled." : "Αυτή η παραγγελία έχει ακυρωθεί.",
+    rate: EN ? "Rate" : "Αξιολόγηση",
+    journey: EN ? "Shipment journey" : "Πορεία αποστολής",
     steps: EN
       ? ["Order placed", "Processing", "Shipping", "Delivery"]
       : ["Παραγγελία ολοκληρώθηκε", "Επεξεργασία", "Αποστολή", "Παράδοση"],
@@ -66,10 +68,42 @@
       "</ol>";
   }
 
-  function render(o) {
+  /* Real ACS checkpoint history (origin → destination), when the server could
+     reach ACS for it — best-effort, so it simply renders nothing otherwise. */
+  function journeyHtml(o) {
+    var points = o.trackingDetails;
+    if (!points || !points.length) return "";
+    var locale = EN ? "en-GB" : "el-GR";
+    var rows = points.map(function (p) {
+      var when = p.at ? new Date(p.at) : null;
+      var whenText = when
+        ? when.toLocaleDateString(locale) + " · " + when.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
+        : "";
+      return (
+        '<li class="track-journey__row">' +
+        '<span class="track-journey__when">' + esc(whenText) + "</span>" +
+        '<span class="track-journey__action">' + esc(p.action || "") +
+        (p.location ? " — " + esc(p.location) : "") + "</span>" +
+        "</li>"
+      );
+    }).join("");
+    return (
+      '<div class="track-journey">' +
+      "<h2>" + esc(L.journey) + "</h2>" +
+      '<ul class="track-journey__list">' + rows + "</ul>" +
+      "</div>"
+    );
+  }
+
+  function render(o, token) {
     var courier = courierLabel(o.courier);
+    var delivered = o.shippingStatus === "delivered";
     var items = (o.items || []).map(function (it) {
-      return '<li class="oitems__row"><span>' + esc(it.title) + " × " + it.qty + "</span>" +
+      var rateLink = delivered && it.id
+        ? ' <a class="track-item__rate" href="/product/' + encodeURIComponent(it.id) +
+          "?reviewToken=" + encodeURIComponent(token) + '">★ ' + esc(L.rate) + "</a>"
+        : "";
+      return '<li class="oitems__row"><span>' + esc(it.title) + " × " + it.qty + rateLink + "</span>" +
         (it.price != null ? "<span>" + money(it.price * it.qty) + "</span>" : "") + "</li>";
     }).join("");
     var d = new Date(o.createdAt);
@@ -91,6 +125,7 @@
       "</div>" +
       (items ? '<div class="track-items"><h2>' + esc(L.products) + '</h2><ul class="oitems-plain">' + items + "</ul>" +
         (o.total ? '<p class="track-total">' + esc(L.total) + ": <strong>" + money(o.total) + "</strong></p>" : "") + "</div>" : "") +
+      journeyHtml(o) +
       '<div class="order-success__help"><span class="order-success__help-text"><strong>' + esc(L.help) + '</strong></span>' +
       '<a class="order-success__help-btn" href="/contact">' + esc(L.contact) + "</a></div>";
 
@@ -111,7 +146,7 @@
     fetch("/api/orders/track?token=" + encodeURIComponent(token), { headers: { Accept: "application/json" } })
       .then(function (r) { return r.json().then(function (d) { d._status = r.status; return d; }); })
       .then(function (data) {
-        if (data && data.ok && data.order) render(data.order);
+        if (data && data.ok && data.order) render(data.order, token);
         else renderError(L.notFound);
       })
       .catch(function () { renderError(L.notFound); });

@@ -56,7 +56,7 @@
       '<div class="review-page__stars" aria-label="' + review.rating + '/5">' + stars(review.rating) + "</div>" +
       '<div class="review-page__meta">' +
       "<span>" + escapeHtml(review.name) + "</span>" +
-      '<span class="review-page__verified">' + escapeHtml(t("reviews_verified")) + "</span>" +
+      (review.isVerifiedPurchase ? '<span class="review-page__verified">✓ ' + escapeHtml(t("reviews_verified")) + "</span>" : "") +
       "<span>" + escapeHtml(fmtDate(review.createdAt)) + "</span></div></article>" +
       '<div class="review-page__body">' + escapeHtml(review.text) + "</div>" +
       '<a class="review-page__product" href="' + escapeHtml(review.productUrl) + '">' +

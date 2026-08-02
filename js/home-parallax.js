@@ -3,9 +3,11 @@
   //   1) The About banner photo — edge-safe, clamped within its over-scale.
   //   2) Generic [data-parallax-speed] layers — speed-based drift for depth
   //      (e.g. the home-moment centerpiece moving slower than the text columns).
-  // One rAF-throttled scroll loop drives both. Disabled under reduced-motion;
-  // the heavier generic layers are also skipped on small/touch screens.
+  // Runs on the shared scroll bus (js/scroll-bus.js). Disabled under
+  // reduced-motion; the heavier generic layers are also skipped on
+  // small/touch screens.
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if (!window.NostalgiaScroll) return;
 
   var isSmall = window.matchMedia("(max-width: 760px)").matches;
 
@@ -27,14 +29,9 @@
 
   if (!aboutFrame && layers.length === 0) return;
 
-  var vh = window.innerHeight || document.documentElement.clientHeight;
   var MAX_SHIFT = 80; // px — cap so big layers never drift off their frame
-  var ticking = false;
-  var settleFrames = 0;
 
-  function update() {
-    ticking = false;
-
+  window.NostalgiaScroll.add(function (vh) {
     if (aboutFrame) {
       var r = aboutFrame.getBoundingClientRect();
       if (r.bottom > -40 && r.top < vh + 40) {
@@ -59,35 +56,5 @@
       else if (y < -MAX_SHIFT) y = -MAX_SHIFT;
       layers[j].el.style.setProperty("--parallax-y", y.toFixed(1) + "px");
     }
-
-    /* keep updating through the inertial ease-out after the last scroll event
-       (the content keeps transforming for a moment after you release) */
-    if (settleFrames > 0) {
-      settleFrames -= 1;
-      ticking = true;
-      window.requestAnimationFrame(update);
-    }
-  }
-
-  function onScroll() {
-    settleFrames = 40;
-    if (ticking) return;
-    ticking = true;
-    window.requestAnimationFrame(update);
-  }
-
-  window.addEventListener("scroll", onScroll, { passive: true });
-  if (window.__lenis && typeof window.__lenis.on === "function") {
-    window.__lenis.on("scroll", onScroll);
-  }
-  window.addEventListener(
-    "resize",
-    function () {
-      vh = window.innerHeight || document.documentElement.clientHeight;
-      onScroll();
-    },
-    { passive: true }
-  );
-
-  update();
+  });
 })();

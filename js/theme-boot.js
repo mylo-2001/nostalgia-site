@@ -32,4 +32,13 @@
       document.documentElement.classList.add("intro-resume");
     }
   } catch (e) {}
+  /* Arms the pre-paint hidden state for [data-motion] sections so GSAP can
+     animate them in without a flash of finished content. Never armed under
+     reduced-motion; home-motion.js disarms it if GSAP fails to load, so the
+     content can never stay stuck invisible. */
+  try {
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      document.documentElement.classList.add("has-motion");
+    }
+  } catch (e) {}
 })();

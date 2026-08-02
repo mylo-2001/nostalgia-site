@@ -1,0 +1,83 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   Entrance patterns driven by js/home-motion.js (GSAP + ScrollTrigger).
+
+   Everything here is scoped to .has-motion — a class set pre-paint by
+   theme-boot.js and removed by home-motion.js once the timelines are built
+   (or immediately, if GSAP is unavailable or the visitor prefers reduced
+   motion). That means these hidden states can never strand content: no
+   .has-motion, no hiding.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* ── ignite ─────────────────────────────────────────────────────────────── */
+
+/* The mask clips each word's rise; the inner span is what GSAP moves. */
+.m-word {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  /* room for descenders — without this, g/y/ς get shaved by the mask */
+  padding-bottom: 0.12em;
+  margin-bottom: -0.12em;
+}
+
+.m-word__i {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+/* The line is held until its trigger fires — home-motion.js splits it into
+   words at that moment (see the note there about the i18n write race) and then
+   clears this inline. */
+.has-motion [data-motion-line] {
+  opacity: 0;
+}
+
+.has-motion [data-motion="ignite"] .m-word__i {
+  opacity: 0;
+}
+
+/* ── surface ────────────────────────────────────────────────────────────── */
+
+.has-motion [data-motion] [data-motion-media] {
+  clip-path: inset(100% 0% 0% 0%);
+  will-change: clip-path;
+}
+
+/* ── copy + cascade ─────────────────────────────────────────────────────── */
+
+/* Scoped to [data-motion] rather than to one pattern name: fadeCopy() and
+   cascade() run in every tagged section regardless of its headline pattern,
+   so pre-hiding only inside surface/cascade left the others visible for the
+   frames between first paint and GSAP setting its from-state. */
+.has-motion [data-motion] [data-motion-copy],
+.has-motion [data-motion] [data-motion-item] {
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+/* ── Safety nets ────────────────────────────────────────────────────────── */
+
+/* Belt and braces: theme-boot.js already withholds .has-motion under
+   reduced-motion, but if the preference flips mid-session nothing hides. */
+@media (prefers-reduced-motion: reduce) {
+  .has-motion [data-motion] [data-motion-media],
+  .has-motion [data-motion] [data-motion-copy],
+  .has-motion [data-motion] [data-motion-item],
+  .has-motion [data-motion="ignite"] .m-word__i {
+    opacity: 1 !important;
+    clip-path: none !important;
+    transform: none !important;
+  }
+}
+
+/* Printing must never inherit a mid-animation state. */
+@media print {
+  [data-motion] [data-motion-media],
+  [data-motion] [data-motion-copy],
+  [data-motion] [data-motion-item],
+  [data-motion="ignite"] .m-word__i {
+    opacity: 1 !important;
+    clip-path: none !important;
+    transform: none !important;
+  }
+}

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Dev · Problems</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 0; background: #0c0a08; color: #f3e4c4; }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+  h1 { font-size: 1.2rem; letter-spacing: .06em; text-transform: uppercase; margin-bottom: .25rem; }
+  .meta { font-size: .8rem; opacity: .6; margin-bottom: 2rem; }
+  h2 { font-size: 1rem; border-bottom: 1px solid #3a3026; padding-bottom: .4rem; margin-top: 2rem; display: flex; align-items: center; gap: .6rem; }
+  .count { background: #ff7a7a; color: #1a0a0a; font-size: .75rem; font-weight: 700; padding: .1rem .5rem; border-radius: 999px; }
+  .empty { color: #7fd18a; font-size: .95rem; padding: .5rem 0; }
+  .file { margin-top: 1rem; }
+  .file h3 { font-size: .82rem; opacity: .85; font-weight: 600; margin-bottom: .3rem; word-break: break-all; }
+  .row { display: flex; gap: .75rem; padding: .45rem .6rem; border: 1px solid #3a3026; border-radius: 6px; margin: .3rem 0; font-size: .85rem; align-items: baseline; }
+  .row.error { border-color: #6a2f2f; }
+  .row.warning { border-color: #6a5a2f; }
+  .loc { opacity: .6; min-width: 3.5rem; }
+  .code { opacity: .7; min-width: 4.5rem; }
+  .row.error .code { color: #ff7a7a; }
+  .row.warning .code { color: #e8c96a; }
+  .msg { flex: 1; }
+  .refresh { margin-top: 2rem; font-size: .8rem; opacity: .6; }
+  code { background: #1a1410; padding: .1rem .35rem; border-radius: 4px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Dev Problems Snapshot</h1>
+    <div class="meta">Παράχθηκε: 2026-07-23T17:39:17.886Z · Σύνολο: 0</div>
+    
+    <section class="group">
+      <h2>Storefront (root tsconfig.json)</h2>
+      <div class="empty">✓ Κανένα πρόβλημα</div>
+    </section>
+    <section class="group">
+      <h2>Admin panel (admin/tsconfig.json)</h2>
+      <div class="empty">✓ Κανένα πρόβλημα</div>
+    </section>
+    <div class="refresh">Αυτή η σελίδα είναι στατική εικόνα των τελευταίων ελέγχων τύπων. Για ανανέωση: <code>npm run problems</code></div>
+  </div>
+</body>
+</html>

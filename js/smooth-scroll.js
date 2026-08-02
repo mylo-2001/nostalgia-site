@@ -13,11 +13,23 @@
   });
   window.__lenis = lenis;
 
-  function raf(time) {
-    lenis.raf(time);
+  // ScrollTrigger must be told when Lenis moves, and must drive Lenis' rAF
+  // instead of running a second loop of its own. Without this, triggers read a
+  // stale scroll position and scrubbed animations lag a frame behind.
+  var st = window.ScrollTrigger;
+  if (st && window.gsap) {
+    lenis.on("scroll", st.update);
+    window.gsap.ticker.add(function (time) {
+      lenis.raf(time * 1000); // gsap ticker is seconds, lenis wants ms
+    });
+    window.gsap.ticker.lagSmoothing(0);
+  } else {
+    function raf(time) {
+      lenis.raf(time);
+      window.requestAnimationFrame(raf);
+    }
     window.requestAnimationFrame(raf);
   }
-  window.requestAnimationFrame(raf);
 
   // Route existing programmatic smooth scrolls (e.g. back-to-top in theme.js)
   // through Lenis so they glide instead of fighting it.

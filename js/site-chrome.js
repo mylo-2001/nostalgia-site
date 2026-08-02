@@ -124,7 +124,7 @@
       "      </li>" +
       '      <li class="site-footer__line">' +
       '        <svg class="site-footer__line-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M4 7l8 6 8-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
-      '        <a href="mailto:mgerostathi@gmail.com">mgerostathi@gmail.com</a>' +
+      '        <a href="mailto:info@nostalgiacandle.gr">info@nostalgiacandle.gr</a>' +
       "      </li>" +
       "    </ul>" +
       "  </div>" +
@@ -180,6 +180,20 @@
       '          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3a9 9 0 0 0-3.3 17.4l1.2-4.4c-.3-.7-.6-1.7-.6-2.8 0-2.3 1.3-4 3.1-4 1.5 0 2.2 1.1 2.2 2.5 0 1.5-1 3.8-1.5 5.9-.4 1.7.9 3.1 2.6 3.1 3.2 0 5.3-4.1 5.3-8.9A8.3 8.3 0 0 0 12 3zm0 0"/></svg>' +
       "        </a>" +
       "      </div>" +
+      '      <ul class="site-footer__lines site-footer__emails">' +
+      '        <li class="site-footer__line">' +
+      '          <svg class="site-footer__line-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M4 7l8 6 8-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+      '          <a href="mailto:support@nostalgiacandle.gr">support@nostalgiacandle.gr</a>' +
+      "        </li>" +
+      '        <li class="site-footer__line">' +
+      '          <svg class="site-footer__line-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M4 7l8 6 8-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+      '          <a href="mailto:privacy@nostalgiacandle.gr">privacy@nostalgiacandle.gr</a>' +
+      "        </li>" +
+      '        <li class="site-footer__line">' +
+      '          <svg class="site-footer__line-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M4 7l8 6 8-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+      '          <a href="mailto:partners@nostalgiacandle.gr">partners@nostalgiacandle.gr</a>' +
+      "        </li>" +
+      "      </ul>" +
       "    </section>" +
       "  </div>" +
       "</div>" +
@@ -283,13 +297,13 @@
   function ensureFooterStyles() {
     var legacy = document.getElementById("site-chrome-footer-style");
     if (legacy) legacy.remove();
-    ["site-chrome-footer-style-v15", "site-chrome-footer-style-v16", "site-chrome-footer-style-v17"].forEach(function (id) {
+    ["site-chrome-footer-style-v15", "site-chrome-footer-style-v16", "site-chrome-footer-style-v17", "site-chrome-footer-style-v18"].forEach(function (id) {
       var old = document.getElementById(id);
       if (old) old.remove();
     });
-    if (document.getElementById("site-chrome-footer-style-v18")) return;
+    if (document.getElementById("site-chrome-footer-style-v19")) return;
     var style = document.createElement("style");
-    style.id = "site-chrome-footer-style-v18";
+    style.id = "site-chrome-footer-style-v19";
     style.textContent = `
       .site-footer {
         padding-top: 3rem;
@@ -359,7 +373,9 @@
         grid-column: 2;
         display: grid;
         grid-template-columns: repeat(3, minmax(6.75rem, 8.75rem)) minmax(12rem, 15.5rem);
-        justify-content: start;
+        /* Hug the right edge: the columns have capped widths, so any leftover
+           space in the track goes to the LEFT instead of dead space on the right. */
+        justify-content: end;
         align-items: start;
         gap: 1.4rem clamp(1rem, 2.2vw, 1.85rem);
         max-width: none;
@@ -443,6 +459,11 @@
       }
       .site-footer__col--follow {
         min-width: 12rem;
+      }
+      .site-footer__emails a {
+        font-size: 0.82rem;
+        color: var(--ink-muted);
+        word-break: break-all;
       }
       .site-footer__socials {
         display: flex;
@@ -682,14 +703,17 @@
       }
       .site-newsletter__veil {
         z-index: 1;
+        /* Light mode: keep enough cream behind the copy for contrast, but stay
+           translucent so the photo actually reads through instead of washing
+           out to a flat block. Raise/lower the first two stops to taste. */
         background:
           linear-gradient(90deg,
-            rgba(245, 236, 224, 0.97) 0%,
-            rgba(245, 236, 224, 0.92) 36%,
-            rgba(245, 236, 224, 0.55) 55%,
-            rgba(245, 236, 224, 0.12) 72%,
+            rgba(245, 236, 224, 0.86) 0%,
+            rgba(245, 236, 224, 0.78) 34%,
+            rgba(245, 236, 224, 0.42) 52%,
+            rgba(245, 236, 224, 0.10) 72%,
             rgba(245, 236, 224, 0) 88%),
-          linear-gradient(180deg, rgba(20, 14, 10, 0.08), rgba(20, 14, 10, 0.18));
+          linear-gradient(180deg, rgba(20, 14, 10, 0.04), rgba(20, 14, 10, 0.12));
       }
       .site-newsletter__inner {
         position: relative;

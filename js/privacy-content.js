@@ -22,7 +22,7 @@
         paragraphs: [
           "Έχετε δικαίωμα πρόσβασης, διόρθωσης, διαγραφής ή φορητότητας των προσωπικών σας δεδομένων, καθώς και δικαίωμα εναντίωσης στην επεξεργασία. Μπορείτε να ασκήσετε τα δικαιώματά σας ανά πάσα στιγμή:",
           "• Απευθείας από τη σελίδα «Ο λογαριασμός μου»: μπορείτε να κατεβάσετε όλα τα προσωπικά σας δεδομένα («Εξαγωγή των δεδομένων μου») ή να διαγράψετε οριστικά τον λογαριασμό σας («Διαγραφή λογαριασμού»).",
-          "• Με email στο mgerostathi@gmail.com",
+          "• Με email στο privacy@nostalgiacandle.gr",
           "• Ή μέσω της φόρμας επικοινωνίας στο /contact",
           "Σε περίπτωση διαγραφής λογαριασμού, τα προσωπικά σας στοιχεία διαγράφονται· τα αρχεία παλαιότερων παραγγελιών διατηρούνται αποσυνδεδεμένα από τον λογαριασμό σας μόνο όσο απαιτεί η φορολογική/λογιστική νομοθεσία (άρθρο 17 παρ. 3 GDPR).",
           "Εάν αντιταχθείτε στην επεξεργασία, ενδέχεται να μην είναι δυνατή η ικανοποίηση ορισμένων αιτημάτων σας (π.χ. αποστολή παραγγελίας).",
@@ -122,7 +122,7 @@
         paragraphs: [
           "You have the right to access, rectify, erase or port your personal data, and to object to processing. You may exercise these rights at any time:",
           "• Directly from the “My account” page: you can download all of your personal data (“Export my data”) or permanently delete your account (“Delete account”).",
-          "• By email at mgerostathi@gmail.com",
+          "• By email at privacy@nostalgiacandle.gr",
           "• Or via our contact form at /contact",
           "When you delete your account, your personal details are erased; past order records are kept, detached from your account, only for as long as tax/accounting law requires (GDPR art. 17(3)).",
           "If you object to processing, we may not be able to fulfil certain requests (e.g. shipping an order).",

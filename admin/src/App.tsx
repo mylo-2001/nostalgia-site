@@ -7,10 +7,12 @@ import { Overview } from "./pages/Overview";
 import { Orders } from "./pages/Orders";
 import { NewProduct } from "./pages/NewProduct";
 import { Products } from "./pages/Products";
+import { Promotions } from "./pages/Promotions";
 import { Coupons } from "./pages/Coupons";
 import { Reviews } from "./pages/Reviews";
 import { Users } from "./pages/Users";
 import { Newsletter } from "./pages/Newsletter";
+import { Announcements } from "./pages/Announcements";
 import { Messages } from "./pages/Messages";
 import { Analytics } from "./pages/Analytics";
 import { Audit } from "./pages/Audit";
@@ -22,10 +24,12 @@ const SECTIONS: Section[] = [
   { id: "orders", label: "Παραγγελίες" },
   { id: "new-product", label: "Νέο προϊόν" },
   { id: "products", label: "Προϊόντα & Stock" },
+  { id: "promotions", label: "Εκπτώσεις" },
   { id: "coupons", label: "Κουπόνια" },
   { id: "reviews", label: "Κριτικές" },
   { id: "users", label: "Πελάτες" },
   { id: "newsletter", label: "Newsletter" },
+  { id: "announcements", label: "Ανακοινώσεις" },
   { id: "messages", label: "Μηνύματα" },
   { id: "analytics", label: "Analytics" },
   { id: "operations", label: "Λειτουργία συστήματος" },
@@ -39,10 +43,12 @@ function render(section: string, goTo: (s: string) => void) {
     case "orders": return <Orders />;
     case "new-product": return <NewProduct />;
     case "products": return <Products />;
+    case "promotions": return <Promotions />;
     case "coupons": return <Coupons />;
     case "reviews": return <Reviews />;
     case "users": return <Users />;
     case "newsletter": return <Newsletter />;
+    case "announcements": return <Announcements />;
     case "messages": return <Messages />;
     case "analytics": return <Analytics />;
     case "operations": return <Operations />;

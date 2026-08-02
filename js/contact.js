@@ -69,7 +69,7 @@
 
       function sendViaMailto() {
         var mailto =
-          "mailto:mgerostathi@gmail.com" +
+          "mailto:support@nostalgiacandle.gr" +
           "?subject=" + encodeURIComponent("[Nostalgia Contact] " + subject) +
           "&body=" + encodeURIComponent(body);
 

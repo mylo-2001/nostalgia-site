@@ -1572,7 +1572,9 @@
           loginError.textContent =
             result.error === "captcha_failed"
               ? (isEnglish() ? "Please complete the verification." : "Ολοκληρώστε την επαλήθευση.")
-              : t("account_login_error");
+              : result.error === "account_disabled"
+                ? (isEnglish() ? "This account has been disabled. Please contact us." : "Ο λογαριασμός έχει απενεργοποιηθεί. Επικοινωνήστε μαζί μας.")
+                : t("account_login_error");
         }
         return;
       }

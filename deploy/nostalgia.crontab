@@ -1,8 +1,20 @@
 # Nostalgia maintenance cron — install for the app user:
-#   sudo chmod +x /var/www/nostalgia/deploy/run-maintenance.sh
+#   sudo chmod +x /var/www/nostalgia/deploy/run-maintenance.sh /var/www/nostalgia/deploy/run-acs-sync.sh /var/www/nostalgia/deploy/run-backup.sh
 #   sudo crontab -u nostalgia deploy/nostalgia.crontab
 #
 # Every 5 minutes: release expired reservations + flush notification outbox.
 # (Reservation TTL is ~1h, so a daily cron is NOT enough — this is why the VPS
 #  matters vs Vercel Hobby.)
 */5 * * * * /var/www/nostalgia/deploy/run-maintenance.sh >> /var/log/nostalgia-maintenance.log 2>&1
+
+# Every 15 minutes: pull real ACS tracking status onto our own orders.
+# No-ops quietly until ACS_API_KEY is set in .env.
+*/15 * * * * /var/www/nostalgia/deploy/run-acs-sync.sh >> /var/log/nostalgia-acs-sync.log 2>&1
+
+# Every night at 03:20: encrypted database backup (AES-256), keeping
+# BACKUP_RETENTION_DAYS of history. Runs in the quiet hours so the dump never
+# competes with real orders.
+# NOTE: backups live on the SAME disk as the database. Once this is running,
+# copy them off-box too (see §8.8 in deploy/website/PROJECT-STATUS.md) —
+# a dead server takes its local backups with it.
+20 3 * * * /var/www/nostalgia/deploy/run-backup.sh >> /var/log/nostalgia-backup.log 2>&1

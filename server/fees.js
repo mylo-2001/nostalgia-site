@@ -3,7 +3,7 @@
 /** Flat order fees (EUR) — keep in sync with js/order-fees.js */
 const SHIPPING_FEE = 3.5;
 const COD_FEE = 3.5;
-const FREE_SHIPPING_MIN = 80;
+const FREE_SHIPPING_MIN = 120;
 
 const COURIERS = {
   elta: "ELTA",

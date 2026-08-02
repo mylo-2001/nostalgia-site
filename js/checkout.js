@@ -63,12 +63,21 @@
     return code === "GR" ? t("checkout_country_value") : code;
   }
 
-  function getStoredCoupon() {
-    try {
-      return localStorage.getItem("nostalgia-coupon") || "";
-    } catch (e) {
-      return "";
+  /* Every applied code — several coupons may be stacked. */
+  function getStoredCoupons() {
+    if (window.NostalgiaOrderFees && typeof window.NostalgiaOrderFees.couponCodes === "function") {
+      return window.NostalgiaOrderFees.couponCodes();
     }
+    try {
+      var one = localStorage.getItem("nostalgia-coupon") || "";
+      return one ? [one] : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function getStoredCoupon() {
+    return getStoredCoupons()[0] || "";
   }
 
   function getPayMethod() {
@@ -325,8 +334,8 @@
         t("checkout_location_type_label") + ": " + window.NostalgiaAddressOptions.locationLabel(data.locationType, t)
       );
     }
-    var coupon = getStoredCoupon();
-    if (coupon) parts.push(t("cart_coupon_row") + ": " + coupon);
+    var coupons = getStoredCoupons();
+    if (coupons.length) parts.push(t("cart_coupon_row") + ": " + coupons.join(", "));
     parts.push(t("checkout_doc_title") + ": " + (data.docType === "invoice" ? t("checkout_doc_invoice") : t("checkout_doc_receipt")));
     if (data.docType === "invoice") {
       parts.push(t("checkout_company_label") + ": " + data.company);
@@ -592,7 +601,7 @@
       lastname: shippingData && shippingData.lastname,
     });
     window.setTimeout(function () {
-      window.location.href = "mailto:mgerostathi@gmail.com?subject=" + subject + "&body=" + body;
+      window.location.href = "mailto:orders@nostalgiacandle.gr?subject=" + subject + "&body=" + body;
     }, 3200);
   }
 
@@ -647,6 +656,8 @@
           return { id: line.id, qty: line.qty };
         }),
         payment: payment,
+        /* `coupons` is authoritative; `coupon` stays for backwards compat. */
+        coupons: getStoredCoupons(),
         coupon: getStoredCoupon(),
         lang: getLang(),
         captchaToken: window.NostalgiaCaptcha ? window.NostalgiaCaptcha.getToken(orderCaptcha) : "",

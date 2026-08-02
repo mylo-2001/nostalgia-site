@@ -17,7 +17,7 @@
   var CONFIG = {
     ga4: "",        // GA4 Measurement ID — normally left "" (comes from server / .env GA_MEASUREMENT_ID)
     metaPixel: "",  // Meta / Facebook Pixel — ID, e.g. "1234567890123456"
-    klaviyo: "",    // Klaviyo — Public API key (company id), e.g. "ABC123"
+    klaviyo: "X2fn2S", // Klaviyo — Public API key (company id)
   };
 
   var loaded = { ga: false, meta: false, klaviyo: false };

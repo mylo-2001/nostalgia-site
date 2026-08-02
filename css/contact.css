@@ -412,6 +412,39 @@ body[data-page="contact"] .contact-split__photo.is-visible img {
   color: var(--text-muted);
 }
 
+.contact-trust__intro {
+  margin: 0 0 0.9rem;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.contact-trust__list {
+  list-style: none;
+  margin: 0 0 1.1rem;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+  font-size: 0.92rem;
+}
+
+.contact-trust__list code {
+  font-family: var(--font-nav, monospace);
+  background: var(--bg-elevated, rgba(0, 0, 0, 0.04));
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.85em;
+}
+
+.contact-trust__warning {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border-left: 3px solid var(--accent);
+  background: var(--bg-elevated, rgba(0, 0, 0, 0.03));
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
 /* Scroll reveal — ίδια αρχή με .home-reveal στο home.css */
 body[data-page="contact"] .home-reveal {
   --reveal-ease: cubic-bezier(0.22, 1, 0.36, 1);

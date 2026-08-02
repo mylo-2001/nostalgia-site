@@ -213,6 +213,9 @@
 }
 
 .cookie-banner__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   margin: 0 0 0.85rem;
   max-width: 26rem;
   font-family: var(--font-display);
@@ -221,6 +224,13 @@
   letter-spacing: 0.02em;
   line-height: 1.35;
   color: var(--cookie-ink);
+}
+
+.cookie-icon {
+  flex: none;
+  width: 1.3em;
+  height: 1.3em;
+  color: var(--accent);
 }
 
 .cookie-banner__text {
@@ -363,6 +373,9 @@ body.cookie-settings-open {
 }
 
 .cookie-settings__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   margin: 0 2.5rem 0.85rem 0;
   font-family: var(--font-display);
   font-size: clamp(1.05rem, 2.5vw, 1.25rem);

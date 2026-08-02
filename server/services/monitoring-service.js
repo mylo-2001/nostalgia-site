@@ -42,7 +42,22 @@ async function collectOperationalMetrics(options) {
       (SELECT COUNT(*)::int FROM notification_outbox WHERE status IN ('failed','dead_letter'))
         notification_failures,
       (SELECT COUNT(*)::int FROM refunds WHERE status='failed'
-        AND updated_at>=now()-interval '24 hours') refund_failures_24h`);
+        AND updated_at>=now()-interval '24 hours') refund_failures_24h,
+      /* Credential-stuffing signals. Per-IP rate limiting cannot see these:
+         an attacker spread across a proxy pool stays under every individual
+         limit, so we look at the SHAPE of the last hour instead of the rate.
+           distinct_attack_ips  — many sources failing = distributed attempt
+           distinct_attacked_accounts — many targets = list-driven, not a
+                                        customer mistyping their own password */
+      (SELECT COUNT(DISTINCT ip)::int FROM audit_log
+        WHERE type='user.login.failed' AND created_at>=now()-interval '1 hour')
+        distinct_attack_ips,
+      (SELECT COUNT(DISTINCT actor)::int FROM audit_log
+        WHERE type='user.login.failed' AND created_at>=now()-interval '1 hour')
+        distinct_attacked_accounts,
+      (SELECT COUNT(*)::int FROM audit_log
+        WHERE type IN ('user.login.failed','user.login.blocked')
+        AND created_at>=now()-interval '1 hour') failed_logins_1h`);
     return result.rows[0];
   } finally { client.release(); }
 }
@@ -54,6 +69,14 @@ const ALERT_RULES = [
   ["notification_failures", 10, "notification_failures", "warning"],
   ["refund_failures_24h", 5, "refund_failures", "error"],
   ["checkout_errors_1h", 10, "checkout_error_rate", "error"],
+  /* Credential stuffing. Thresholds are deliberately low: a real shop this
+     size sees a handful of mistyped passwords an hour, never 15 from 8
+     different networks. Catching the SHAPE is the point — an automated
+     attacker paces itself under any per-IP limit, but it cannot hide the fact
+     that many sources are probing many accounts at once. */
+  ["distinct_attack_ips", 8, "credential_stuffing_distributed", "critical"],
+  ["distinct_attacked_accounts", 10, "account_enumeration", "critical"],
+  ["failed_logins_1h", 40, "failed_login_spike", "error"],
 ];
 
 async function evaluateOperationalAlerts(options) {
@@ -63,13 +86,23 @@ async function evaluateOperationalAlerts(options) {
   try {
     for (const [metric, threshold, type, severity] of ALERT_RULES) {
       if (Number(metrics[metric]) < threshold) continue;
+      const details = { metric, value: metrics[metric], threshold };
+      /* `occurrences` lets the caller tell a brand-new alert (1) from one that
+         is simply still open. Without it a 5-minute cron would re-notify
+         about the same problem 288 times a day. */
       const result = await client.query(`INSERT INTO operational_alerts
         (dedupe_key,alert_type,severity,details) VALUES ($1,$2,$3,$4)
         ON CONFLICT(dedupe_key) WHERE status='open' DO UPDATE SET
           last_seen_at=now(),occurrences=operational_alerts.occurrences+1,
-          details=EXCLUDED.details RETURNING id`,
-      [`${type}:active`, type, severity, { metric, value: metrics[metric], threshold }]);
-      alerts.push({ id: result.rows[0].id, type, severity });
+          details=EXCLUDED.details RETURNING id, occurrences`,
+      [`${type}:active`, type, severity, details]);
+      alerts.push({
+        id: result.rows[0].id,
+        type,
+        severity,
+        details,
+        occurrences: result.rows[0].occurrences,
+      });
     }
     return { metrics, alerts };
   } finally { client.release(); }

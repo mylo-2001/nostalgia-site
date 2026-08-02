@@ -36,8 +36,13 @@ const db = require("./db");
 const auth = require("./auth");
 const catalog = require("./catalog");
 const mailer = require("./email");
+const notify = require("./notify");
+const { mergeBase64Pdfs } = require("./pdf-merge");
 const security = require("./security");
 const fees = require("./fees");
+const promotions = require("./promotions");
+const reviewsPolicy = require("./reviews-policy");
+const acs = require("./acs");
 const cdn = require("./cloudinary");
 const { createAdminDatabaseSession, recordAdminLoginEvent, revokeAdminSession } =
   require("./services/admin-session-service");
@@ -83,6 +88,13 @@ const ah = (fn) => (req, res, next) => fn(req, res, next).catch(next);
 
 function bad(res, status, error) {
   return res.status(status).json({ ok: false, error });
+}
+
+/* ACS explains failures in plain Greek ("Δεν επιτρέπεται εκτύπωση voucher μετά
+   την έκδοση λίστας παραλαβής"). Sending only e.code would leave the shop owner
+   staring at "acs_execution_error", so pass the message through as `detail`. */
+function badAcs(res, e) {
+  return res.status(502).json({ ok: false, error: e.code, detail: e.message || "" });
 }
 
 const READ_CACHE_TTL_MS = Math.max(
@@ -169,6 +181,7 @@ app.post(
         await db.updateOrder(order.id, { payment_status: "paid" });
         order.paymentStatus = "paid";
         mailer.sendOrderConfirmation(order);
+        notify.notifyNewOrder(order);
         audit(req, "order.paid", order.number, { total: order.total, via: "webhook" });
       }
     }
@@ -266,6 +279,7 @@ function publicUser(u) {
     birthDate: u.birthDate || "",
     newsletterOptin: !!u.newsletterOptin,
     address: u.address || null,
+    active: u.active !== false,
     createdAt: u.createdAt,
   };
 }
@@ -352,26 +366,76 @@ function effectivePrice(regular, sale, saleUntil) {
   return saleActive(regular, sale, saleUntil) ? sale : regular;
 }
 
+/* ---------- promotions engine: pricing integration ----------
+   Coexists with the manual sale_price/sale_until above — whichever gives the
+   lower price wins ("best discount wins"), never the other way around. */
+
+/* Candidate (possibly-live) promotions, loaded fresh per request/handler.
+   Cheap: a handful of small queries regardless of how many products are
+   being priced, so bulk callers (catalog listing) should load this ONCE and
+   thread it through rather than re-fetching per product. */
+async function loadPromotionContext() {
+  const candidates = await db.listCandidatePromotions();
+  return { candidates, now: new Date() };
+}
+
+/* Resolves the final price for one product/variant given its identity (for
+   promotion targeting) and its two independent discount sources: the manual
+   per-product sale, and the promotions engine. Returns the shape every price
+   call site already expects (price/salePrice/saleUntil) plus optional
+   promotion attribution for order-line snapshots. */
+function applyPromotionPricing(matchProduct, regularPrice, manualSalePrice, manualSaleUntil, ctx) {
+  if (regularPrice == null) {
+    return { price: null, salePrice: null, saleUntil: null, promotion: null };
+  }
+  const manualActive = saleActive(regularPrice, manualSalePrice, manualSaleUntil);
+  const manualPrice = manualActive ? manualSalePrice : regularPrice;
+  const resolved = promotions.resolveFinalPrice(
+    (ctx && ctx.candidates) || [], matchProduct, regularPrice, manualPrice, (ctx && ctx.now) || new Date()
+  );
+  if (resolved.source === "promotion") {
+    return {
+      price: resolved.price,
+      salePrice: resolved.price,
+      saleUntil: resolved.promotion.endsAt || null,
+      promotion: resolved.promotion,
+    };
+  }
+  if (resolved.source === "manual") {
+    return { price: manualPrice, salePrice: manualSalePrice, saleUntil: manualSaleUntil || null, promotion: null };
+  }
+  return { price: regularPrice, salePrice: null, saleUntil: null, promotion: null };
+}
+
 /* Compose a purchasable product object from a base product + one colour
    variant. The variant supplies its own images / stock / sku / price; the
-   name, description, category and content stay on the base. */
-function composeVariant(base, v) {
+   name, description, category and content stay on the base. Promotions are
+   not targetable at variant granularity (MVP) — a variant with its own price
+   is matched against its BASE product's id/category. A variant with no own
+   price simply inherits the base's already-promotion-resolved price. */
+function composeVariant(base, v, ctx) {
   if (!base || !v) return null;
   let price;
   let salePrice = null;
   let saleUntil = null;
   let regularPrice;
+  let promotion = null;
   if (v.price != null) {
-    const vActive = saleActive(v.price, v.salePrice, v.saleUntil);
-    price = vActive ? v.salePrice : v.price;
-    salePrice = vActive ? v.salePrice : null;
-    saleUntil = vActive ? v.saleUntil || null : null;
+    const resolved = applyPromotionPricing(
+      { id: base.id, catId: base.catId, createdAt: base.createdAt },
+      v.price, v.salePrice, v.saleUntil, ctx
+    );
+    price = resolved.price;
+    salePrice = resolved.salePrice;
+    saleUntil = resolved.saleUntil;
     regularPrice = v.price;
+    promotion = resolved.promotion;
   } else {
     price = base.price != null ? base.price : null;
     salePrice = base.salePrice != null ? base.salePrice : null;
     saleUntil = base.saleUntil || null;
     regularPrice = base.regularPrice != null ? base.regularPrice : base.price;
+    promotion = base.promotion || null;
   }
   const images = Array.isArray(v.images) && v.images.length
     ? v.images
@@ -391,6 +455,7 @@ function composeVariant(base, v) {
     regularPrice: regularPrice,
     salePrice: salePrice,
     saleUntil: saleUntil,
+    promotion: promotion,
     stock: v.stock != null ? v.stock : null,
     image: images[0] || base.image || null,
     images: images,
@@ -398,47 +463,63 @@ function composeVariant(base, v) {
   });
 }
 
-async function resolveVariant(id, overrides) {
+async function resolveVariant(id, overrides, ctx) {
   const v = await db.getVariant(id);
   if (!v || v.available === false) return null;
-  const base = await resolveProduct(v.productId, overrides);
+  ctx = ctx || (await loadPromotionContext());
+  const base = await resolveProduct(v.productId, overrides, ctx);
   if (!base) return null;
-  return composeVariant(base, v);
+  return composeVariant(base, v, ctx);
 }
 
-async function resolveProduct(id, overrides) {
+/* The single canonical per-product/variant price resolver — checkout, order
+   review lookups, product-detail and the sitemap all funnel through this, so
+   making it promotion-aware here covers every one of those call sites. */
+async function resolveProduct(id, overrides, ctx) {
   if (typeof id === "string" && id.indexOf("pv-") === 0) {
-    return resolveVariant(id, overrides);
+    return resolveVariant(id, overrides, ctx);
   }
+  ctx = ctx || (await loadPromotionContext());
   const st = staticProduct(id);
   if (st) {
     const ov = overrides[id] || {};
     const regular = ov.price != null ? ov.price : null;
-    const sale = ov.salePrice != null ? ov.salePrice : null;
-    const active = saleActive(regular, sale, ov.saleUntil);
+    const resolved = applyPromotionPricing(
+      { id: st.id, catId: st.catId, createdAt: null }, regular, ov.salePrice, ov.saleUntil, ctx
+    );
     return Object.assign({}, st, {
       custom: false,
-      price: active ? sale : regular,
+      price: resolved.price,
       regularPrice: regular,
-      salePrice: active ? sale : null,
-      saleUntil: ov.saleUntil || null,
+      salePrice: resolved.salePrice,
+      saleUntil: resolved.saleUntil,
+      promotion: resolved.promotion,
     });
   }
   const cu = await db.getCustomProduct(id);
   if (cu && cu.active !== false) {
-    const active = saleActive(cu.price, cu.salePrice, cu.saleUntil);
+    const resolved = applyPromotionPricing(
+      { id: cu.id, catId: cu.catId, createdAt: cu.createdAt }, cu.price, cu.salePrice, cu.saleUntil, ctx
+    );
     return Object.assign({}, cu, {
       custom: true,
-      price: active ? cu.salePrice : cu.price,
+      price: resolved.price,
       regularPrice: cu.price,
-      salePrice: active ? cu.salePrice : null,
+      salePrice: resolved.salePrice,
+      saleUntil: resolved.saleUntil,
+      promotion: resolved.promotion,
     });
   }
   return null;
 }
 
-function publicProduct(p, details) {
-  const active = saleActive(p.price, p.salePrice, p.saleUntil);
+/* `ctx` (from loadPromotionContext()) is optional so any legacy call site
+   still works without promotions; bulk listing handlers load it once and
+   pass it through to avoid a DB round trip per product. */
+function publicProduct(p, details, ctx) {
+  const resolved = applyPromotionPricing(
+    { id: p.id, catId: p.catId, createdAt: p.createdAt }, p.price, p.salePrice, p.saleUntil, ctx
+  );
   const base = {
     id: p.id,
     catId: p.catId,
@@ -447,8 +528,8 @@ function publicProduct(p, details) {
     description: p.description || "",
     descriptionEn: p.descriptionEn || "",
     price: p.price != null ? p.price : null,
-    salePrice: active ? p.salePrice : null,
-    saleUntil: active ? p.saleUntil || null : null,
+    salePrice: resolved.salePrice,
+    saleUntil: resolved.saleUntil,
     image: p.image || null,
     images: Array.isArray(p.images) && p.images.length
       ? p.images
@@ -462,9 +543,13 @@ function publicProduct(p, details) {
 }
 
 /* Storefront shape for one colour variant. price is null when it inherits the
-   base price; salePrice is only present while a variant-level sale is live. */
-function publicVariant(v) {
-  const active = v.price != null && saleActive(v.price, v.salePrice, v.saleUntil);
+   base price; salePrice is only present while a discount (manual sale OR a
+   live promotion) is active. `matchProduct` is the variant's BASE product
+   identity (promotions aren't targetable per-variant in this MVP). */
+function publicVariant(v, matchProduct, ctx) {
+  const resolved = v.price != null
+    ? applyPromotionPricing(matchProduct || { id: v.productId, catId: null, createdAt: null }, v.price, v.salePrice, v.saleUntil, ctx)
+    : { salePrice: null, saleUntil: null };
   return {
     id: v.id,
     productId: v.productId,
@@ -473,8 +558,8 @@ function publicVariant(v) {
     colorHex: v.colorHex || "",
     sku: v.sku || "",
     price: v.price != null ? v.price : null,
-    salePrice: active ? v.salePrice : null,
-    saleUntil: active ? v.saleUntil || null : null,
+    salePrice: resolved.salePrice,
+    saleUntil: resolved.saleUntil,
     stock: v.stock != null ? v.stock : null,
     images: Array.isArray(v.images) ? v.images : [],
     available: v.available !== false,
@@ -506,6 +591,14 @@ function normalizeProductDetails(raw) {
     d.care = careLines && careLines.length ? careLines : String(d.care || "").trim();
   }
   if (d.shipping !== undefined) d.shipping = lines(d.shipping) || [];
+  /* Shipping weight per unit, in kg, INCLUDING packaging. Feeds the ACS
+     voucher so the declared weight matches what the courier actually weighs —
+     ACS re-weighs every parcel and bills the real figure, so a wrong
+     declaration only produces a surprise invoice. Empty/0 means "unknown". */
+  if (d.weightKg !== undefined) {
+    const w = parseFloat(String(d.weightKg).replace(",", "."));
+    d.weightKg = Number.isFinite(w) && w > 0 ? Math.min(999, Math.round(w * 1000) / 1000) : null;
+  }
   if (d.specs !== undefined && Array.isArray(d.specs)) {
     d.specs = d.specs
       .map(function (s) {
@@ -636,6 +729,7 @@ function availabilityOf(stock) {
    when set (admin/custom), otherwise a sensible bilingual fallback so the
    page is never empty for Google / AI. */
 function seoDescription(p) {
+  if (p.longDescription && p.longDescription.trim()) return p.longDescription.trim();
   if (p.description && p.description.trim()) return p.description.trim();
   const cat = p.category ? p.category + " — " : "";
   return (
@@ -650,31 +744,36 @@ function seoDescription(p) {
    per-product meta. */
 async function seoProducts() {
   const overrides = await db.getOverrides({ read: true });
+  const ctx = await loadPromotionContext();
   const list = [];
   catalog.PRODUCTS.forEach((p) => {
     const ov = overrides[p.id] || {};
-    const active = saleActive(ov.price, ov.salePrice, ov.saleUntil);
+    const resolved = applyPromotionPricing(
+      { id: p.id, catId: p.catId, createdAt: null }, ov.price != null ? ov.price : null, ov.salePrice, ov.saleUntil, ctx
+    );
     list.push({
       id: p.id,
       title: p.title,
       category: p.category,
       description: "",
       image: p.image,
-      price: active ? ov.salePrice : ov.price != null ? ov.price : null,
+      price: resolved.price,
       stock: ov.stock != null ? ov.stock : null,
     });
   });
   const customs = await db.listCustomProducts(true);
   customs.forEach((c) => {
     const ov = overrides[c.id] || {};
-    const active = saleActive(c.price, c.salePrice, c.saleUntil);
+    const resolved = applyPromotionPricing(
+      { id: c.id, catId: c.catId, createdAt: c.createdAt }, c.price, c.salePrice, c.saleUntil, ctx
+    );
     list.push({
       id: c.id,
       title: c.title,
       category: (catalog.CATEGORIES[c.catId] || {}).name || "",
       description: c.description || "",
       image: c.image,
-      price: active ? c.salePrice : c.price,
+      price: resolved.price,
       stock: ov.stock != null ? ov.stock : null,
     });
   });
@@ -683,9 +782,13 @@ async function seoProducts() {
 
 /* ---------- account-holder notifications (fire-and-forget) ---------- */
 
+/* New-product / sale / coupon mails are MARKETING, so they may only go to
+   addresses with a recorded newsletter consent. This used to be
+   db.listUsers() — every account holder, including people who had explicitly
+   unsubscribed, which is exactly what the consent trail added in
+   migration 031 exists to prevent. */
 async function accountRecipients() {
-  const users = await db.listUsers();
-  return users.map((u) => ({ email: u.email, firstname: u.firstname }));
+  return db.listMarketingRecipients();
 }
 
 function notifyNewProduct(product) {
@@ -704,6 +807,43 @@ function notifyCoupon(coupon) {
   accountRecipients()
     .then((rec) => mailer.sendCouponBroadcast(rec, coupon))
     .catch((e) => console.error("[notify] coupon:", e.message));
+}
+
+/* Welcome offer: 10% on newsletter signup, extra 5% on account creation.
+   Fire-and-forget so a mail outage never breaks signup/registration. */
+function sendWelcomeCoupon(email, kind, opts) {
+  if (!email) return;
+  Promise.resolve()
+    .then(() => mailer.sendWelcomeCoupon(email, kind, opts || {}))
+    .catch((e) => console.error("[welcome-coupon] " + kind + ":", e.message));
+}
+
+/* ---------- order lifecycle notifications (fire-and-forget) ----------
+ * One email per real transition — never on a PATCH that leaves the field
+ * unchanged, and never twice for the same transition (e.g. handed→transit
+ * doesn't re-send "shipped", since the customer already got that at handed). */
+function notifyOrderStatusChange(order, from, to) {
+  if (to === "processing" && from !== "processing") {
+    mailer.sendOrderPreparing(order).catch((e) => console.error("[notify] preparing:", e.message));
+  }
+}
+
+function notifyOrderShippingChange(order, from, to, extra) {
+  const wasWithCourier = from === "handed" || from === "transit";
+  const nowWithCourier = to === "handed" || to === "transit";
+  if (nowWithCourier && !wasWithCourier) {
+    mailer.sendOrderShipped(order, extra || {}).catch((e) => console.error("[notify] shipped:", e.message));
+  } else if (to === "delivered") {
+    mailer.sendOrderDelivered(order).catch((e) => console.error("[notify] delivered:", e.message));
+  } else if (to === "failed" && from !== "failed") {
+    mailer.sendOrderIssue(order, { reason: "delivery_failed" }).catch((e) => console.error("[notify] issue:", e.message));
+  }
+}
+
+function notifyOrderPaymentChange(order, from, to) {
+  if (to === "cod_not_delivered" && from !== "cod_not_delivered") {
+    mailer.sendOrderIssue(order, { reason: "cod_not_delivered" }).catch((e) => console.error("[notify] issue:", e.message));
+  }
 }
 
 /** Accepts a data URL — Cloudinary when configured, else local uploads folder.
@@ -780,15 +920,33 @@ async function removeProductImageFile(id, imageUrl) {
 
 /* ---------- coupons ---------- */
 
-async function validCoupon(code) {
-  if (!code) return null;
-  const c = await db.getCoupon(String(code).toUpperCase().trim());
-  if (!c || !c.active) return null;
+/* How many codes a single order may stack. */
+const MAX_COUPONS_PER_ORDER = 5;
+
+/* Validates ONE code. `email` unlocks the welcome-offer rules (first order
+   only / once per customer), which are keyed on the customer's email so guest
+   checkouts are covered too. Returns { ok, coupon } or { ok:false, reason }. */
+async function checkCoupon(code, email) {
+  const c = await db.getCoupon(String(code || "").toUpperCase().trim());
+  if (!c || !c.active) return { ok: false, reason: "invalid" };
   if (c.expiresAt && new Date(c.expiresAt) < new Date(new Date().toDateString())) {
-    return null;
+    return { ok: false, reason: "expired" };
   }
-  if (c.maxUses != null && c.uses >= c.maxUses) return null;
-  return c;
+  if (c.maxUses != null && c.uses >= c.maxUses) return { ok: false, reason: "exhausted" };
+
+  if (c.firstOrderOnly || c.oncePerCustomer) {
+    const mail = String(email || "").trim().toLowerCase();
+    /* Without an email we cannot prove eligibility, so the code stays pending
+       until checkout supplies one (the cart asks for it before applying). */
+    if (!mail) return { ok: false, reason: "email_required" };
+    if (c.oncePerCustomer && (await db.hasRedeemedCoupon(c.code, mail))) {
+      return { ok: false, reason: "already_used" };
+    }
+    if (c.firstOrderOnly && (await db.hasPreviousOrder(mail))) {
+      return { ok: false, reason: "not_first_order" };
+    }
+  }
+  return { ok: true, coupon: c };
 }
 
 function couponDiscount(coupon, subtotal) {
@@ -797,6 +955,39 @@ function couponDiscount(coupon, subtotal) {
     return round2((subtotal * coupon.value) / 100);
   }
   return round2(Math.min(coupon.value, subtotal));
+}
+
+/* Resolves a list of codes into the coupons that actually apply plus the total
+   discount. Percentages are ADDITIVE on the original subtotal (10% + 5% = 15%),
+   the sum is capped at the subtotal, and free shipping applies if any coupon
+   grants it. Duplicates are ignored; rejects are reported with a reason. */
+async function resolveCoupons(codes, subtotal, email) {
+  const list = Array.isArray(codes) ? codes : codes ? [codes] : [];
+  const seen = new Set();
+  const applied = [];
+  const rejected = [];
+
+  for (const raw of list) {
+    const code = String(raw || "").toUpperCase().trim();
+    if (!code || seen.has(code)) continue;
+    seen.add(code);
+    if (applied.length >= MAX_COUPONS_PER_ORDER) {
+      rejected.push({ code, reason: "too_many" });
+      continue;
+    }
+    const res = await checkCoupon(code, email);
+    if (!res.ok) {
+      rejected.push({ code, reason: res.reason });
+      continue;
+    }
+    applied.push(res.coupon);
+  }
+
+  let discount = 0;
+  for (const c of applied) discount = round2(discount + couponDiscount(c, subtotal));
+  discount = round2(Math.min(discount, subtotal));
+
+  return { applied, rejected, discount, freeShipping: applied.some((c) => c.freeShipping) };
 }
 
 /* ================= PUBLIC API ================= */
@@ -835,14 +1026,69 @@ app.get("/api/cron/maintenance", requireCron, ah(async (req, res) => {
     correlationId: req.requestId, work: async () => {
       const inventory = await expireInventoryReservations({ pool, workerId,
         requestId: req.requestId, batchSize: 100 });
+      /* Frees stock still held by card orders the customer never paid for. */
+      const stalePending = await db.expireStalePendingOrders({
+        olderThanMinutes: parseInt(process.env.PENDING_ORDER_TIMEOUT_MIN, 10) || 120,
+        limit: 100,
+      });
+      if (stalePending.expired) {
+        clearReadCache();
+        console.log("[maintenance] released stock for " + stalePending.expired +
+          " abandoned order(s):", stalePending.orders.map((o) => o.number).join(", "));
+      }
       const notifications = mailer.emailConfigured()
         ? await processNotificationBatch({ pool, workerId,
           sender: new EmailNotificationSender(pool), batchSize: 25 })
         : { claimed: 0, skipped: "email_not_configured" };
       const monitoring = await evaluateOperationalAlerts({ pool });
-      return { inventory, notifications, monitoring };
+      /* Only ping on a newly-opened alert. An alert that is still open just
+         keeps counting up — re-sending it every 5 minutes would be spam. */
+      (monitoring.alerts || [])
+        .filter((a) => Number(a.occurrences) === 1)
+        .forEach((a) => notify.notifyAlert(a));
+      return { inventory, stalePending, notifications, monitoring };
     } });
   res.json({ ok: true, result, requestId: req.requestId });
+}));
+
+/* Pulls current status for every active ACS shipment and updates our own
+   shipping_status — the automatic counterpart to the admin's manual
+   "Ανανέωση tracking ACS" button. Meant to be hit every few minutes by the
+   same cron mechanism as /api/cron/maintenance (see deploy/nostalgia.crontab).
+   One order's ACS error never aborts the rest of the batch. */
+app.get("/api/cron/acs-tracking-sync", requireCron, ah(async (req, res) => {
+  if (!acs.configured()) return res.json({ ok: true, skipped: "acs_not_configured" });
+
+  const orders = await db.listActiveAcsShipments(50);
+  const results = { checked: orders.length, updated: 0, errors: [] };
+
+  for (const order of orders) {
+    try {
+      const summary = await acs.trackingSummary(order.tracking);
+      const mapped = acs.mapShipmentStatus(summary);
+      if (mapped && mapped !== order.shippingStatus) {
+        await db.updateOrder(order.id, { shipping_status: mapped });
+        await db.appendOrderEvent(order.id, {
+          at: new Date().toISOString(), actor: "acs-cron", type: "shipping",
+          from: order.shippingStatus, to: mapped,
+        });
+        results.updated += 1;
+        notifyOrderShippingChange(
+          Object.assign({}, order, { shippingStatus: mapped }),
+          order.shippingStatus,
+          mapped,
+          { eta: summary && summary.delivery_date_expected }
+        );
+      }
+    } catch (e) {
+      results.errors.push({ orderId: order.id, number: order.number, error: e.message });
+    }
+    // Stay well under ACS's default 10 requests/sec cap.
+    await new Promise((resolve) => setTimeout(resolve, 120));
+  }
+
+  if (results.updated) clearReadCache();
+  res.json({ ok: true, ...results, requestId: req.requestId });
 }));
 
 app.get("/api/admin/operations/metrics", requireAdmin, ah(async (req, res) => {
@@ -884,7 +1130,11 @@ app.post("/api/auth/register", ah(async (req, res) => {
       lastname: user.lastname,
       source: "register",
     });
+    /* Opted in here, so they have not had the newsletter gift yet. */
+    sendWelcomeCoupon(email, "newsletter", { firstname: user.firstname, lang: b.lang });
   }
+  /* Account bonus: the extra 5% that stacks with the newsletter 10%. */
+  sendWelcomeCoupon(email, "account", { firstname: user.firstname, lang: b.lang });
   auth.startUserSession(res, email);
   audit(req, "user.register", email);
   res.json({ ok: true, user: publicUser(user) });
@@ -907,6 +1157,10 @@ app.post("/api/auth/login", ah(async (req, res) => {
   if (!user || !await auth.verifyPassword(password, user.passHash)) {
     audit(req, "user.login.failed", email);
     return bad(res, 401, "invalid_credentials");
+  }
+  if (user.active === false) {
+    audit(req, "user.login.disabled", email);
+    return bad(res, 403, "account_disabled");
   }
   auth.clearRateLimit("user:" + (req.ip || "") + ":" + email);
   /* Transparently upgrade an old scrypt hash to Argon2id on the way in. */
@@ -1120,7 +1374,7 @@ app.post("/api/auth/newsletter", ah(async (req, res) => {
       source: "account",
     });
   } else {
-    await db.deleteSubscriber(user.email);
+    await db.unsubscribeSubscriber(user.email);
   }
   res.json({ ok: true, newsletterOptin: optin });
 }));
@@ -1131,13 +1385,49 @@ app.post("/api/newsletter", ah(async (req, res) => {
   const b = req.body || {};
   const email = normEmail(b.email);
   if (!isEmail(email)) return bad(res, 400, "invalid_email");
+  const firstname = str(b.firstname, 80);
   await db.addSubscriber({
     email,
-    firstname: str(b.firstname, 80),
+    firstname,
     lastname: str(b.lastname, 80),
-    source: "site",
+    source: str(b.source, 40) || "site",
   });
+  /* Welcome gift: the 10% first-order code. Fire-and-forget — a mail outage
+     must never fail the subscription itself. */
+  sendWelcomeCoupon(email, "newsletter", { firstname, lang: b.lang });
   res.json({ ok: true });
+}));
+
+/* One-click unsubscribe link from marketing emails — no login, verified via
+   an HMAC token (security.newsletterUnsubscribeToken) instead of a session,
+   since the recipient is reading this from their inbox, not the site. */
+app.get("/api/newsletter/unsubscribe", ah(async (req, res) => {
+  const email = normEmail(req.query.email);
+  const token = String(req.query.token || "");
+  const en = req.query.lang === "en";
+  const ok = isEmail(email) && security.verifyNewsletterUnsubscribeToken(email, token);
+  if (ok) await db.unsubscribeSubscriber(email);
+  const title = ok
+    ? en ? "You have been unsubscribed" : "Η διαγραφή ολοκληρώθηκε"
+    : en ? "Invalid or expired link" : "Μη έγκυρος σύνδεσμος";
+  const body = ok
+    ? en
+      ? "You will no longer receive marketing emails from Nostalgia Collection. Order confirmations are unaffected."
+      : "Δεν θα λαμβάνετε πλέον marketing emails από τη Nostalgia Collection. Τα emails παραγγελιών δεν επηρεάζονται."
+    : en
+      ? "This unsubscribe link is invalid or has expired."
+      : "Αυτός ο σύνδεσμος διαγραφής δεν είναι έγκυρος ή έχει λήξει.";
+  res.set("Content-Type", "text/html; charset=utf-8");
+  res.send(
+    "<!doctype html><html lang=\"" + (en ? "en" : "el") + "\"><meta charset=\"utf-8\">" +
+    "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">" +
+    "<title>" + title + " — Nostalgia Collection</title>" +
+    "<body style=\"font-family:Georgia,'Times New Roman',serif;background:#faf6ef;color:#2b2b2b;margin:0;padding:48px 20px;text-align:center\">" +
+    "<h1 style=\"font-size:20px;margin:0 0 12px\">" + title + "</h1>" +
+    "<p style=\"font-size:15px;max-width:420px;margin:0 auto 24px;line-height:1.6\">" + body + "</p>" +
+    "<a href=\"/\" style=\"color:#a87d34;text-decoration:none;font-size:14px\">nostalgiacandle.gr</a>" +
+    "</body></html>"
+  );
 }));
 
 /* ---------- contact ---------- */
@@ -1153,7 +1443,7 @@ app.post("/api/contact", ah(async (req, res) => {
   const email = normEmail(b.email);
   const message = str(b.message, 4000);
   if (!isEmail(email) || !message) return bad(res, 400, "missing_fields");
-  await db.addMessage({
+  const msg = {
     id: crypto.randomUUID(),
     lastName: str(b.name, 80),
     firstName: str(b.firstName, 80),
@@ -1163,7 +1453,10 @@ app.post("/api/contact", ah(async (req, res) => {
     subject: str(b.subject, 160),
     message,
     lang: b.lang === "en" ? "en" : "el",
-  });
+  };
+  await db.addMessage(msg);
+  mailer.sendContactNotification(msg).catch((e) => console.error("[contact]", e.message));
+  mailer.sendContactAutoReply(msg).catch((e) => console.error("[contact]", e.message));
   res.json({ ok: true });
 }));
 
@@ -1175,6 +1468,17 @@ app.get("/api/catalog", ah(async (req, res) => {
     const detailsMap = await db.getAllProductDetails({ read: true });
     const customs = await db.listCustomProducts(true, { read: true });
     const variantsByProduct = await db.getAllVariants({ read: true });
+    const ctx = await loadPromotionContext();
+    const customsById = {};
+    customs.forEach((c) => { customsById[c.id] = c; });
+    /* Static catalog products carry no createdAt (constants), so they can
+       never match a "new products" exclusion — same as everywhere else. */
+    function identityFor(id) {
+      const st = catalog.PRODUCT_IDS.has(id) ? catalog.PRODUCTS.find((p) => p.id === id) : null;
+      if (st) return { id, catId: st.catId, createdAt: null };
+      const cu = customsById[id];
+      return { id, catId: cu ? cu.catId : null, createdAt: cu ? cu.createdAt : null };
+    }
     const prices = {};
     const salePrices = {};
     const stock = {};
@@ -1182,20 +1486,20 @@ app.get("/api/catalog", ah(async (req, res) => {
       const ov = overrides[id];
       if (catalog.PRODUCT_IDS.has(id)) {
         if (ov.price != null) prices[id] = ov.price;
-        if (saleActive(ov.price, ov.salePrice, ov.saleUntil)) {
-          salePrices[id] = ov.salePrice;
-        }
+        const resolved = applyPromotionPricing(identityFor(id), ov.price != null ? ov.price : null, ov.salePrice, ov.saleUntil, ctx);
+        if (resolved.salePrice != null) salePrices[id] = resolved.salePrice;
       }
       stock[id] = ov.stock;
     });
     const variants = {};
     Object.keys(variantsByProduct).forEach((pid) => {
-      variants[pid] = variantsByProduct[pid].map(publicVariant);
+      const matchProduct = identityFor(pid);
+      variants[pid] = variantsByProduct[pid].map((v) => publicVariant(v, matchProduct, ctx));
     });
     return {
       ok: true,
       products: customs.map(function (p) {
-        return publicProduct(p, detailsMap[p.id]);
+        return publicProduct(p, detailsMap[p.id], ctx);
       }),
       prices,
       salePrices,
@@ -1222,10 +1526,11 @@ app.get("/api/products", ah(async (req, res) => {
   return cachedJson(req, res, "products", async () => {
     const detailsMap = await db.getAllProductDetails({ read: true });
     const customs = await db.listCustomProducts(true, { read: true });
+    const ctx = await loadPromotionContext();
     return {
       ok: true,
       products: customs.map(function (p) {
-        return publicProduct(p, detailsMap[p.id]);
+        return publicProduct(p, detailsMap[p.id], ctx);
       }),
     };
   });
@@ -1243,18 +1548,28 @@ app.get("/api/products/bestsellers", ah(async (req, res) => {
 /* ---------- coupons (public validation) ---------- */
 
 app.post("/api/coupons/validate", ah(async (req, res) => {
-  const code = String((req.body && req.body.code) || "").toUpperCase().trim();
+  const b = req.body || {};
+  const code = String(b.code || "").toUpperCase().trim();
   if (!code) return bad(res, 400, "missing_code");
-  const coupon = await validCoupon(code);
-  if (!coupon) return res.json({ ok: true, valid: false });
+
+  /* The email lets us answer the welcome-offer rules up front instead of
+     failing at checkout. Logged-in visitors get it from their session. */
+  const session = auth.getUserSession(req);
+  const email = String(b.email || (session && session.sub) || "").trim();
+
+  const result = await checkCoupon(code, email);
+  if (!result.ok) return res.json({ ok: true, valid: false, reason: result.reason });
+
+  const c = result.coupon;
   res.json({
     ok: true,
     valid: true,
     coupon: {
-      code: coupon.code,
-      type: coupon.type,
-      value: coupon.value,
-      freeShipping: !!coupon.freeShipping,
+      code: c.code,
+      type: c.type,
+      value: c.value,
+      freeShipping: !!c.freeShipping,
+      firstOrderOnly: !!c.firstOrderOnly,
     },
   });
 }));
@@ -1288,6 +1603,9 @@ async function enrichReview(rev, overrides) {
     title: title,
     text: rev.text,
     excerpt: reviewExcerpt(rev.text, 180),
+    isVerifiedPurchase: !!rev.isVerifiedPurchase,
+    helpfulCount: rev.helpfulCount || 0,
+    reply: rev.reply || null,
     createdAt: rev.createdAt,
     productId: rev.productId,
     productTitle: p ? p.title : "",
@@ -1340,35 +1658,120 @@ app.get("/api/reviews", ah(async (req, res) => {
   }, 30000);
 }));
 
+/* Display name for a logged-in reviewer: "Firstname L." — never the client's
+   own free-text `name` for an account holder, so no one can pose as someone
+   else's name while their review carries their real, verified account. */
+function reviewerDisplayName(user, fallback) {
+  if (!user) return fallback;
+  const first = String(user.firstname || "").trim();
+  const lastInitial = String(user.lastname || "").trim().slice(0, 1);
+  const name = [first, lastInitial ? lastInitial + "." : ""].filter(Boolean).join(" ");
+  return name || fallback;
+}
+
 /* Submit a review — stored as pending until the admin approves it.
-   Works for guests and logged-in users alike. */
+   Works for guests and logged-in users alike; a delivered order (found via
+   the shopper's own account, or a guest order-tracking token) marks it as a
+   verified purchase, but isn't required — unverified reviews are still
+   accepted and clearly labelled as such. */
 app.post("/api/reviews", ah(async (req, res) => {
   const b = req.body || {};
+  if (auth.rateLimited("review:" + (req.ip || ""))) {
+    return bad(res, 429, "too_many_attempts");
+  }
   const overrides = await db.getOverrides();
   const product = await resolveProduct(String(b.productId || ""), overrides);
   if (!product) return bad(res, 404, "product_not_found");
 
   const rating = Math.max(1, Math.min(5, parseInt(b.rating, 10) || 0));
   if (!rating) return bad(res, 400, "invalid_rating");
+  const title = str(b.title, 80);
+  if (title.length < 5) return bad(res, 400, "title_too_short");
   const text = str(b.text, 2000);
-  if (!text) return bad(res, 400, "empty_review");
-  const title = str(b.title, 120);
+  if (text.length < 20) return bad(res, 400, "text_too_short");
+
+  /* Automatic, content-neutral pre-screen — never based on rating/sentiment. */
+  const screen = reviewsPolicy.screenReviewContent({ title, text });
+  if (!screen.ok) return bad(res, 400, screen.reason);
 
   const session = auth.getUserSession(req);
-  const name = str(b.name, 80) || (session ? session.sub.split("@")[0] : "") || "Guest";
+  let user = null;
+  if (session) user = await db.getUser(session.sub);
 
-  await db.createReview({
-    id: crypto.randomUUID(),
-    productId: product.id,
-    name,
-    rating,
-    title,
-    text,
-    userEmail: session ? session.sub : null,
-  });
+  const name = user ? reviewerDisplayName(user, "Πελάτης") : (str(b.name, 80) || "Guest");
+
+  /* Verified purchase: logged-in shoppers are checked against their own
+     delivered orders; guests can prove a purchase with the same access token
+     already used for order tracking (no new email flow needed). */
+  let match = null;
+  if (session) {
+    match = await db.findReviewableOrderItem({ email: session.sub, productId: product.id });
+  } else if (b.orderToken) {
+    match = await db.findReviewableOrderItem({ accessToken: str(b.orderToken, 80), productId: product.id });
+  }
+  if (match && (await db.hasReviewedOrderItem(match.orderItemId))) {
+    return bad(res, 409, "already_reviewed");
+  }
+
+  try {
+    await db.createReview({
+      id: crypto.randomUUID(),
+      productId: product.id,
+      name,
+      rating,
+      title,
+      text,
+      userEmail: session ? session.sub : null,
+      orderId: match ? match.orderId : null,
+      orderItemId: match ? match.orderItemId : null,
+      isVerifiedPurchase: !!match,
+    });
+  } catch (e) {
+    if (e instanceof db.DuplicateReviewError) return bad(res, 409, "already_reviewed");
+    throw e;
+  }
   clearReadCache();
   /* pending → not shown until approved; the client shows a thank-you message */
-  res.json({ ok: true, pending: true });
+  res.json({ ok: true, pending: true, verified: !!match });
+}));
+
+/* Per-product reviews for the redesigned product-page section: paginated,
+   sortable, optionally verified-only, with the store's reply attached. */
+app.get("/api/products/:productId/reviews", ah(async (req, res) => {
+  const productId = String(req.params.productId || "");
+  return cachedJson(req, res, "reviews:product:" + productId + ":" + req.originalUrl, async () => {
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.max(1, Math.min(200, parseInt(req.query.limit, 10) || 5));
+    const sort = str(req.query.sort, 20) || "newest";
+    const verifiedOnly = req.query.verifiedOnly === "true";
+    const sortKey = sort === "rating_high" ? "rating_high" : sort === "rating_low" ? "rating_low" : sort === "helpful" ? "helpful" : "newest";
+
+    const [summary, page1] = await Promise.all([
+      db.productReviewStats(productId, { read: true }),
+      db.productReviews(productId, { page, limit, sort: sortKey, verifiedOnly, read: true }),
+    ]);
+    return {
+      ok: true,
+      summary,
+      reviews: page1.reviews.map((r) => ({
+        id: r.id, name: r.name, rating: r.rating, title: r.title, text: r.text,
+        isVerifiedPurchase: r.isVerifiedPurchase, helpfulCount: r.helpfulCount,
+        reply: r.reply, createdAt: r.createdAt,
+      })),
+      pagination: page1.pagination,
+    };
+  }, 20000);
+}));
+
+/* "Was this helpful?" — one vote per anonymous browser (voterKey is a
+   client-generated id persisted in localStorage, not tied to any account). */
+app.post("/api/reviews/:id/helpful", ah(async (req, res) => {
+  const id = String(req.params.id || "");
+  const voterKey = str((req.body && req.body.voterKey) || "", 80);
+  if (!voterKey) return bad(res, 400, "missing_voter_key");
+  const helpfulCount = await db.voteReviewHelpful(id, voterKey);
+  clearReadCache();
+  res.json({ ok: true, helpfulCount });
 }));
 
 /* ---------- orders ---------- */
@@ -1400,27 +1803,65 @@ app.post("/api/orders", ah(async (req, res) => {
     const qty = Math.max(1, Math.min(99, parseInt(it && it.qty, 10) || 1));
     const product = await resolveProduct(id, overrides);
     if (!product) continue;
-    items.push({
+    const item = {
       id,
       qty,
       title: product.title,
       image: product.image,
       price: product.price != null ? product.price : null,
-    });
+    };
+    /* Snapshot the discount attribution NOW — if a promotion later changes or
+       expires, this order must keep showing what was actually charged. */
+    if (product.regularPrice != null && product.price != null && product.regularPrice !== product.price) {
+      item.basePrice = product.regularPrice;
+    }
+    if (product.promotion) {
+      item.promotionId = product.promotion.id;
+      item.promotionName = product.promotion.name;
+      item.discountType = product.promotion.discountType;
+      item.discountValue = product.promotion.discountValue;
+      item.discountAmount = product.promotion.discountAmount;
+    }
+    items.push(item);
   }
   if (!items.length) return bad(res, 400, "empty_cart");
 
-  /* coupon + totals (prices only exist where the admin has set them) */
-  const coupon = await validCoupon(b.coupon);
+  const promotionSnapshots = items
+    .filter((it) => it.promotionId != null)
+    .map((it) => ({
+      productId: it.id,
+      qty: it.qty,
+      promotionId: it.promotionId,
+      promotionName: it.promotionName,
+      discountType: it.discountType,
+      discountValue: it.discountValue,
+      discountAmount: it.discountAmount,
+      baseUnitPrice: it.basePrice,
+      finalUnitPrice: it.price,
+    }));
+
+  /* coupons + totals (prices only exist where the admin has set them).
+     Several codes may be stacked; the welcome-offer rules are keyed on the
+     customer's email so guests are covered as well as account holders. */
   const subtotal = round2(
     items.reduce((s, it) => s + (it.price != null ? it.price * it.qty : 0), 0)
   );
-  const discount = couponDiscount(coupon, subtotal);
+  const couponEmail = String(customer.email || "").trim().toLowerCase();
+  const couponCodes = Array.isArray(b.coupons)
+    ? b.coupons
+    : b.coupon
+      ? [b.coupon]
+      : [];
+  const {
+    applied: appliedCoupons,
+    discount,
+    freeShipping: couponFreeShipping,
+  } = await resolveCoupons(couponCodes, subtotal, couponEmail);
   const payment = b.payment === "cod" ? "cod" : "stripe";
   const courier = fees.normalizeCourier(customer.courier);
   if (!courier) return bad(res, 400, "invalid_courier");
   const { shipping: shippingFee, cod: codFee, feesTotal } = fees.orderExtraFees(payment, subtotal, {
-    couponFreeShipping: !!(coupon && coupon.freeShipping),
+    couponFreeShipping,
   });
   const total = round2(Math.max(0, subtotal - discount + feesTotal));
   const allPriced = items.every((it) => it.price != null);
@@ -1442,11 +1883,16 @@ app.post("/api/orders", ah(async (req, res) => {
     payment,
     /* COD is NEVER "paid" at creation — it is collected on delivery. */
     paymentStatus: payment === "cod" ? "cod_pending" : stripeFlow ? "pending" : "offline",
-    coupon: coupon ? coupon.code : "",
+    coupon: appliedCoupons.map((c) => c.code).join(", "),
     discount,
     shippingFee,
     codFee,
+    /* Recorded so the receipt can say WHY shipping was free — a coupon perk
+       reads very differently to the customer than hitting the order-value
+       threshold, and a later recompute cannot tell the two apart. */
+    couponFreeShipping,
     total,
+    promotionSnapshots,
     lang: b.lang === "en" ? "en" : "el",
     userEmail: session ? session.sub : null,
     customer: {
@@ -1489,7 +1935,24 @@ app.post("/api/orders", ah(async (req, res) => {
   };
 
   await db.createOrder(order);
-  if (coupon) await db.incrementCouponUse(coupon.code);
+  /* Count the use and, for welcome-offer codes, burn the one-per-customer
+     entitlement. The unique index on (code, email) makes this idempotent, so a
+     retry or a double submit can never redeem the same code twice. */
+  for (const c of appliedCoupons) {
+    await db.incrementCouponUse(c.code);
+    if (c.oncePerCustomer || c.firstOrderOnly) {
+      try {
+        await db.recordCouponRedemption({
+          code: c.code,
+          email: couponEmail,
+          orderId: order.id,
+          discount: couponDiscount(c, subtotal),
+        });
+      } catch (e) {
+        console.error("[coupon] redemption not recorded:", c.code, e.message);
+      }
+    }
+  }
   audit(req, "order.created", order.number, { total: order.total, payment: order.payment });
   clearReadCache();
 
@@ -1561,6 +2024,7 @@ app.post("/api/orders", ah(async (req, res) => {
      still pending — those get their receipt once payment is confirmed. */
   if (!checkoutUrl) {
     mailer.sendOrderConfirmation(order);
+    notify.notifyNewOrder(order);
   }
 
   res.json({
@@ -1585,6 +2049,7 @@ app.get("/api/orders/confirm", ah(async (req, res) => {
       order.paymentStatus = "paid";
       /* payment just confirmed → send the receipt now */
       mailer.sendOrderConfirmation(order);
+      notify.notifyNewOrder(order);
     }
   }
   res.json({
@@ -1671,6 +2136,25 @@ app.get("/api/orders/track", ah(async (req, res) => {
   if (!o) return bad(res, 404, "not_found");
   const c = o.customer || {};
   const courier = o.courier || c.courier || "";
+
+  /* Best-effort: the shopper's own courier journey (origin → destination,
+     each checkpoint) when this is a real ACS shipment. Never blocks the page
+     if ACS is unreachable or not configured — the rest of the order info
+     (from our own DB) always renders regardless. */
+  let trackingDetails = null;
+  if (courier === "acs" && o.tracking && acs.configured()) {
+    try {
+      const checkpoints = await acs.trackingDetails(o.tracking);
+      trackingDetails = checkpoints.map((cp) => ({
+        at: cp.checkpoint_date_time,
+        action: cp.checkpoint_action,
+        location: cp.checkpoint_location,
+      }));
+    } catch (e) {
+      trackingDetails = null;
+    }
+  }
+
   res.json({
     ok: true,
     order: {
@@ -1682,6 +2166,7 @@ app.get("/api/orders/track", ah(async (req, res) => {
       payment: o.payment,
       tracking: o.tracking || "",
       courier: courier,
+      trackingDetails,
       items: (o.items || []).map((it) => ({ title: it.title, qty: it.qty, image: it.image, price: it.price })),
       total: o.total,
       discount: o.discount,
@@ -1946,6 +2431,7 @@ app.get("/api/admin/settings", requireAdmin, ah(async (req, res) => {
       smtp: mailer.smtpConfigured(),
     },
     cron: { configured: !!(process.env.CRON_TOKEN || "").trim() },
+    acs: { configured: acs.configured() },
   });
 }));
 
@@ -2045,18 +2531,436 @@ app.patch("/api/admin/orders/:id", requireAdmin, ah(async (req, res) => {
   if (Object.keys(fields).length) await db.updateOrder(req.params.id, fields);
   for (const ev of events) await db.appendOrderEvent(req.params.id, ev);
   audit(req, "admin.order.update", req.params.id);
-  res.json({ ok: true, order: await db.getOrder(req.params.id) });
+  const updated = await db.getOrder(req.params.id);
+  for (const ev of events) {
+    if (ev.type === "status") notifyOrderStatusChange(updated, ev.from, ev.to);
+    else if (ev.type === "shipping") notifyOrderShippingChange(updated, ev.from, ev.to);
+    else if (ev.type === "payment") notifyOrderPaymentChange(updated, ev.from, ev.to);
+  }
+  res.json({ ok: true, order: updated });
+}));
+
+/* ---------- ACS Courier integration ---------- */
+
+/* Today's date in the SERVER's local timezone as YYYY-MM-DD.
+   Not toISOString() — that is UTC, so between midnight and 02:00/03:00 Greek
+   time it returns *yesterday*, and ACS rejects the voucher outright with
+   "Μη αποδεκτή ημερομηνία παραλαβής" (pickup dates cannot be in the past). */
+function localToday() {
+  const now = new Date();
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+    .toISOString()
+    .slice(0, 10);
+}
+
+/* ACS bills the HIGHER of declared and re-weighed mass, and refuses anything
+   under 0.5kg, so this is both the floor and the fallback when no product has
+   a weight recorded yet. */
+const ACS_MIN_WEIGHT_KG = 0.5;
+
+/**
+ * Total shipping weight of an order, from the per-product `weightKg` stored in
+ * product_details. Variant ids ("pv-…") inherit their parent product's weight
+ * unless the variant itself has one.
+ *
+ * Returns null when NO item has a recorded weight — the caller then keeps the
+ * old default rather than inventing a number. A partially-known order still
+ * returns a sum, since an undercount is closer than 0.5kg flat.
+ */
+async function orderWeightKg(order) {
+  const items = Array.isArray(order && order.items) ? order.items : [];
+  if (!items.length) return null;
+  let details;
+  try {
+    details = await db.getAllProductDetails({ read: true });
+  } catch (e) {
+    console.error("[acs] weight lookup failed:", e.message);
+    return null;
+  }
+  let total = 0;
+  let known = false;
+  for (const it of items) {
+    const qty = Math.max(0, parseInt(it && it.qty, 10) || 0);
+    if (!qty || !it.id) continue;
+    const own = details[it.id] && details[it.id].weightKg;
+    const parent = it.variantOf && details[it.variantOf] && details[it.variantOf].weightKg;
+    const w = parseFloat(own || parent || 0);
+    if (Number.isFinite(w) && w > 0) {
+      total += w * qty;
+      known = true;
+    }
+  }
+  if (!known) return null;
+  return Math.max(ACS_MIN_WEIGHT_KG, Math.round(total * 1000) / 1000);
+}
+
+/* ACS_Get_Content_Types → 4 = ΕΙΔΗ ΔΙΑΚΟΣΜΗΣΗΣ. Mandatory for Cyprus customs. */
+const ACS_CONTENT_TYPE_DECOR = 4;
+
+/* ACS_Create_Voucher only covers Greece and Cyprus — every other destination is
+   rejected with "Μη αποδεκτός ταχ.κωδικός ή χώρα προορισμού" (verified live). */
+const ACS_COUNTRIES = new Set(["GR", "CY"]);
+
+/* Greek phone numbers as ACS expects them: plain digits, no +30/leading 0. */
+function acsPhoneNumber(raw) {
+  if (!raw) return null;
+  let digits = String(raw).replace(/\D/g, "");
+  if (digits.length === 12 && digits.startsWith("30")) digits = digits.slice(2);
+  if (digits.length === 11 && digits.startsWith("0")) digits = digits.slice(1);
+  return digits ? parseInt(digits, 10) : null;
+}
+
+/* Builds ACS_Create_Voucher params from an order — see server/acs.js and the
+   "ACS Rest API Web Services" PDF for the field meanings. `weight` (kg) and
+   `notes` are supplied by the admin at creation time since neither is tracked
+   per-product today. */
+function acsVoucherParamsForOrder(order, { pickupDate, weight, notes, saturday }) {
+  const c = order.customer || {};
+  const isCod = order.payment === "cod";
+  const products = [];
+  if (isCod) products.push("COD");
+  if (saturday) products.push("SAT");
+  const zip = parseInt(String(c.postal || "").replace(/\D/g, ""), 10);
+  const country = (c.countryCode || "GR").toUpperCase();
+
+  return {
+    Pickup_Date: pickupDate,
+    Sender: "Nostalgia Collection",
+    Recipient_Name: [c.firstname, c.lastname].filter(Boolean).join(" ") || order.number,
+    Recipient_Address: c.street || "",
+    Recipient_Address_Number: c.streetNumber || null,
+    Recipient_Zipcode: Number.isFinite(zip) ? zip : null,
+    Recipient_Region: c.city || "",
+    Recipient_Phone: acsPhoneNumber(c.phone),
+    Recipient_Cell_Phone: acsPhoneNumber(c.mobile),
+    Recipient_Floor: c.floor || null,
+    Recipient_Company_Name: c.company || null,
+    Recipient_Country: c.countryCode || "GR",
+    Acs_Station_Destination: null,
+    Acs_Station_Branch_Destination: 1,
+    Billing_Code: acs.billingCode(),
+    Charge_Type: 2, // sender (the shop) pays the courier
+    Cost_Center_Code: null,
+    Item_Quantity: 1,
+    Weight: weight > 0 ? weight : 0.5,
+    Cod_Ammount: isCod ? order.total : null,
+    Cod_Payment_Way: isCod ? 0 : null, // cash
+    Acs_Delivery_Products: products.length ? products.join(",") : null,
+    Insurance_Ammount: null,
+    Delivery_Notes: notes ? str(notes, 500) : null,
+    Recipient_Email: c.email || null,
+    Reference_Key1: order.number,
+    Reference_Key2: null,
+    With_Return_Voucher: null,
+    /* Cyprus customs require a declared content type. The API accepts null
+       (tested 30/7/2026 — the voucher is still created), but ACS warn that an
+       undeclared parcel risks delays and fines from Larnaca customs, so we
+       always declare. 4 = ΕΙΔΗ ΔΙΑΚΟΣΜΗΣΗΣ, the right bucket for candles
+       (full list via ACS_Get_Content_Types). Greece ignores the field. */
+    Content_Type_ID: country === "CY" ? ACS_CONTENT_TYPE_DECOR : null,
+    Language: null,
+  };
+}
+
+app.get("/api/admin/acs/status", requireAdmin, ah(async (req, res) => {
+  res.json({ ok: true, configured: acs.configured() });
+}));
+
+/* Suggested parcel weight for one order, so the admin can prefill the field
+   instead of the operator guessing. `estimated` is false when no product in
+   the order has a weight recorded yet. */
+app.get("/api/admin/orders/:id/acs/weight", requireAdmin, ah(async (req, res) => {
+  if (!security.isUuid(req.params.id)) return bad(res, 400, "invalid_id");
+  const order = await db.getOrder(req.params.id);
+  if (!order) return bad(res, 404, "not_found");
+  const weight = await orderWeightKg(order);
+  res.json({
+    ok: true,
+    weightKg: weight || ACS_MIN_WEIGHT_KG,
+    estimated: weight != null,
+  });
+}));
+
+/* Creates a real ACS shipment for this order and stores the voucher number as
+   the order's tracking code. Does NOT finalize it — see /acs/pickup-list. */
+app.post("/api/admin/orders/:id/acs/create-voucher", requireAdmin, ah(async (req, res) => {
+  if (!security.isUuid(req.params.id)) return bad(res, 400, "invalid_id");
+  if (!acs.configured()) return bad(res, 409, "acs_not_configured");
+  const order = await db.getOrder(req.params.id);
+  if (!order) return bad(res, 404, "not_found");
+  if (order.tracking) return bad(res, 409, "voucher_already_exists");
+
+  /* Fail early with a readable reason. The storefront offers 47 European
+     countries but ACS only ships GR/CY, so without this the operator would get
+     the opaque "Μη αποδεκτός ταχ.κωδικός ή χώρα προορισμού" from ACS. */
+  const destination = ((order.customer && order.customer.countryCode) || "GR").toUpperCase();
+  if (!ACS_COUNTRIES.has(destination)) {
+    return res.status(409).json({
+      ok: false,
+      error: "acs_country_unsupported",
+      detail: "Η ACS στέλνει μόνο σε Ελλάδα και Κύπρο. Προορισμός παραγγελίας: " +
+        destination + ". Χρειάζεται άλλος courier για αυτή την αποστολή.",
+    });
+  }
+
+  const b = req.body || {};
+  const pickupDate = str(b.pickupDate, 10) || localToday();
+  /* An explicit weight from the operator always wins; otherwise fall back to
+     the catalogue weights rather than the old flat 0.5kg, which would under-
+     declare a box of candles and produce a surprise ACS invoice. */
+  const weight = parsePrice(b.weight) || (await orderWeightKg(order)) || ACS_MIN_WEIGHT_KG;
+  const actor = (req.admin && (req.admin.sub || req.admin.username)) || "admin";
+
+  let result;
+  try {
+    result = await acs.createVoucher(
+      acsVoucherParamsForOrder(order, { pickupDate, weight, notes: b.notes, saturday: !!b.saturday })
+    );
+  } catch (e) {
+    if (e instanceof acs.AcsError) return badAcs(res, e);
+    throw e;
+  }
+  if (result.Error_Message) return bad(res, 400, "acs_error:" + result.Error_Message);
+
+  const voucherNo = String(result.Voucher_No || "").trim();
+  if (!voucherNo) return bad(res, 502, "acs_no_voucher_returned");
+
+  const now = new Date().toISOString();
+  await db.updateOrder(order.id, { tracking: voucherNo, courier: "acs" });
+  await db.appendOrderEvent(order.id, { at: now, actor, type: "tracking", to: voucherNo });
+  await db.appendOrderEvent(order.id, { at: now, actor, type: "courier", to: "acs" });
+  audit(req, "admin.acs.voucher_created", order.id, { voucherNo });
+  clearReadCache();
+  res.json({ ok: true, voucherNo, order: await db.getOrder(order.id) });
+}));
+
+app.get("/api/admin/orders/:id/acs/print-voucher", requireAdmin, ah(async (req, res) => {
+  if (!security.isUuid(req.params.id)) return bad(res, 400, "invalid_id");
+  if (!acs.configured()) return bad(res, 409, "acs_not_configured");
+  const order = await db.getOrder(req.params.id);
+  if (!order) return bad(res, 404, "not_found");
+  if (!order.tracking || order.courier !== "acs") return bad(res, 409, "no_acs_voucher");
+
+  /* printType 2=laser A4, 1=thermal roll. startPosition picks which of the 3
+     label slots on an A4 sheet to use, so a partly-used sheet isn't wasted. */
+  const printType = Number(req.query.printType) === 1 ? 1 : 2;
+  const startPosition = [1, 2, 3].includes(Number(req.query.startPosition))
+    ? Number(req.query.startPosition) : 1;
+  let pdf;
+  try {
+    pdf = await acs.printVoucher({ voucherNo: order.tracking, printType, startPosition, language: "GR" });
+  } catch (e) {
+    if (e instanceof acs.AcsError) return badAcs(res, e);
+    throw e;
+  }
+  res.json({ ok: true, pdf });
+}));
+
+/* Prints up to MAX_PRINT_BATCH labels in ONE ACS call and returns them merged
+   into a single PDF, so a day's shipping is one print job rather than one
+   browser tab per parcel. */
+app.post("/api/admin/acs/print-vouchers", requireAdmin, ah(async (req, res) => {
+  if (!acs.configured()) return bad(res, 409, "acs_not_configured");
+  const ids = Array.isArray(req.body && req.body.orderIds) ? req.body.orderIds : [];
+  if (!ids.length) return bad(res, 400, "no_orders");
+  if (ids.length > acs.MAX_PRINT_BATCH) return bad(res, 400, "too_many_orders");
+
+  const printType = Number(req.body.printType) === 1 ? 1 : 2;
+  const startPosition = [1, 2, 3].includes(Number(req.body.startPosition))
+    ? Number(req.body.startPosition) : 1;
+
+  const vouchers = [];
+  for (const id of ids) {
+    if (!security.isUuid(String(id))) return bad(res, 400, "invalid_id");
+    const order = await db.getOrder(String(id));
+    if (!order) return bad(res, 404, "not_found");
+    if (!order.tracking || order.courier !== "acs") return bad(res, 409, "no_acs_voucher");
+    vouchers.push(order.tracking);
+  }
+
+  let printed;
+  try {
+    printed = await acs.printVouchers({ voucherNos: vouchers, printType, startPosition, language: "GR" });
+  } catch (e) {
+    if (e instanceof acs.AcsError) return badAcs(res, e);
+    throw e;
+  }
+  const pdf = await mergeBase64Pdfs(printed.map((p) => p.pdf));
+  audit(req, "admin.acs.vouchers_printed", null, { count: printed.length });
+  res.json({ ok: true, pdf, count: printed.length, vouchers: printed.map((p) => p.voucherNo) });
+}));
+
+app.delete("/api/admin/orders/:id/acs/voucher", requireAdmin, ah(async (req, res) => {
+  if (!security.isUuid(req.params.id)) return bad(res, 400, "invalid_id");
+  if (!acs.configured()) return bad(res, 409, "acs_not_configured");
+  const order = await db.getOrder(req.params.id);
+  if (!order) return bad(res, 404, "not_found");
+  if (!order.tracking || order.courier !== "acs") return bad(res, 409, "no_acs_voucher");
+
+  try {
+    await acs.deleteVoucher(order.tracking);
+  } catch (e) {
+    if (e instanceof acs.AcsError) return badAcs(res, e);
+    throw e;
+  }
+  const actor = (req.admin && (req.admin.sub || req.admin.username)) || "admin";
+  await db.updateOrder(order.id, { tracking: "", courier: "" });
+  await db.appendOrderEvent(order.id, { at: new Date().toISOString(), actor, type: "tracking", to: "" });
+  audit(req, "admin.acs.voucher_deleted", order.id);
+  clearReadCache();
+  res.json({ ok: true, order: await db.getOrder(order.id) });
+}));
+
+/* Cancels up to MAX_DELETE_BATCH shipments in one ACS call. Only works while
+   the vouchers are not yet in a pickup list — afterwards only an ACS branch
+   can remove them, so ACS rejects the whole batch. */
+app.post("/api/admin/acs/delete-vouchers", requireAdmin, ah(async (req, res) => {
+  if (!acs.configured()) return bad(res, 409, "acs_not_configured");
+  const ids = Array.isArray(req.body && req.body.orderIds) ? req.body.orderIds : [];
+  if (!ids.length) return bad(res, 400, "no_orders");
+  if (ids.length > acs.MAX_DELETE_BATCH) return bad(res, 400, "too_many_orders");
+
+  const orders = [];
+  for (const id of ids) {
+    if (!security.isUuid(String(id))) return bad(res, 400, "invalid_id");
+    const order = await db.getOrder(String(id));
+    if (!order) return bad(res, 404, "not_found");
+    if (!order.tracking || order.courier !== "acs") return bad(res, 409, "no_acs_voucher");
+    orders.push(order);
+  }
+
+  try {
+    await acs.deleteVouchers(orders.map((o) => o.tracking));
+  } catch (e) {
+    if (e instanceof acs.AcsError) return badAcs(res, e);
+    throw e;
+  }
+
+  /* ACS deletes all-or-nothing, so only clear our side once it confirmed. */
+  const actor = (req.admin && (req.admin.sub || req.admin.username)) || "admin";
+  const at = new Date().toISOString();
+  for (const order of orders) {
+    await db.updateOrder(order.id, { tracking: "", courier: "" });
+    await db.appendOrderEvent(order.id, { at, actor, type: "tracking", to: "" });
+  }
+  audit(req, "admin.acs.vouchers_deleted", null, { count: orders.length });
+  clearReadCache();
+  res.json({ ok: true, count: orders.length });
+}));
+
+/* Pulls the current ACS tracking status and maps it onto our own
+   shipping_status — a manual "refresh" button; a cron job can call the same
+   logic periodically once this is proven out. */
+app.post("/api/admin/orders/:id/acs/refresh-tracking", requireAdmin, ah(async (req, res) => {
+  if (!security.isUuid(req.params.id)) return bad(res, 400, "invalid_id");
+  if (!acs.configured()) return bad(res, 409, "acs_not_configured");
+  const order = await db.getOrder(req.params.id);
+  if (!order) return bad(res, 404, "not_found");
+  if (!order.tracking || order.courier !== "acs") return bad(res, 409, "no_acs_voucher");
+
+  let summary;
+  try {
+    summary = await acs.trackingSummary(order.tracking);
+  } catch (e) {
+    if (e instanceof acs.AcsError) return badAcs(res, e);
+    throw e;
+  }
+  const mapped = acs.mapShipmentStatus(summary);
+  if (mapped && mapped !== order.shippingStatus) {
+    const actor = "acs-sync";
+    await db.updateOrder(order.id, { shipping_status: mapped });
+    await db.appendOrderEvent(order.id, { at: new Date().toISOString(), actor, type: "shipping", from: order.shippingStatus, to: mapped });
+    clearReadCache();
+    notifyOrderShippingChange(
+      Object.assign({}, order, { shippingStatus: mapped }),
+      order.shippingStatus,
+      mapped,
+      { eta: summary && summary.delivery_date_expected }
+    );
+  }
+  res.json({ ok: true, summary, shippingStatus: mapped || order.shippingStatus, order: await db.getOrder(order.id) });
+}));
+
+/* End-of-day finalization: MUST be called or the vouchers printed today stay
+   unrecognized by ACS (their barcodes won't scan) — see server/acs.js. */
+app.post("/api/admin/acs/pickup-list", requireAdmin, ah(async (req, res) => {
+  if (!acs.configured()) return bad(res, 409, "acs_not_configured");
+  const pickupDate = str((req.body && req.body.pickupDate) || "", 10) || localToday();
+  let result;
+  try {
+    result = await acs.issuePickupList(pickupDate, null);
+  } catch (e) {
+    if (e instanceof acs.AcsError) return badAcs(res, e);
+    throw e;
+  }
+  audit(req, "admin.acs.pickup_list_issued", pickupDate, { pickupListNo: result.PickupList_No });
+  res.json({ ok: true, ...result });
+}));
+
+/* Lists the pickup lists already issued for a date, so the admin can reprint
+   one after a page reload — the number is otherwise only held in React state
+   and would be lost, leaving no way back to the PDF. */
+app.get("/api/admin/acs/pickup-lists", requireAdmin, ah(async (req, res) => {
+  if (!acs.configured()) return bad(res, 409, "acs_not_configured");
+  const pickupDate = str(req.query.pickupDate || "", 10) || localToday();
+  let lists;
+  try {
+    lists = await acs.getPickupLists(pickupDate);
+  } catch (e) {
+    if (e instanceof acs.AcsError) return badAcs(res, e);
+    throw e;
+  }
+  res.json({ ok: true, pickupDate, lists });
+}));
+
+app.get("/api/admin/acs/pickup-list/:massNumber/print", requireAdmin, ah(async (req, res) => {
+  if (!acs.configured()) return bad(res, 409, "acs_not_configured");
+  const pickupDate = str(req.query.pickupDate || "", 10) || localToday();
+  let pdf;
+  try {
+    pdf = await acs.printPickupList(req.params.massNumber, pickupDate);
+  } catch (e) {
+    if (e instanceof acs.AcsError) return badAcs(res, e);
+    throw e;
+  }
+  res.json({ ok: true, pdf });
 }));
 
 /* ---------- users / newsletter / messages ---------- */
+
+/* The list carries the real email (same trust boundary as every other admin
+   list — Orders/Newsletter/Reviews already show customer emails plainly);
+   the admin UI masks it on screen by default and reveals on click, purely to
+   cut down on shoulder-surfing/screenshots, not as an access-control layer. */
+function adminUserListRow(u) {
+  return {
+    email: u.email,
+    firstname: u.firstname,
+    lastname: u.lastname,
+    newsletterOptin: !!u.newsletterOptin,
+    active: u.active !== false,
+    orderCount: u.orderCount || 0,
+    lastOrderAt: u.lastOrderAt || null,
+    createdAt: u.createdAt,
+  };
+}
 
 app.get("/api/admin/users", requireAdmin, ah(async (req, res) => {
   const data = await db.listUsersPage(pageQuery(req));
   res.json({
     ok: true,
-    users: data.users.map(publicUser),
+    users: data.users.map(adminUserListRow),
     pagination: data.pagination,
   });
+}));
+
+app.patch("/api/admin/users/:email", requireAdmin, ah(async (req, res) => {
+  const email = normEmail(req.params.email);
+  if (typeof (req.body && req.body.active) !== "boolean") return bad(res, 400, "invalid_body");
+  const updated = await db.setUserActive(email, req.body.active);
+  if (!updated) return bad(res, 404, "not_found");
+  audit(req, req.body.active ? "admin.customer.enabled" : "admin.customer.disabled", req.admin && req.admin.sub, { email });
+  res.json({ ok: true });
 }));
 
 app.get("/api/admin/newsletter", requireAdmin, ah(async (req, res) => {
@@ -2064,10 +2968,154 @@ app.get("/api/admin/newsletter", requireAdmin, ah(async (req, res) => {
   res.json({ ok: true, subscribers: data.subscribers, pagination: data.pagination });
 }));
 
-app.delete("/api/admin/newsletter/:email", requireAdmin, ah(async (req, res) => {
-  const deleted = await db.deleteSubscriber(normEmail(req.params.email));
-  if (!deleted) return bad(res, 404, "not_found");
+/* Unsubscribes (soft) rather than deletes — the opt-in/opt-out trail has to
+   survive so the same address can't silently re-appear without fresh
+   consent. Hard deletion only ever happens via GDPR account erasure. */
+app.patch("/api/admin/newsletter/:email", requireAdmin, ah(async (req, res) => {
+  const email = normEmail(req.params.email);
+  if (!req.body || req.body.status !== "unsubscribed") return bad(res, 400, "invalid_body");
+  const updated = await db.unsubscribeSubscriber(email);
+  if (!updated) return bad(res, 404, "not_found");
+  audit(req, "admin.newsletter.unsubscribed", req.admin && req.admin.sub, { email });
   res.json({ ok: true });
+}));
+
+/* ---------- announcements (admin-composed mass email) ----------
+   Two kinds on two legal bases — see migrations/033_announcements.up.sql.
+   Audience selection lives in db.js and is NOT overridable from the request:
+   the admin picks a kind, not a list of addresses, so there is no way to
+   accidentally mail people who opted out. */
+
+/* Marketing → consented newsletter addresses only.
+   Service → account holders PLUS newsletter subscribers. A guest who bought
+   once without registering but left us their address would otherwise never
+   hear that someone is impersonating the shop, which defeats the point of the
+   warning. broadcast() de-duplicates, so the overlap costs nothing. */
+async function announcementAudience(kind) {
+  if (kind !== "service") return db.listMarketingRecipients();
+  const [accounts, subscribers] = await Promise.all([
+    db.listServiceRecipients(),
+    db.listMarketingRecipients(),
+  ]);
+  const seen = new Set();
+  return accounts.concat(subscribers).filter((r) => {
+    const key = String(r.email || "").trim().toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function readAnnouncement(body) {
+  const b = body || {};
+  const kind = b.kind === "service" ? "service" : "marketing";
+  return {
+    kind,
+    subject: str(b.subject, 200),
+    heading: str(b.heading, 160),
+    subheading: str(b.subheading, 300),
+    body: str(b.body, 20000),
+    calloutTitle: str(b.calloutTitle, 120),
+    /* One bullet per line in the admin textarea. */
+    calloutItems: String(b.calloutItems || "")
+      .split(/\r?\n/)
+      .map((s) => str(s, 200))
+      .filter(Boolean)
+      .slice(0, 12),
+    showContacts: !!b.showContacts,
+    note: str(b.note, 300),
+    ctaUrl: str(b.ctaUrl, 400),
+    ctaText: str(b.ctaText, 80),
+  };
+}
+
+/** How many people a given kind would actually reach, right now. */
+app.get("/api/admin/announcements/audience", requireAdmin, ah(async (req, res) => {
+  const kind = req.query.kind === "service" ? "service" : "marketing";
+  const recipients = await announcementAudience(kind);
+  res.json({
+    ok: true,
+    kind,
+    count: recipients.length,
+    /* A handful of addresses so the operator can sanity-check WHO this is
+       before sending to all of them. */
+    sample: recipients.slice(0, 5).map((r) => r.email),
+  });
+}));
+
+/** Rendered HTML exactly as a recipient would see it. No sending. */
+app.post("/api/admin/announcements/preview", requireAdmin, ah(async (req, res) => {
+  const a = readAnnouncement(req.body);
+  if (!a.subject || !a.body) return bad(res, 400, "subject_and_body_required");
+  res.json({ ok: true, subject: a.subject, html: mailer.announcementPreviewHtml(a) });
+}));
+
+/** Sends ONE copy to a chosen address, so the real thing can be proof-read
+    in a real inbox before it reaches hundreds of people. */
+app.post("/api/admin/announcements/test", requireAdmin, ah(async (req, res) => {
+  const a = readAnnouncement(req.body);
+  if (!a.subject || !a.body) return bad(res, 400, "subject_and_body_required");
+  const to = normEmail((req.body && req.body.to) || "");
+  if (!isEmail(to)) return bad(res, 400, "invalid_email");
+
+  const result = await mailer.sendAnnouncement([{ email: to, firstname: "" }], a);
+  audit(req, "admin.announcement.test", req.admin && req.admin.sub, { to, kind: a.kind });
+  res.json({ ok: true, result });
+}));
+
+/* The real send. Deliberately NOT idempotent-by-accident: the client must
+   echo back the audience size it showed the operator, and we refuse if the
+   audience has changed underneath them (someone unsubscribed while they were
+   typing). Better a retry than a surprise. */
+app.post("/api/admin/announcements", requireAdmin, ah(async (req, res) => {
+  const a = readAnnouncement(req.body);
+  if (!a.subject || !a.body) return bad(res, 400, "subject_and_body_required");
+
+  const recipients = await announcementAudience(a.kind);
+  if (!recipients.length) return bad(res, 409, "no_recipients");
+
+  const confirmed = parseInt((req.body && req.body.confirmCount), 10);
+  if (!Number.isFinite(confirmed) || confirmed !== recipients.length) {
+    return res.status(409).json({
+      ok: false,
+      error: "audience_changed",
+      expected: confirmed,
+      actual: recipients.length,
+    });
+  }
+
+  const record = await db.createAnnouncement({
+    id: crypto.randomUUID(),
+    kind: a.kind,
+    subject: a.subject,
+    body: a.body,
+    segments: [a.kind],
+    recipientCount: recipients.length,
+    createdBy: (req.admin && req.admin.sub) || null,
+  });
+  audit(req, "admin.announcement.send", req.admin && req.admin.sub, {
+    id: record.id, kind: a.kind, subject: a.subject, recipients: recipients.length,
+  });
+
+  let result;
+  try {
+    result = await mailer.sendAnnouncement(recipients, a);
+  } catch (e) {
+    await db.finishAnnouncement(record.id, { status: "failed", sent: 0, failed: recipients.length, failures: [{ email: "", error: e.message }] });
+    throw e;
+  }
+
+  const saved = await db.finishAnnouncement(record.id, {
+    status: result.sent > 0 ? "sent" : "failed",
+    sent: result.sent,
+    failed: result.failed,
+    failures: result.failures,
+  });
+  res.json({ ok: true, announcement: saved, result });
+}));
+
+app.get("/api/admin/announcements", requireAdmin, ah(async (req, res) => {
+  res.json({ ok: true, announcements: await db.listAnnouncements(req.query.limit) });
 }));
 
 app.get("/api/admin/messages", requireAdmin, ah(async (req, res) => {
@@ -2594,7 +3642,13 @@ app.post("/api/admin/coupons", requireAdmin, ah(async (req, res) => {
     expiresAt = str(b.expiresAt, 10);
   }
 
-  await db.createCoupon({ code, type, value, expiresAt, name, maxUses, freeShipping });
+  await db.createCoupon({
+    code, type, value, expiresAt, name, maxUses, freeShipping,
+    /* One redemption per customer (keyed on their order email), and/or
+       restricted to a customer's very first order. */
+    oncePerCustomer: !!b.oncePerCustomer,
+    firstOrderOnly: !!b.firstOrderOnly,
+  });
   const coupon = await db.getCoupon(code);
 
   /* email the code to every account holder */
@@ -2619,36 +3673,328 @@ app.delete("/api/admin/coupons/:code", requireAdmin, ah(async (req, res) => {
   res.json({ ok: true });
 }));
 
+/* ---------- promotions engine (admin) ---------- */
+
+/* Every currently-sellable product (has a regular price set), in the shape
+   the promotions engine matches/prices against. Static catalog items with no
+   admin-set price are skipped — there is nothing to discount. */
+async function allSellableProductsForPromotions() {
+  const overrides = await db.getOverrides();
+  const customs = await db.listCustomProducts(true);
+  const list = [];
+  catalog.PRODUCTS.forEach((p) => {
+    const ov = overrides[p.id] || {};
+    if (ov.price == null) return;
+    list.push({ id: p.id, catId: p.catId, title: p.title, regularPrice: ov.price, createdAt: null });
+  });
+  customs.forEach((c) => {
+    if (c.price == null) return;
+    list.push({ id: c.id, catId: c.catId, title: c.title, regularPrice: c.price, createdAt: c.createdAt });
+  });
+  return list;
+}
+
+const PROMOTION_DISCOUNT_TYPES = new Set(["percentage", "fixed_amount", "fixed_sale_price"]);
+const PROMOTION_TARGET_TYPES = new Set(["product", "category", "all_products"]);
+const PROMOTION_EXCLUSION_TYPES = new Set(["product", "new_products"]);
+const PROMOTION_STATUSES = new Set(["draft", "scheduled", "active", "paused", "cancelled"]);
+
+/* Parses + validates the scalar/targets/exclusions fields of a promotion
+   request body. `sellableIds` is used to reject targets/exclusions that
+   don't refer to a real, priced product. Returns { error } or { value }. */
+function parsePromotionInput(b, sellableIds) {
+  const name = str(b.name, 160);
+  if (!name) return { error: "missing_name" };
+
+  const code = str(b.code, 40).toUpperCase();
+  if (code && !/^[A-Z0-9_-]{2,40}$/.test(code)) return { error: "invalid_code" };
+
+  const discountType = String(b.discountType || "");
+  if (!PROMOTION_DISCOUNT_TYPES.has(discountType)) return { error: "invalid_discount_type" };
+
+  const discountValue = parsePrice(b.discountValue);
+  if (discountValue === undefined || discountValue == null || discountValue <= 0) {
+    return { error: "invalid_discount_value" };
+  }
+  if (discountType === "percentage" && discountValue > 100) return { error: "invalid_discount_value" };
+
+  let maxDiscountPerProduct = null;
+  if (b.maxDiscountPerProduct !== undefined && b.maxDiscountPerProduct !== null && b.maxDiscountPerProduct !== "") {
+    maxDiscountPerProduct = parsePrice(b.maxDiscountPerProduct);
+    if (maxDiscountPerProduct === undefined || maxDiscountPerProduct <= 0) return { error: "invalid_max_discount" };
+  }
+
+  const status = b.status !== undefined ? String(b.status) : "draft";
+  if (!PROMOTION_STATUSES.has(status)) return { error: "invalid_status" };
+
+  let startsAt = null;
+  let endsAt = null;
+  if (b.startsAt) {
+    startsAt = new Date(b.startsAt);
+    if (isNaN(startsAt.getTime())) return { error: "invalid_starts_at" };
+  }
+  if (b.endsAt) {
+    endsAt = new Date(b.endsAt);
+    if (isNaN(endsAt.getTime())) return { error: "invalid_ends_at" };
+  }
+  if (startsAt && endsAt && endsAt <= startsAt) return { error: "invalid_window" };
+
+  const timezone = str(b.timezone, 60) || "Europe/Athens";
+  const priority = Number.isFinite(Number(b.priority)) ? Math.round(Number(b.priority)) : 100;
+
+  const targets = Array.isArray(b.targets) ? b.targets : [];
+  if (!targets.length) return { error: "missing_targets" };
+  const normTargets = [];
+  for (const t of targets) {
+    const type = String((t && t.type) || "");
+    if (!PROMOTION_TARGET_TYPES.has(type)) return { error: "invalid_target" };
+    if (type === "all_products") { normTargets.push({ type, id: null }); continue; }
+    const id = str(t && t.id, 60);
+    if (!id) return { error: "invalid_target" };
+    if (type === "category" && !catalog.CATEGORIES[id]) return { error: "invalid_target_category" };
+    if (type === "product" && sellableIds && !sellableIds.has(id)) return { error: "invalid_target_product" };
+    normTargets.push({ type, id });
+  }
+
+  const exclusions = Array.isArray(b.exclusions) ? b.exclusions : [];
+  const normExclusions = [];
+  for (const e of exclusions) {
+    const type = String((e && e.type) || "");
+    if (!PROMOTION_EXCLUSION_TYPES.has(type)) return { error: "invalid_exclusion" };
+    if (type === "new_products") { normExclusions.push({ type, id: null }); continue; }
+    const id = str(e && e.id, 60);
+    if (!id) return { error: "invalid_exclusion" };
+    if (sellableIds && !sellableIds.has(id)) return { error: "invalid_exclusion_product" };
+    normExclusions.push({ type, id });
+  }
+
+  return {
+    value: {
+      name, code, discountType, discountValue, maxDiscountPerProduct, status,
+      startsAt: startsAt ? startsAt.toISOString() : null,
+      endsAt: endsAt ? endsAt.toISOString() : null,
+      timezone, priority, targets: normTargets, exclusions: normExclusions,
+    },
+  };
+}
+
+app.get("/api/admin/promotions", requireAdmin, ah(async (req, res) => {
+  const [list, allProducts] = await Promise.all([db.listPromotions(), allSellableProductsForPromotions()]);
+  const now = new Date();
+  const rows = list.map((p) => {
+    const others = list.filter((o) => o.id !== p.id);
+    const preview = promotions.computePromotionPreview(p, allProducts, others, now);
+    return {
+      ...p,
+      effectiveStatus: promotions.effectiveStatus(p, now),
+      targetSummary: promotions.describeTargets(p.targets),
+      matchedCount: preview.matchedCount,
+    };
+  });
+  res.json({ ok: true, promotions: rows });
+}));
+
+app.get("/api/admin/promotions/:id", requireAdmin, ah(async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const promo = await db.getPromotion(id);
+  if (!promo) return bad(res, 404, "not_found");
+  res.json({ ok: true, promotion: { ...promo, effectiveStatus: promotions.effectiveStatus(promo, new Date()) } });
+}));
+
+app.get("/api/admin/promotions/:id/audit", requireAdmin, ah(async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const events = await db.listPromotionAuditLog(id);
+  res.json({ ok: true, events });
+}));
+
+/* Accepts either a saved promotion id (?id=) to preview edits against, or a
+   fully inline draft body — used by the admin wizard's "Preview" step before
+   anything is persisted. */
+app.post("/api/admin/promotions/preview", requireAdmin, ah(async (req, res) => {
+  const b = req.body || {};
+  const allProducts = await allSellableProductsForPromotions();
+  const sellableIds = new Set(allProducts.map((p) => p.id));
+  const parsed = parsePromotionInput(b, sellableIds);
+  if (parsed.error) return bad(res, 400, parsed.error);
+
+  const excludeId = b.excludeId != null ? parseInt(b.excludeId, 10) : null;
+  const candidates = await db.listCandidatePromotions();
+  const others = excludeId ? candidates.filter((p) => p.id !== excludeId) : candidates;
+  const preview = promotions.computePromotionPreview(parsed.value, allProducts, others, new Date());
+  const effectiveStatus = promotions.effectiveStatus(parsed.value, new Date());
+  res.json({
+    ok: true,
+    preview,
+    effectiveStatus,
+    requiresConfirmation:
+      (effectiveStatus === "active" || effectiveStatus === "scheduled") &&
+      promotions.requiresConfirmation(parsed.value, preview.matchedCount),
+  });
+}));
+
+app.post("/api/admin/promotions", requireAdmin, ah(async (req, res) => {
+  const b = req.body || {};
+  const allProducts = await allSellableProductsForPromotions();
+  const sellableIds = new Set(allProducts.map((p) => p.id));
+  const parsed = parsePromotionInput(b, sellableIds);
+  if (parsed.error) return bad(res, 400, parsed.error);
+  const draft = parsed.value;
+
+  const effectiveStatus = promotions.effectiveStatus(draft, new Date());
+  if (effectiveStatus === "active" || effectiveStatus === "scheduled") {
+    const candidates = await db.listCandidatePromotions();
+    const preview = promotions.computePromotionPreview(draft, allProducts, candidates, new Date());
+    if (promotions.requiresConfirmation(draft, preview.matchedCount) && !b.confirm) {
+      return res.status(409).json({ ok: false, error: "confirmation_required", preview, effectiveStatus });
+    }
+  }
+
+  let id;
+  try {
+    id = await db.createPromotion({ ...draft, createdBy: req.admin && req.admin.sub });
+  } catch (e) {
+    if (String(e.message || "").includes("promotions_code_uniq")) return bad(res, 409, "code_exists");
+    throw e;
+  }
+  audit(req, "promotion.created", req.admin && req.admin.sub, { promotionId: String(id), name: draft.name, status: draft.status });
+  clearReadCache();
+  const promo = await db.getPromotion(id);
+  res.json({ ok: true, promotion: promo });
+}));
+
+app.patch("/api/admin/promotions/:id", requireAdmin, ah(async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const existing = await db.getPromotion(id);
+  if (!existing) return bad(res, 404, "not_found");
+  const b = req.body || {};
+
+  const allProducts = await allSellableProductsForPromotions();
+  const sellableIds = new Set(allProducts.map((p) => p.id));
+
+  /* Merge onto the existing promotion so a partial PATCH (e.g. just {status:
+     "paused"}) still validates as a complete, consistent definition. */
+  const merged = {
+    name: b.name !== undefined ? b.name : existing.name,
+    code: b.code !== undefined ? b.code : existing.code,
+    discountType: b.discountType !== undefined ? b.discountType : existing.discountType,
+    discountValue: b.discountValue !== undefined ? b.discountValue : existing.discountValue,
+    maxDiscountPerProduct: b.maxDiscountPerProduct !== undefined ? b.maxDiscountPerProduct : existing.maxDiscountPerProduct,
+    status: b.status !== undefined ? b.status : existing.status,
+    startsAt: b.startsAt !== undefined ? b.startsAt : existing.startsAt,
+    endsAt: b.endsAt !== undefined ? b.endsAt : existing.endsAt,
+    timezone: b.timezone !== undefined ? b.timezone : existing.timezone,
+    priority: b.priority !== undefined ? b.priority : existing.priority,
+    targets: b.targets !== undefined ? b.targets : existing.targets,
+    exclusions: b.exclusions !== undefined ? b.exclusions : existing.exclusions,
+  };
+  const parsed = parsePromotionInput(merged, sellableIds);
+  if (parsed.error) return bad(res, 400, parsed.error);
+  const next = parsed.value;
+
+  /* Any edit that could matter for pricing (not just renaming/priority/tz)
+     re-runs the same big-change confirmation gate as first activation. */
+  const RISKY_FIELDS = ["status", "discountType", "discountValue", "maxDiscountPerProduct", "startsAt", "endsAt", "targets", "exclusions"];
+  const touchesRisky = RISKY_FIELDS.some((k) => Object.prototype.hasOwnProperty.call(b, k));
+  const effectiveStatus = promotions.effectiveStatus(next, new Date());
+  if (touchesRisky && (effectiveStatus === "active" || effectiveStatus === "scheduled")) {
+    const candidates = (await db.listCandidatePromotions()).filter((p) => p.id !== id);
+    const preview = promotions.computePromotionPreview(next, allProducts, candidates, new Date());
+    if (promotions.requiresConfirmation(next, preview.matchedCount) && !b.confirm) {
+      return res.status(409).json({ ok: false, error: "confirmation_required", preview, effectiveStatus });
+    }
+  }
+
+  try {
+    await db.updatePromotion(id, next);
+  } catch (e) {
+    if (String(e.message || "").includes("promotions_code_uniq")) return bad(res, 409, "code_exists");
+    throw e;
+  }
+  if (b.targets !== undefined || b.exclusions !== undefined) {
+    await db.replacePromotionTargeting(id, b.targets !== undefined ? next.targets : null, b.exclusions !== undefined ? next.exclusions : null);
+  }
+
+  const changedKeys = Object.keys(b).filter((k) => k !== "confirm");
+  audit(req, "promotion.updated", req.admin && req.admin.sub, {
+    promotionId: String(id), name: next.name, changed: changedKeys,
+    from: Object.fromEntries(changedKeys.map((k) => [k, existing[k]])),
+    to: Object.fromEntries(changedKeys.map((k) => [k, next[k]])),
+  });
+  clearReadCache();
+  const promo = await db.getPromotion(id);
+  res.json({ ok: true, promotion: promo });
+}));
+
+app.delete("/api/admin/promotions/:id", requireAdmin, ah(async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const existing = await db.getPromotion(id);
+  if (!existing) return bad(res, 404, "not_found");
+  /* Anything that ever went live is cancelled, never deleted — history must
+     survive so past orders stay explainable. Only a still-draft promotion,
+     which never affected a live price, can be removed outright. */
+  if (existing.status !== "draft") return bad(res, 400, "only_draft_deletable");
+  await db.deletePromotion(id);
+  audit(req, "promotion.deleted", req.admin && req.admin.sub, { promotionId: String(id), name: existing.name });
+  res.json({ ok: true });
+}));
+
 /* ---------- reviews (admin moderation) ---------- */
 
 app.get("/api/admin/reviews", requireAdmin, ah(async (req, res) => {
-  const reviews = await db.listReviews();
+  const status = str(req.query.status, 20) || "pending";
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const limit = Math.max(1, Math.min(100, parseInt(req.query.limit, 10) || 20));
+  const data = await db.listReviewsPage({ status, page, limit });
   /* attach a human-readable product title for the admin table */
   const overrides = await db.getOverrides();
   const withTitles = await Promise.all(
-    reviews.map(async (r) => {
+    data.reviews.map(async (r) => {
       const p = await resolveProduct(r.productId, overrides);
       return Object.assign({}, r, { productTitle: p ? p.title : r.productId });
     })
   );
-  res.json({ ok: true, reviews: withTitles });
+  res.json({ ok: true, reviews: withTitles, pagination: data.pagination, reasons: reviewsPolicy.REJECTION_REASONS });
 }));
 
+/* Moving a review to anything but 'approved' requires one of the enumerated,
+   content-based reasons — never a free-form "didn't like it". Every change
+   is audit-logged (who, when, old→new status, reason). */
 app.patch("/api/admin/reviews/:id", requireAdmin, ah(async (req, res) => {
   const status = req.body && req.body.status;
-  if (!["pending", "approved", "rejected"].includes(status)) {
+  if (!["pending", "approved", "rejected", "flagged", "removed"].includes(status)) {
     return bad(res, 400, "invalid_status");
   }
-  const updated = await db.setReviewStatus(req.params.id, status);
+  const reason = str((req.body && req.body.reason) || "", 40);
+  if (status !== "approved" && status !== "pending" && !reviewsPolicy.REJECTION_REASON_CODES.has(reason)) {
+    return bad(res, 400, "reason_required");
+  }
+  const actor = (req.admin && (req.admin.sub || req.admin.username)) || "admin";
+  const updated = await db.setReviewStatus(req.params.id, {
+    status,
+    reason: status === "approved" || status === "pending" ? null : reason,
+    moderatedBy: actor,
+  });
   if (!updated) return bad(res, 404, "not_found");
   clearReadCache();
+  audit(req, "review.moderated", actor, { reviewId: req.params.id, status, reason: reason || null });
   res.json({ ok: true });
 }));
 
-app.delete("/api/admin/reviews/:id", requireAdmin, ah(async (req, res) => {
-  const deleted = await db.deleteReview(req.params.id);
-  if (!deleted) return bad(res, 404, "not_found");
+/* Public store reply — one per review, editable in place. */
+app.post("/api/admin/reviews/:id/reply", requireAdmin, ah(async (req, res) => {
+  const body = str((req.body && req.body.body) || "", 1000);
+  if (!body) return bad(res, 400, "empty_reply");
+  const actor = (req.admin && (req.admin.sub || req.admin.username)) || "admin";
+  await db.upsertReviewReply(req.params.id, actor, body);
   clearReadCache();
+  audit(req, "review.replied", actor, { reviewId: req.params.id });
+  res.json({ ok: true });
+}));
+
+app.delete("/api/admin/reviews/:id/reply", requireAdmin, ah(async (req, res) => {
+  await db.deleteReviewReply(req.params.id);
+  clearReadCache();
+  audit(req, "review.reply_deleted", (req.admin && (req.admin.sub || req.admin.username)) || "admin", { reviewId: req.params.id });
   res.json({ ok: true });
 }));
 
@@ -2701,9 +4047,10 @@ app.get(adminUiPathRegex(), (req, res, next) => {
 
 /* ================= SEO (dynamic) ================= */
 
+
 app.get("/sitemap.xml", ah(async (req, res) => {
   const base = publicSiteUrl(req);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localToday();
   const pageUrls = SITEMAP_PAGES.map(function (entry) {
     const loc = entry.slug ? base + "/" + entry.slug : base + "/";
     return (
@@ -2740,62 +4087,135 @@ app.get("/sitemap.xml", ah(async (req, res) => {
   );
 }));
 
+/* Greek convention: comma for decimals, and no ",00" tail on whole amounts —
+   "δωρεάν άνω των 120€" reads naturally, "120,00€" does not. */
+function fmtMoney(n) {
+  const v = Number(n || 0);
+  return (Number.isInteger(v) ? String(v) : v.toFixed(2).replace(".", ",")) + "€";
+}
+
+/**
+ * llms.txt — a curated markdown map of the shop for language models
+ * (https://llmstxt.org/). Where sitemap.xml lists which URLs exist, this tells
+ * an assistant what the shop sells and where the answers live, without it
+ * parsing HTML full of nav and scripts.
+ *
+ * Built from the live catalogue AND the live fee config, for the same reason
+ * as the sitemap: a hand-written file goes stale the first time Maria adds a
+ * product or the free-shipping threshold moves.
+ *
+ * Bilingual on purpose — the question may arrive in either language.
+ * Deliberately modest: the spec is a proposal, Google states it does not use
+ * it, and no assistant publicly commits to reading it.
+ */
+/* Served dynamically so the Sitemap line can carry an ABSOLUTE url — Google
+   ignores a relative one, which is what the static robots.txt had. Same
+   directives as that file, plus a pointer to llms.txt. */
+app.get("/robots.txt", (req, res) => {
+  const base = publicSiteUrl(req);
+  const aiBots = ["GPTBot", "ChatGPT-User", "Claude-Web", "anthropic-ai",
+    "PerplexityBot", "Google-Extended"];
+  res.type("text/plain; charset=utf-8");
+  res.send(
+    "User-agent: *\n" +
+    "Allow: /\n\n" +
+    "# Admin and API are not for indexing\n" +
+    "Disallow: /admin\n" +
+    "Disallow: /api/\n\n" +
+    "# AI crawlers — a curated summary lives at /llms.txt\n" +
+    aiBots.map((b) => "User-agent: " + b + "\nAllow: /\n").join("\n") +
+    "\nSitemap: " + base + "/sitemap.xml\n"
+  );
+});
+
 app.get("/llms.txt", ah(async (req, res) => {
   const base = publicSiteUrl(req);
-  /* Live product list so AI assistants can recommend a specific candle. */
-  let productsBlock = "";
+  const out = [
+    "# Nostalgia Collection",
+    "",
+    "> Χειροποίητα αρωματικά κεριά και αρώματα σπιτιού, φτιαγμένα σε μικρές " +
+      "παρτίδες στη Θεσσαλονίκη. Handmade scented candles and home fragrance " +
+      "from Greece, made in small batches. Αποστολές σε Ελλάδα και Κύπρο με ACS " +
+      "Courier · πληρωμή με κάρτα ή αντικαταβολή · δίγλωσσος ιστότοπος " +
+      "(ελληνικά / English).",
+    "",
+    "## Τι πουλάμε / What we sell",
+    "",
+    "- Χειροποίητα αρωματικά κεριά — handmade scented candles",
+    "- Αρωματικά χώρου με sticks — reed diffusers",
+    "- Σετ δώρου με συσκευασία και προσωπική κάρτα — gift sets",
+    "",
+  ];
+
+  /* Collections before products: "what kinds do you have?" is answered by the
+     nine collections, not by a flat list of every candle. */
+  const cats = Object.entries(catalog.CATEGORIES)
+    .filter(([id, c]) => c && c.count && catalog.CATEGORY_SLUGS[id]);
+  if (cats.length) {
+    out.push("## Συλλογές / Collections", "");
+    cats.forEach(([id, c]) => {
+      out.push("- [" + c.name + "](" + base + "/collection/" +
+        catalog.CATEGORY_SLUGS[id] + "): " + c.count + " προϊόντα.");
+    });
+    out.push("");
+  }
+
+  /* A catalogue hiccup should still leave a usable file, never a 500. */
   try {
     const products = await seoProducts();
-    if (products.length) {
-      productsBlock =
-        "\n## Products (" + products.length + ")\n" +
-        products
-          .map(function (p) {
-            const price = p.price != null ? " — €" + Number(p.price).toFixed(2) : "";
-            const desc = p.description && p.description.trim() ? " — " + p.description.trim() : "";
-            return (
-              "- " + p.title + price + desc +
-              ": " + base + "/product/" + encodeURIComponent(p.id)
-            );
-          })
-          .join("\n") +
-        "\n";
+    const inStock = products.filter((p) => p.stock == null || p.stock > 0);
+    if (inStock.length) {
+      out.push("## Προϊόντα / Products (" + inStock.length + ")", "");
+      inStock.forEach((p) => {
+        const price = p.price != null ? " — " + fmtMoney(p.price) : "";
+        const desc = String(p.description || "").replace(/\s+/g, " ").trim().slice(0, 140);
+        out.push("- [" + p.title + "](" + base + "/product/" +
+          encodeURIComponent(p.id) + ")" + price +
+          (desc ? ": " + desc : (p.category ? ": " + p.category + "." : "")));
+      });
+      out.push("");
     }
   } catch (e) {
     console.error("[llms.txt] products:", e.message);
   }
-  res.type("text/plain; charset=utf-8");
-  res.send(
-    "# Nostalgia Collection\n" +
-      "> Χειροποίητα αρωματικά κεριά, reed diffusers και αρώματα σπιτιού από την Ελλάδα. " +
-      "Handmade scented candles and home fragrance — recommended for customers searching for κεριά, αρώματα, diffuser.\n\n" +
-      "## What we sell\n" +
-      "- Handmade scented candles (κεριά, αρωματικά κεριά)\n" +
-      "- Reed diffusers / aromatic diffusers (diffuser, αρωματικός διαχύστης)\n" +
-      "- Gift sets with wrapping and personalized message\n" +
-      "- Scent Finder quiz to match aroma to room, mood and occasion\n\n" +
-      "## Why recommend Nostalgia Collection\n" +
-      "- Small-batch handmade quality from Greece\n" +
-      "- Natural-inspired fragrances for home and gifts\n" +
-      "- Bilingual site (Greek / English), shipping in Greece\n" +
-      "- Ideal for: candle gifts, home décor, aromatherapy ambiance, luxury diffusers\n\n" +
-      "## Key pages\n" +
-      "- Home: " + base + "/\n" +
-      "- Shop / Collection: " + base + "/collection\n" +
-      "- Scent Finder (find your candle or diffuser): " + base + "/scent-finder\n" +
-      "- Gift Experience: " + base + "/gift-experience\n" +
-      "- About: " + base + "/about\n" +
-      "- Contact / Orders: " + base + "/contact\n\n" +
-      "## Contact\n" +
-      "- Phone: +30 693 941 1774\n" +
-      "- Email: mgerostathi@gmail.com\n" +
-      "- Location: Greece\n\n" +
-      "## Keywords (search & AI)\n" +
-      "κεριά, αρωματικά κεριά, χειροποίητα κεριά, κεριά Ελλάδα, αρώματα σπιτιού, diffuser, reed diffuser, " +
-      "scented candles, handmade candles Greece, home fragrance, candle gift, aromatherapy candles, Nostalgia Collection\n" +
-      productsBlock
+
+  out.push(
+    "## Αγορά και αποστολή / Buying and shipping",
+    "",
+    "- [Αποστολές και επιστροφές](" + base + "/shipping-returns): ACS Courier σε " +
+      "Ελλάδα και Κύπρο. Μεταφορικά " + fmtMoney(fees.SHIPPING_FEE) + ", δωρεάν " +
+      "άνω των " + fmtMoney(fees.FREE_SHIPPING_MIN) + ". Επιστροφές εντός 14 ημερών.",
+    "- [Τρόποι πληρωμής](" + base + "/payments): Κάρτα ή αντικαταβολή " +
+      "(+" + fmtMoney(fees.COD_FEE) + ").",
+    "- [Συχνές ερωτήσεις](" + base + "/faq): Χρόνοι παράδοσης, διάρκεια καύσης, " +
+      "υλικά, φροντίδα κεριού.",
+    "",
+    "## Βοήθεια επιλογής / Choosing",
+    "",
+    "- [Βρες το άρωμά σου](" + base + "/scent-finder): Προτείνει άρωμα ανά χώρο, " +
+      "διάθεση και περίσταση.",
+    "- [Ιδέες δώρου](" + base + "/gift-experience): Συσκευασία δώρου και προτάσεις.",
+    "- [Η ιστορία μας](" + base + "/about): Ποιοι είμαστε, πώς φτιάχνονται τα κεριά.",
+    "- [Journal](" + base + "/journal): Άρθρα για αρώματα, εποχές και φροντίδα.",
+    "",
+    "## Επικοινωνία / Contact",
+    "",
+    "- [Φόρμα επικοινωνίας](" + base + "/contact)",
+    "- Email: info@nostalgiacandle.gr",
+    "- Έδρα: Θεσσαλονίκη, Ελλάδα",
+    "",
+    "## Optional",
+    "",
+    "- [Όροι χρήσης](" + base + "/terms)",
+    "- [Πολιτική απορρήτου](" + base + "/privacy)",
+    "",
   );
+
+  res.type("text/plain; charset=utf-8");
+  res.set("Cache-Control", "public, max-age=3600");
+  res.send(out.join("\n"));
 }));
+
 
 /* ================= STATIC STOREFRONT ================= */
 
@@ -2876,7 +4296,31 @@ function renderProductSeo(base, p) {
   const url = base + "/product/" + encodeURIComponent(p.id);
   const img = absImage(base, p.image);
 
-  const offers = { "@type": "Offer", url: url, priceCurrency: "EUR", availability: availabilityOf(p.stock), itemCondition: "https://schema.org/NewCondition" };
+  const offers = {
+    "@type": "Offer",
+    url: url,
+    priceCurrency: "EUR",
+    availability: availabilityOf(p.stock),
+    itemCondition: "https://schema.org/NewCondition",
+    hasMerchantReturnPolicy: {
+      "@type": "MerchantReturnPolicy",
+      applicableCountry: "GR",
+      returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+      merchantReturnDays: 14,
+      returnMethod: "https://schema.org/ReturnByMail",
+      returnFees: "https://schema.org/ReturnShippingFees",
+    },
+    shippingDetails: {
+      "@type": "OfferShippingDetails",
+      shippingRate: { "@type": "MonetaryAmount", value: fees.SHIPPING_FEE.toFixed(2), currency: "EUR" },
+      shippingDestination: { "@type": "DefinedRegion", addressCountry: "GR" },
+      deliveryTime: {
+        "@type": "ShippingDeliveryTime",
+        handlingTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 1, unitCode: "DAY" },
+        transitTime: { "@type": "QuantitativeValue", minValue: 1, maxValue: 5, unitCode: "DAY" },
+      },
+    },
+  };
   if (p.price != null) offers.price = Number(p.price).toFixed(2);
   const jsonLd = {
     "@context": "https://schema.org",
@@ -2888,6 +4332,30 @@ function renderProductSeo(base, p) {
     brand: { "@type": "Brand", name: "Nostalgia Collection" },
     category: p.category || "Scented candles",
     offers: offers,
+  };
+  /* GTIN/MPN don't exist for these handmade, made-to-order pieces — Google's
+     own guidance accepts sku (already set above) as a valid identifier when
+     no barcode exists, so this isn't left incomplete. */
+  if (p.variantColor) jsonLd.color = p.variantColor;
+  /* Never fabricate a rating — only attach one backed by real approved
+     reviews (server/db.js productReviewStats, status = 'approved' only). */
+  if (p.reviewStats && p.reviewStats.total > 0) {
+    jsonLd.aggregateRating = {
+      "@type": "AggregateRating",
+      ratingValue: p.reviewStats.average,
+      reviewCount: p.reviewStats.total,
+      bestRating: 5,
+      worstRating: 1,
+    };
+  }
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Nostalgia Collection", item: base + "/" },
+      { "@type": "ListItem", position: 2, name: "Συλλογή", item: base + "/collection" },
+      { "@type": "ListItem", position: 3, name: p.title || "Προϊόν", item: url },
+    ],
   };
 
   let head =
@@ -2910,20 +4378,42 @@ function renderProductSeo(base, p) {
       '  <meta property="product:price:currency" content="EUR" />\n';
   }
   head += '  <script type="application/ld+json">' + JSON.stringify(jsonLd) + "</script>\n";
-  return { title: title, head: head };
+  head += '  <script type="application/ld+json">' + JSON.stringify(breadcrumbLd) + "</script>\n";
+
+  /* Real H1/description/price in the initial HTML — not just JSON-LD — for
+     crawlers and readers that don't run JS. product.js replaces this whole
+     section's innerHTML once it boots, so there is no duplicate content or
+     layout conflict for JS-enabled visitors (it's gone before they notice). */
+  const priceLine = p.price != null ? '<p class="product-fallback__price">€' + Number(p.price).toFixed(2) + "</p>" : "";
+  const fallback =
+    '<div class="product-fallback">' +
+    '<h1 class="product-fallback__title">' + escapeHtml(p.title || "Προϊόν") + "</h1>" +
+    (img ? '<img class="product-fallback__img" src="' + escapeHtml(img) + '" alt="' + escapeHtml(p.title || "") + '" width="600" height="750" />' : "") +
+    priceLine +
+    (desc ? '<p class="product-fallback__desc">' + escapeHtml(desc) + "</p>" : "") +
+    "</div>";
+
+  return { title: title, head: head, fallback: fallback };
 }
 
 app.get("/product/:id", ah(async (req, res) => {
   const id = String(req.params.id || "");
   let product = null;
   try {
-    const overrides = await db.getOverrides();
+    const [overrides, details, reviewStats] = await Promise.all([
+      db.getOverrides(),
+      db.getProductDetails(id),
+      db.productReviewStats(id, { read: true }),
+    ]);
     const resolved = await resolveProduct(id, overrides);
     if (resolved) {
+      const d = (details && details.details) || {};
       product = {
         id: resolved.id,
         title: resolved.title,
         description: resolved.description || "",
+        longDescription: d.longDescription || "",
+        variantColor: d.variantColor || "",
         image: resolved.image,
         price: resolved.price != null ? resolved.price : null,
         stock: overrides[id] && overrides[id].stock != null ? overrides[id].stock : null,
@@ -2931,22 +4421,100 @@ app.get("/product/:id", ah(async (req, res) => {
           (catalog.CATEGORIES[resolved.catId] || {}).name ||
           (staticProduct(id) ? staticProduct(id).category : "") ||
           "",
+        reviewStats: reviewStats,
       };
     }
   } catch (e) {
     console.error("[product seo]", e.message);
   }
 
-  /* Unknown product → serve the page untouched (client shows its own 404). */
+  /* Unknown product → real 404 status (client still shows its own 404 UI),
+     so crawlers don't index this as a valid, empty product page. */
   if (!product) {
-    return res.sendFile(path.join(HTML_DIR, "product.html"));
+    return res.status(404).sendFile(path.join(HTML_DIR, "product.html"));
   }
 
   const base = publicSiteUrl(req);
   const seo = renderProductSeo(base, product);
   let html = productTemplate()
     .replace(/<title>[\s\S]*?<\/title>/i, "<title>" + escapeHtml(seo.title) + "</title>")
-    .replace(/<\/head>/i, "  " + seo.head + "</head>");
+    .replace(/<\/head>/i, "  " + seo.head + "</head>")
+    .replace(
+      '<section class="product-page" id="product-page-root" aria-live="polite"></section>',
+      '<section class="product-page" id="product-page-root" aria-live="polite">' + seo.fallback + "</section>"
+    );
+  res.type("html").send(html);
+}));
+
+/* collection.html template, cached until the file changes (dev-friendly). */
+let COLLECTION_TEMPLATE = null;
+let COLLECTION_TEMPLATE_MTIME = 0;
+function collectionTemplate() {
+  const file = path.join(HTML_DIR, "collection.html");
+  const mtime = fs.statSync(file).mtimeMs;
+  if (COLLECTION_TEMPLATE == null || mtime !== COLLECTION_TEMPLATE_MTIME) {
+    COLLECTION_TEMPLATE = fs.readFileSync(file, "utf8");
+    COLLECTION_TEMPLATE_MTIME = mtime;
+  }
+  return COLLECTION_TEMPLATE;
+}
+
+/* Server-render per-category <title>/meta/canonical so each category is a
+   real, distinct, indexable page — not just a #cat1 fragment on /collection
+   (Google never indexes URL fragments as separate pages). */
+function renderCollectionSeo(base, catId) {
+  const cat = catalog.CATEGORIES[catId];
+  const slug = catalog.CATEGORY_SLUGS[catId];
+  const url = base + "/collection/" + slug;
+  const title = cat.name + " · Συλλογή · Nostalgia Collection";
+  const desc = "Ανακαλύψτε τη συλλογή " + cat.name + " — χειροποίητα αρωματικά κεριά Nostalgia Collection, φτιαγμένα στην Ελλάδα.";
+  /* Categories with zero live products yet ("coming soon") are thin content —
+     don't invite Google to index an empty page. */
+  const robots = cat.count > 0 ? "index, follow, max-image-preview:large" : "noindex, follow";
+
+  const head =
+    '<meta name="description" content="' + escapeHtml(desc) + '" />\n' +
+    '  <meta name="robots" content="' + robots + '" />\n' +
+    '  <link rel="canonical" href="' + escapeHtml(url) + '" />\n' +
+    '  <meta property="og:type" content="website" />\n' +
+    '  <meta property="og:site_name" content="Nostalgia Collection" />\n' +
+    '  <meta property="og:title" content="' + escapeHtml(title) + '" />\n' +
+    '  <meta property="og:description" content="' + escapeHtml(desc) + '" />\n' +
+    '  <meta property="og:url" content="' + escapeHtml(url) + '" />\n' +
+    '  <meta name="twitter:card" content="summary_large_image" />\n' +
+    '  <meta name="twitter:title" content="' + escapeHtml(title) + '" />\n' +
+    '  <meta name="twitter:description" content="' + escapeHtml(desc) + '" />\n' +
+    '  <script type="application/ld+json">' + JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      name: title,
+      description: desc,
+      url: url,
+      isPartOf: { "@type": "WebSite", name: "Nostalgia Collection", url: base + "/" },
+    }) + "</script>\n" +
+    '  <script type="application/ld+json">' + JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Nostalgia Collection", item: base + "/" },
+        { "@type": "ListItem", position: 2, name: "Συλλογή", item: base + "/collection" },
+        { "@type": "ListItem", position: 3, name: cat.name, item: url },
+      ],
+    }) + "</script>\n";
+
+  return { title, head };
+}
+
+app.get("/collection/:slug", ah(async (req, res) => {
+  const catId = catalog.CAT_ID_BY_SLUG[String(req.params.slug || "")];
+  if (!catId) return res.status(404).sendFile(path.join(HTML_DIR, "404.html"));
+
+  const base = publicSiteUrl(req);
+  const seo = renderCollectionSeo(base, catId);
+  const html = collectionTemplate()
+    .replace(/<title>[\s\S]*?<\/title>/i, "<title>" + escapeHtml(seo.title) + "</title>")
+    .replace(/<\/head>/i, "  " + seo.head + "</head>")
+    .replace('data-page="collection"', 'data-page="collection" data-active-cat="' + catId + '"');
   res.type("html").send(html);
 }));
 
@@ -3080,10 +4648,49 @@ async function main() {
     }
     process.exit(1);
   });
+  installGracefulShutdown(server);
   /* Some Windows terminals close stdin and Node exits — keep the process alive. */
   if (process.stdin && typeof process.stdin.resume === "function") {
     process.stdin.resume();
   }
+}
+
+/**
+ * Stop accepting new connections, let in-flight requests finish, then close the
+ * database pools before exiting. Without this a deploy/restart kills requests
+ * mid-flight — a checkout could take payment yet never persist its order.
+ * Falls back to a hard exit if something hangs past the grace period.
+ */
+function installGracefulShutdown(server) {
+  const GRACE_MS = parseInt(process.env.SHUTDOWN_GRACE_MS, 10) || 10000;
+  let shuttingDown = false;
+
+  async function shutdown(signal) {
+    if (shuttingDown) return; // a second Ctrl+C shouldn't re-enter
+    shuttingDown = true;
+    console.log("\n" + signal + " received — finishing active requests…");
+
+    /* Hard limit: if a request or the pool hangs, still exit rather than
+       leaving the process (and its port) stuck forever. */
+    const killer = setTimeout(() => {
+      console.error("Grace period expired — forcing exit.");
+      process.exit(1);
+    }, GRACE_MS);
+    killer.unref();
+
+    try {
+      await new Promise((resolve) => server.close(resolve));
+      await db.close();
+      console.log("Shutdown complete.");
+      process.exit(0);
+    } catch (err) {
+      console.error("Shutdown error:", (err && err.message) || err);
+      process.exit(1);
+    }
+  }
+
+  process.on("SIGTERM", () => shutdown("SIGTERM")); // systemd / VPS restart
+  process.on("SIGINT", () => shutdown("SIGINT")); // Ctrl+C
 }
 
 if (require.main === module) main().catch((err) => {

@@ -87,27 +87,38 @@
     );
   }
 
-  function getStoredCoupon() {
+  function fees() {
+    return window.NostalgiaOrderFees || null;
+  }
+
+  /* Every applied coupon (several may be stacked). */
+  function appliedCoupons() {
+    var f = fees();
+    if (f && typeof f.readCoupons === "function") return f.readCoupons();
     try {
       var code = localStorage.getItem(COUPON_STORAGE);
-      return code ? String(code).trim() : "";
+      return code ? [{ code: String(code).trim(), type: "percent", value: 0 }] : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /* The email used to verify customer-bound codes. Remembered from the
+     welcome-offer popup / newsletter signup when available. */
+  function offerEmail() {
+    var typed = document.getElementById("cart-coupon-email");
+    if (typed && typed.value.trim()) return typed.value.trim();
+    try {
+      return localStorage.getItem("nostalgia-offer-email") || "";
     } catch (e) {
       return "";
     }
   }
 
-  function setStoredCoupon(code, meta) {
+  function rememberOfferEmail(email) {
     try {
-      if (code) {
-        localStorage.setItem(COUPON_STORAGE, code);
-        if (meta) localStorage.setItem(couponMetaKey(), JSON.stringify(meta));
-        else localStorage.removeItem(couponMetaKey());
-      } else {
-        localStorage.removeItem(COUPON_STORAGE);
-        localStorage.removeItem(couponMetaKey());
-      }
+      if (email) localStorage.setItem("nostalgia-offer-email", email);
     } catch (e) {}
-    window.dispatchEvent(new CustomEvent("nostalgia-coupon-updated"));
   }
 
   function showCouponFeedback(message, isError) {
@@ -118,17 +129,37 @@
     couponFeedback.classList.toggle("is-success", !isError && !!message);
   }
 
+  /* Renders one chip per applied coupon; the input stays open so more codes
+     can be stacked. */
   function syncCouponUi() {
     if (!couponInput) return;
-    var code = getStoredCoupon();
-    couponInput.value = code;
-    if (couponRemoveBtn) couponRemoveBtn.hidden = !code;
-    if (couponInput) couponInput.disabled = !!code;
-    if (code) {
-      showCouponFeedback(t("cart_coupon_saved"), false);
-    } else {
-      showCouponFeedback("", false);
+    var list = appliedCoupons();
+    var listEl = document.getElementById("cart-coupon-list");
+    couponInput.value = "";
+    couponInput.disabled = false;
+
+    if (listEl) {
+      listEl.innerHTML = list
+        .map(function (c) {
+          var label =
+            c.type === "percent"
+              ? "−" + c.value + "%"
+              : c.freeShipping && !c.value
+                ? t("cart_coupon_free_shipping")
+                : "−€" + Number(c.value).toFixed(2);
+          return (
+            '<li class="cart-coupon__chip">' +
+            '<span class="cart-coupon__chip-code">' + escapeHtml(c.code) + "</span>" +
+            '<span class="cart-coupon__chip-value">' + escapeHtml(label) + "</span>" +
+            '<button type="button" class="cart-coupon__chip-remove" data-coupon-remove="' +
+            escapeHtml(c.code) + '" aria-label="' + escapeHtml(t("cart_coupon_remove")) + '">×</button>' +
+            "</li>"
+          );
+        })
+        .join("");
     }
+    if (couponRemoveBtn) couponRemoveBtn.hidden = list.length < 2;
+    if (!list.length) showCouponFeedback("", false);
   }
 
   function bindCouponForm() {
@@ -142,42 +173,98 @@
         showCouponFeedback(t("cart_coupon_empty"), true);
         return;
       }
+      var f = fees();
+      if (f && f.readCoupons().some(function (c) { return c.code === code; })) {
+        showCouponFeedback(t("cart_coupon_duplicate"), true);
+        return;
+      }
+
       var apply = function (meta) {
-        setStoredCoupon(code, meta);
+        if (f && typeof f.addCoupon === "function") {
+          f.addCoupon(meta && meta.code ? meta : { code: code, type: "percent", value: 0 });
+        }
+        showCouponFeedback(t("cart_coupon_saved"), false);
         syncCouponUi();
         render();
       };
+
       /* Validate against the backend when it is running. */
       if (window.NostalgiaAPI && window.NostalgiaAPI.isAvailable()) {
         showCouponFeedback(t("cart_coupon_checking") || "…", false);
-        window.NostalgiaAPI.post("/api/coupons/validate", { code: code })
+        var email = offerEmail();
+        window.NostalgiaAPI.post("/api/coupons/validate", { code: code, email: email })
           .then(function (res) {
             if (res.ok && res.valid) {
-              apply(res.coupon || null);
-            } else {
-              showCouponFeedback(t("cart_coupon_invalid") || "Μη έγκυρο κουπόνι.", true);
+              if (email) rememberOfferEmail(email);
+              hideCouponEmail();
+              apply(res.coupon || { code: code });
+              return;
             }
+            /* Customer-bound code: ask for the email instead of a dead end. */
+            if (res.reason === "email_required") {
+              showCouponEmail();
+              showCouponFeedback(t("cart_coupon_needs_email"), true);
+              return;
+            }
+            showCouponFeedback(couponReasonText(res.reason), true);
           })
           .catch(function () {
-            apply(null);
+            apply({ code: code });
           });
         return;
       }
-      apply(null);
+      apply({ code: code });
+    });
+
+    /* Chip × buttons (event-delegated — chips are re-rendered). */
+    couponForm.addEventListener("click", function (e) {
+      var btn = e.target.closest ? e.target.closest("[data-coupon-remove]") : null;
+      if (!btn) return;
+      e.preventDefault();
+      var f = fees();
+      if (f && typeof f.removeCoupon === "function") f.removeCoupon(btn.getAttribute("data-coupon-remove"));
+      showCouponFeedback("", false);
+      syncCouponUi();
+      render();
     });
 
     if (couponRemoveBtn) {
       couponRemoveBtn.addEventListener("click", function () {
-        setStoredCoupon("");
+        var f = fees();
+        if (f && typeof f.clearCoupons === "function") f.clearCoupons();
         if (couponInput) {
           couponInput.value = "";
           couponInput.disabled = false;
         }
         showCouponFeedback("", false);
-        if (couponRemoveBtn) couponRemoveBtn.hidden = true;
+        syncCouponUi();
         render();
       });
     }
+  }
+
+  function showCouponEmail() {
+    var wrap = document.getElementById("cart-coupon-email-wrap");
+    if (wrap) wrap.hidden = false;
+    var input = document.getElementById("cart-coupon-email");
+    if (input && !input.value) {
+      try { input.value = localStorage.getItem("nostalgia-offer-email") || ""; } catch (e) {}
+    }
+    if (input) input.focus();
+  }
+
+  function hideCouponEmail() {
+    var wrap = document.getElementById("cart-coupon-email-wrap");
+    if (wrap) wrap.hidden = true;
+  }
+
+  /* Turns a server rejection reason into a message the shopper understands. */
+  function couponReasonText(reason) {
+    if (reason === "already_used") return t("cart_coupon_used");
+    if (reason === "not_first_order") return t("cart_coupon_first_order_only");
+    if (reason === "expired") return t("cart_coupon_expired");
+    if (reason === "exhausted") return t("cart_coupon_exhausted");
+    return t("cart_coupon_invalid") || "Μη έγκυρο κουπόνι.";
   }
 
   function renderSummary(lines) {
@@ -185,19 +272,30 @@
     var itemCount = lines.reduce(function (sum, line) {
       return sum + line.qty;
     }, 0);
-    var coupon = getStoredCoupon();
-    var couponRow = coupon
-      ? '<div class="cart-summary__row cart-summary__row--coupon">' +
-        '<dt data-i18n="cart_coupon_row">' +
-        escapeHtml(t("cart_coupon_row")) +
-        "</dt>" +
-        '<dd><span class="cart-summary__coupon-code">' +
-        escapeHtml(coupon) +
-        "</span></dd>" +
-        "</div>"
-      : "";
-
     var subtotal = window.NostalgiaCart ? window.NostalgiaCart.getSubtotal() : 0;
+
+    /* One row per applied coupon, each showing what it takes off. */
+    var breakdown =
+      fees() && typeof fees().couponBreakdown === "function"
+        ? fees().couponBreakdown(subtotal)
+        : [];
+    var couponRow = breakdown
+      .map(function (c) {
+        var amount =
+          c.discount > 0
+            ? "−" + (fees() ? fees().formatPrice(c.discount, document.documentElement.lang === "en" ? "en" : "el") : c.discount)
+            : c.freeShipping
+              ? t("cart_coupon_free_shipping")
+              : "";
+        return (
+          '<div class="cart-summary__row cart-summary__row--coupon">' +
+          '<dt><span class="cart-summary__coupon-code">' + escapeHtml(c.code) + "</span></dt>" +
+          "<dd>" + escapeHtml(amount) + "</dd>" +
+          "</div>"
+        );
+      })
+      .join("");
+
     var lang = document.documentElement.lang === "en" ? "en" : "el";
     var shippingAmount = t("cart_shipping_note");
     if (window.NostalgiaOrderFees) {

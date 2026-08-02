@@ -1,6 +1,20 @@
 (function () {
   var CAT_IDS = ["cat1", "cat2", "cat3", "cat4", "cat5", "cat6", "cat7", "cat8", "cat9"];
 
+  /* Mirrors server/catalog.js CATEGORY_SLUGS — used to write the crawlable
+     /collection/:slug URL instead of the old #cat1 fragment. */
+  var CAT_SLUGS = {
+    cat1: "art-class-murano-candle",
+    cat2: "driftwood-beeswax-flame",
+    cat3: "liquid-eternal",
+    cat4: "vintage-unique-objects",
+    cat5: "ni-terra",
+    cat6: "perfume",
+    cat7: "diffusers",
+    cat8: "gift-sets",
+    cat9: "mirror-candles",
+  };
+
   function muranoImg(n) {
     return "product%20photo/art%20class%20murano%20candle/product%20" + n + ".png";
   }
@@ -452,8 +466,10 @@
       }, 0);
     }
     try {
+      var slug = CAT_SLUGS[catId];
+      var newPath = slug ? "/collection/" + slug : location.pathname;
       if (history.replaceState) {
-        history.replaceState(null, "", location.pathname + location.search + "#" + catId);
+        history.replaceState(null, "", newPath + location.search);
       } else {
         location.hash = catId;
       }
@@ -481,7 +497,7 @@
     if (!opts.keepHash) {
       try {
         if (history.replaceState) {
-          history.replaceState(null, "", location.pathname + (wasSearch ? "" : location.search));
+          history.replaceState(null, "", "/collection" + (wasSearch ? "" : location.search));
         } else {
           location.hash = "";
         }
@@ -532,9 +548,13 @@
     filtersClearEl = $("#collection-filters-clear");
 
     getCategoryButtons().forEach(function (btn) {
-      btn.addEventListener("click", function () {
+      btn.addEventListener("click", function (e) {
         var cat = btn.getAttribute("data-category");
         if (!cat) return;
+        /* Now a real <a href="/collection/:slug"> (crawlable) — intercept
+           for the smooth client-side transition; the href still works as a
+           plain-navigation fallback if JS fails. */
+        e.preventDefault();
         showProducts(cat);
       });
     });
@@ -663,6 +683,15 @@
       var q = (params.get("search") || "").trim();
       if (q) {
         showSearchResults(q);
+        return;
+      }
+      /* /collection/:slug — server already resolved the category into
+         data-active-cat on <body>. Falls back to the old #cat1 hash for
+         bookmarked links (showProducts() will rewrite the URL to the new
+         clean path automatically). */
+      var serverCat = document.body.getAttribute("data-active-cat");
+      if (serverCat && CAT_IDS.indexOf(serverCat) !== -1) {
+        showProducts(serverCat);
         return;
       }
       onHash();

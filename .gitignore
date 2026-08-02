@@ -47,3 +47,25 @@ Thumbs.db
 # React admin build + deps
 admin/node_modules/
 admin/dist/
+
+.vercel
+.env*
+
+# Generated ACS labels — real sender address, phone and voucher barcodes.
+acs-test/
+acs-test-pdf/
+*voucher*.pdf
+*lista-paralavis*.pdf
+
+# Internal notes and supplier paperwork. THIS REPO IS PUBLIC on GitHub, so
+# anything here would be world-readable — these hold the ΑΦΜ, the ACS billing
+# code and username, and a full description of our security posture.
+deploy/website/
+new/
+MARKETING-SETUP.md
+WORLDLINE-SETUP.md
+ACS-SETUP.md
+
+# The rest of deploy/ (nginx conf, systemd unit, crontab, cron scripts) stays
+# tracked on purpose: it is infrastructure-as-code the server needs on clone,
+# and it holds no secrets — every script reads them from .env at runtime.

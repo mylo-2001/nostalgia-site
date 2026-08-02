@@ -28,6 +28,25 @@ const CFG = {
   database: process.env.PGDATABASE || "nostalgia",
 };
 
+/* Pool sizing. Every concurrent request borrows a connection and returns it
+   when its query finishes, so `max` caps how many queries run against
+   PostgreSQL at once — the rest queue for a few ms. It must stay BELOW the
+   server's own connection limit:
+     Supabase free tier → ~15-20 total, so keep the default 10.
+     Own Postgres on a VPS → default limit 100, so 20-25 is comfortable.
+   Override with DB_POOL_MAX in .env when we move off Supabase. */
+function poolTuning() {
+  const max = parseInt(process.env.DB_POOL_MAX, 10);
+  return {
+    max: Number.isFinite(max) && max > 0 ? max : 10,
+    /* Fail fast instead of hanging forever when the pool is saturated —
+       a clear 500 beats a request that never answers. */
+    connectionTimeoutMillis: 10000,
+    /* Release idle connections so we don't hold slots we aren't using. */
+    idleTimeoutMillis: 30000,
+  };
+}
+
 let pool = null;
 let readPool = null;
 
@@ -62,8 +81,18 @@ function pagination(total, page, limit) {
 
 /* ---------- bootstrap ---------- */
 
+/** Prefer app DATABASE_URL; accept Vercel/Supabase integration aliases. */
+function resolveDatabaseUrl() {
+  return String(
+    process.env.DATABASE_URL ||
+      process.env.POSTGRES_PRISMA_URL ||
+      process.env.POSTGRES_URL ||
+      ""
+  ).trim();
+}
+
 async function ensureDatabase() {
-  if (process.env.DATABASE_URL) return; // assume it exists
+  if (resolveDatabaseUrl()) return; // remote URL — assume the DB exists
   const admin = new Client({
     host: CFG.host,
     port: CFG.port,
@@ -359,12 +388,13 @@ async function importLegacyJson() {
 
 async function init() {
   await ensureDatabase();
-  const poolOpts = process.env.DATABASE_URL
-    ? { connectionString: process.env.DATABASE_URL }
-    : CFG;
+  const databaseUrl = resolveDatabaseUrl();
+  const poolOpts = databaseUrl
+    ? { connectionString: databaseUrl, ...poolTuning() }
+    : { ...CFG, ...poolTuning() };
   if (
-    process.env.DATABASE_URL &&
-    !/localhost|127\.0\.0\.1/i.test(process.env.DATABASE_URL)
+    databaseUrl &&
+    !/localhost|127\.0\.0\.1/i.test(databaseUrl)
   ) {
     const sslFlag = String(process.env.PG_SSL_REJECT_UNAUTHORIZED || "").trim().toLowerCase();
     let rejectUnauthorized = process.env.NODE_ENV === "production";
@@ -379,7 +409,10 @@ async function init() {
   }
   pool = new Pool(poolOpts);
   if (process.env.READ_DATABASE_URL) {
-    const readPoolOpts = { connectionString: process.env.READ_DATABASE_URL };
+    const readPoolOpts = {
+      connectionString: process.env.READ_DATABASE_URL,
+      ...poolTuning(),
+    };
     if (!/localhost|127\.0\.0\.1/i.test(process.env.READ_DATABASE_URL)) {
       const sslFlag = String(process.env.PG_SSL_REJECT_UNAUTHORIZED || "").trim().toLowerCase();
       let rejectUnauthorized = process.env.NODE_ENV === "production";
@@ -431,9 +464,24 @@ function rowToUser(r) {
     newsletterOptin: r.newsletter_optin,
     address: r.address || null,
     passHash: r.pass_hash,
+    active: r.active !== false,
+    orderCount: r.order_count != null ? Number(r.order_count) : 0,
+    lastOrderAt: r.last_order_at || null,
     createdAt: r.created_at,
   };
 }
+
+/* Every order is matched to a customer by email — guest checkouts store it in
+   customer->>'email', account checkouts also set user_email. Shared by the
+   users list (bulk) and the single-customer detail lookup below. */
+const ORDER_STATS_BY_EMAIL_SQL = `
+  SELECT lower(btrim(coalesce(customer->>'email', user_email, ''))) AS email,
+         COUNT(*)::int AS order_count,
+         MAX(created_at) AS last_order_at
+    FROM orders
+   WHERE lower(btrim(coalesce(customer->>'email', user_email, ''))) <> ''
+   GROUP BY 1
+`;
 
 async function getUser(email) {
   const r = await q("SELECT * FROM users WHERE email = $1", [email]);
@@ -456,14 +504,22 @@ async function listUsers() {
 async function listUsersPage(opts) {
   const p = pageOpts(opts, 50);
   const total = await q("SELECT COUNT(*)::int AS total FROM users");
-  const r = await q("SELECT * FROM users ORDER BY created_at DESC LIMIT $1 OFFSET $2", [
-    p.limit,
-    p.offset,
-  ]);
+  const r = await q(
+    `SELECT u.*, o.order_count, o.last_order_at
+       FROM (SELECT * FROM users ORDER BY created_at DESC LIMIT $1 OFFSET $2) u
+       LEFT JOIN (${ORDER_STATS_BY_EMAIL_SQL}) o ON o.email = lower(btrim(u.email))
+      ORDER BY u.created_at DESC`,
+    [p.limit, p.offset]
+  );
   return {
     users: r.rows.map(rowToUser),
     pagination: pagination(total.rows[0].total, p.page, p.limit),
   };
+}
+
+async function setUserActive(email, active) {
+  const r = await q("UPDATE users SET active = $2 WHERE email = $1", [email, !!active]);
+  return r.rowCount > 0;
 }
 
 /* Partial update of an account's own profile. Only whitelisted fields. */
@@ -535,23 +591,115 @@ async function deleteAuthCode(email) {
 
 /* ---------- newsletter ---------- */
 
+/* Records (or RE-records) consent. A returning subscriber — someone who had
+   previously unsubscribed and opts in again — must show up as fresh consent
+   (status back to 'subscribed', consented_at bumped to now), not be silently
+   ignored. Keeps any already-known name if this submission didn't supply one. */
 async function addSubscriber(s) {
   await q(
-    `INSERT INTO newsletter (email, firstname, lastname, source)
-     VALUES ($1,$2,$3,$4) ON CONFLICT (email) DO NOTHING`,
+    `INSERT INTO newsletter (email, firstname, lastname, source, status, consented_at, unsubscribed_at)
+     VALUES ($1,$2,$3,$4,'subscribed',now(),NULL)
+     ON CONFLICT (email) DO UPDATE SET
+       firstname = CASE WHEN EXCLUDED.firstname <> '' THEN EXCLUDED.firstname ELSE newsletter.firstname END,
+       lastname  = CASE WHEN EXCLUDED.lastname  <> '' THEN EXCLUDED.lastname  ELSE newsletter.lastname  END,
+       source = EXCLUDED.source,
+       status = 'subscribed',
+       consented_at = now(),
+       unsubscribed_at = NULL`,
     [s.email, s.firstname, s.lastname, s.source]
   );
 }
 
-async function listSubscribers() {
-  const r = await q("SELECT * FROM newsletter ORDER BY created_at DESC");
-  return r.rows.map((x) => ({
+function rowToSubscriber(x) {
+  return {
     email: x.email,
     firstname: x.firstname,
     lastname: x.lastname,
     source: x.source,
-    at: x.created_at,
-  }));
+    status: x.status,
+    consentedAt: x.consented_at,
+    unsubscribedAt: x.unsubscribed_at,
+    consentPolicyVersion: x.consent_policy_version,
+    createdAt: x.created_at,
+  };
+}
+
+async function listSubscribers() {
+  const r = await q("SELECT * FROM newsletter ORDER BY created_at DESC");
+  return r.rows.map(rowToSubscriber);
+}
+
+/* ---------- mass-mail audiences ----------
+   Two audiences on two different legal bases — see the comment at the top of
+   migrations/033_announcements.up.sql. Both queries are the ONLY sanctioned
+   way to build a bulk recipient list; anything else risks mailing people who
+   opted out. */
+
+/** Consented marketing audience: newsletter rows still in 'subscribed'. */
+async function listMarketingRecipients() {
+  const r = await q(
+    `SELECT email, firstname FROM newsletter
+      WHERE status = 'subscribed' AND email IS NOT NULL AND btrim(email) <> ''
+      ORDER BY created_at DESC`
+  );
+  return r.rows.map((x) => ({ email: x.email, firstname: x.firstname || "" }));
+}
+
+/** Service-notice audience: active account holders. */
+async function listServiceRecipients() {
+  const r = await q(
+    `SELECT email, firstname FROM users
+      WHERE active = TRUE AND email IS NOT NULL AND btrim(email) <> ''
+      ORDER BY created_at DESC`
+  );
+  return r.rows.map((x) => ({ email: x.email, firstname: x.firstname || "" }));
+}
+
+function rowToAnnouncement(r) {
+  return {
+    id: r.id,
+    kind: r.kind,
+    subject: r.subject,
+    body: r.body,
+    segments: r.segments || [],
+    status: r.status,
+    recipientCount: r.recipient_count,
+    sentCount: r.sent_count,
+    failedCount: r.failed_count,
+    failures: r.failures || [],
+    createdBy: r.created_by,
+    createdAt: r.created_at,
+    sentAt: r.sent_at,
+  };
+}
+
+/* Written BEFORE the first message goes out, so an interrupted send still
+   leaves a record of what was attempted. */
+async function createAnnouncement(a) {
+  const r = await q(
+    `INSERT INTO announcements (id, kind, subject, body, segments, status, recipient_count, created_by)
+     VALUES ($1,$2,$3,$4,$5,'sending',$6,$7) RETURNING *`,
+    [a.id, a.kind, a.subject, a.body, JSON.stringify(a.segments || []), a.recipientCount || 0, a.createdBy || null]
+  );
+  return rowToAnnouncement(r.rows[0]);
+}
+
+async function finishAnnouncement(id, res) {
+  const r = await q(
+    `UPDATE announcements
+        SET status = $2, sent_count = $3, failed_count = $4, failures = $5, sent_at = now()
+      WHERE id = $1 RETURNING *`,
+    [id, res.status, res.sent || 0, res.failed || 0, JSON.stringify((res.failures || []).slice(0, 20))]
+  );
+  return r.rows[0] ? rowToAnnouncement(r.rows[0]) : null;
+}
+
+async function listAnnouncements(limit) {
+  const r = await q(
+    "SELECT * FROM announcements ORDER BY created_at DESC LIMIT $1",
+    [Math.min(Math.max(parseInt(limit, 10) || 25, 1), 100)]
+  );
+  return r.rows.map(rowToAnnouncement);
 }
 
 async function listSubscribersPage(opts) {
@@ -562,17 +710,24 @@ async function listSubscribersPage(opts) {
     p.offset,
   ]);
   return {
-    subscribers: r.rows.map((x) => ({
-      email: x.email,
-      firstname: x.firstname,
-      lastname: x.lastname,
-      source: x.source,
-      at: x.created_at,
-    })),
+    subscribers: r.rows.map(rowToSubscriber),
     pagination: pagination(total.rows[0].total, p.page, p.limit),
   };
 }
 
+/* Soft opt-out — keeps the row (and its original consent history) instead of
+   deleting it, so a stray re-signup can't happen without fresh consent and
+   the opt-in/opt-out trail stays intact. */
+async function unsubscribeSubscriber(email) {
+  const r = await q(
+    "UPDATE newsletter SET status = 'unsubscribed', unsubscribed_at = now() WHERE email = $1 AND status = 'subscribed'",
+    [email]
+  );
+  return r.rowCount > 0;
+}
+
+/* True hard delete — reserved for GDPR erasure (deleteUserAccount), never a
+   plain admin "remove from newsletter" action (that's unsubscribeSubscriber). */
 async function deleteSubscriber(email) {
   const r = await q("DELETE FROM newsletter WHERE email = $1", [email]);
   return r.rowCount > 0;
@@ -957,6 +1112,9 @@ function rowToCoupon(r) {
     uses: r.uses,
     maxUses: r.max_uses == null ? null : r.max_uses,
     freeShipping: !!r.free_shipping,
+    firstOrderOnly: !!r.first_order_only,
+    oncePerCustomer: !!r.once_per_customer,
+    autoIssued: !!r.auto_issued,
     createdAt: r.created_at,
   };
 }
@@ -973,8 +1131,13 @@ async function getCoupon(code) {
 
 async function createCoupon(c) {
   await q(
-    "INSERT INTO coupons (code, type, value, expires_at, name, max_uses, free_shipping) VALUES ($1,$2,$3,$4,$5,$6,$7)",
-    [c.code, c.type, c.value, c.expiresAt, c.name || "", c.maxUses ?? null, !!c.freeShipping]
+    `INSERT INTO coupons
+       (code, type, value, expires_at, name, max_uses, free_shipping, once_per_customer, first_order_only)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+    [
+      c.code, c.type, c.value, c.expiresAt, c.name || "", c.maxUses ?? null,
+      !!c.freeShipping, !!c.oncePerCustomer, !!c.firstOrderOnly,
+    ]
   );
 }
 
@@ -1002,6 +1165,265 @@ async function incrementCouponUse(code) {
   await q("UPDATE coupons SET uses = uses + 1 WHERE code = $1", [code]);
 }
 
+/* ---------- coupon redemptions (welcome offer rules) ---------- */
+
+/* Has this email ever placed an order? Drives "first order only" coupons.
+   Matches both guest orders (customer->>'email') and account orders. */
+async function hasPreviousOrder(email) {
+  const e = String(email || "").trim().toLowerCase();
+  if (!e) return false;
+  const r = await q(
+    `SELECT 1 FROM orders
+      WHERE lower(btrim(coalesce(customer->>'email', ''))) = $1
+         OR lower(btrim(coalesce(user_email, ''))) = $1
+      LIMIT 1`,
+    [e]
+  );
+  return r.rowCount > 0;
+}
+
+async function hasRedeemedCoupon(code, email) {
+  const e = String(email || "").trim().toLowerCase();
+  if (!e || !code) return false;
+  const r = await q(
+    "SELECT 1 FROM welcome_coupon_redemptions WHERE code = $1 AND lower(btrim(email)) = $2 LIMIT 1",
+    [code, e]
+  );
+  return r.rowCount > 0;
+}
+
+/* Records a redemption. Returns false when the unique index rejects a repeat,
+   which is the authoritative "already used" answer under concurrency. */
+async function recordCouponRedemption({ code, email, orderId, discount }) {
+  const e = String(email || "").trim().toLowerCase();
+  if (!e || !code) return false;
+  const r = await q(
+    `INSERT INTO welcome_coupon_redemptions (code, email, order_id, discount)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (code, lower(btrim(email))) DO NOTHING`,
+    [code, e, orderId || null, discount || 0]
+  );
+  return r.rowCount > 0;
+}
+
+/* ---------- promotions engine ---------- */
+
+function rowToPromotion(r) {
+  return {
+    /* BIGSERIAL comes back from pg as a string; promotion counts will never
+       approach Number.MAX_SAFE_INTEGER, and callers (incl. tie-break sorting
+       in promotions.js) need a real number. */
+    id: Number(r.id),
+    name: r.name,
+    code: r.code || "",
+    discountType: r.discount_type,
+    discountValue: parseFloat(r.discount_value),
+    maxDiscountPerProduct: r.max_discount_per_product == null ? null : parseFloat(r.max_discount_per_product),
+    status: r.status,
+    startsAt: r.starts_at,
+    endsAt: r.ends_at,
+    timezone: r.timezone,
+    priority: r.priority,
+    createdBy: r.created_by,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+}
+
+async function listPromotionTargets(promotionId) {
+  const r = await q(
+    "SELECT target_type, target_id FROM promotion_targets WHERE promotion_id = $1",
+    [promotionId]
+  );
+  return r.rows.map((t) => ({ type: t.target_type, id: t.target_id }));
+}
+
+async function listPromotionExclusions(promotionId) {
+  const r = await q(
+    "SELECT exclusion_type, exclusion_id FROM promotion_exclusions WHERE promotion_id = $1",
+    [promotionId]
+  );
+  return r.rows.map((e) => ({ type: e.exclusion_type, id: e.exclusion_id }));
+}
+
+async function listPromotions() {
+  const r = await q("SELECT * FROM promotions ORDER BY created_at DESC");
+  const promos = r.rows.map(rowToPromotion);
+  if (!promos.length) return [];
+  const ids = promos.map((p) => p.id);
+  const [targetRows, exclusionRows] = await Promise.all([
+    q("SELECT promotion_id, target_type, target_id FROM promotion_targets WHERE promotion_id = ANY($1)", [ids]),
+    q("SELECT promotion_id, exclusion_type, exclusion_id FROM promotion_exclusions WHERE promotion_id = ANY($1)", [ids]),
+  ]);
+  const targetsBy = {};
+  for (const t of targetRows.rows) {
+    (targetsBy[t.promotion_id] = targetsBy[t.promotion_id] || []).push({ type: t.target_type, id: t.target_id });
+  }
+  const exclusionsBy = {};
+  for (const e of exclusionRows.rows) {
+    (exclusionsBy[e.promotion_id] = exclusionsBy[e.promotion_id] || []).push({ type: e.exclusion_type, id: e.exclusion_id });
+  }
+  return promos.map((p) => ({
+    ...p,
+    targets: targetsBy[p.id] || [],
+    exclusions: exclusionsBy[p.id] || [],
+  }));
+}
+
+/* Candidates that could POSSIBLY be live right now (draft/paused/cancelled/
+   expired can never apply) — effectiveStatus() in server/promotions.js does
+   the final scheduled/active/expired-by-date resolution. Used for pricing on
+   every product read, so keep it cheap; callers should cache briefly. */
+async function listCandidatePromotions() {
+  const r = await q("SELECT * FROM promotions WHERE status IN ('scheduled', 'active')");
+  const promos = r.rows.map(rowToPromotion);
+  if (!promos.length) return [];
+  const ids = promos.map((p) => p.id);
+  const [targetRows, exclusionRows] = await Promise.all([
+    q("SELECT promotion_id, target_type, target_id FROM promotion_targets WHERE promotion_id = ANY($1)", [ids]),
+    q("SELECT promotion_id, exclusion_type, exclusion_id FROM promotion_exclusions WHERE promotion_id = ANY($1)", [ids]),
+  ]);
+  const targetsBy = {};
+  for (const t of targetRows.rows) {
+    (targetsBy[t.promotion_id] = targetsBy[t.promotion_id] || []).push({ type: t.target_type, id: t.target_id });
+  }
+  const exclusionsBy = {};
+  for (const e of exclusionRows.rows) {
+    (exclusionsBy[e.promotion_id] = exclusionsBy[e.promotion_id] || []).push({ type: e.exclusion_type, id: e.exclusion_id });
+  }
+  return promos.map((p) => ({
+    ...p,
+    targets: targetsBy[p.id] || [],
+    exclusions: exclusionsBy[p.id] || [],
+  }));
+}
+
+async function getPromotion(id) {
+  const r = await q("SELECT * FROM promotions WHERE id = $1", [id]);
+  if (!r.rowCount) return null;
+  const [targets, exclusions] = await Promise.all([
+    listPromotionTargets(id),
+    listPromotionExclusions(id),
+  ]);
+  return { ...rowToPromotion(r.rows[0]), targets, exclusions };
+}
+
+/* Creates a promotion with its targets/exclusions in one transaction. */
+async function createPromotion(p) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const ins = await client.query(
+      `INSERT INTO promotions
+         (name, code, discount_type, discount_value, max_discount_per_product,
+          status, starts_at, ends_at, timezone, priority, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+       RETURNING id`,
+      [
+        p.name, p.code || null, p.discountType, p.discountValue,
+        p.maxDiscountPerProduct ?? null, p.status || "draft",
+        p.startsAt || null, p.endsAt || null, p.timezone || "Europe/Athens",
+        p.priority ?? 100, p.createdBy || null,
+      ]
+    );
+    const id = ins.rows[0].id;
+    for (const t of p.targets || []) {
+      await client.query(
+        "INSERT INTO promotion_targets (promotion_id, target_type, target_id) VALUES ($1,$2,$3)",
+        [id, t.type, t.id ?? null]
+      );
+    }
+    for (const e of p.exclusions || []) {
+      await client.query(
+        "INSERT INTO promotion_exclusions (promotion_id, exclusion_type, exclusion_id) VALUES ($1,$2,$3)",
+        [id, e.type, e.id ?? null]
+      );
+    }
+    await client.query("COMMIT");
+    return id;
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+/* Partial update of scalar promotion fields (targets/exclusions are replaced
+   separately via replacePromotionTargeting, since they're not 1:1 columns). */
+async function updatePromotion(id, fields) {
+  const colMap = {
+    name: "name", code: "code", discountType: "discount_type", discountValue: "discount_value",
+    maxDiscountPerProduct: "max_discount_per_product", status: "status", startsAt: "starts_at",
+    endsAt: "ends_at", timezone: "timezone", priority: "priority",
+  };
+  const sets = [];
+  const vals = [id];
+  let i = 2;
+  for (const [key, col] of Object.entries(colMap)) {
+    if (Object.prototype.hasOwnProperty.call(fields, key)) {
+      sets.push(col + " = $" + i++);
+      vals.push(fields[key]);
+    }
+  }
+  if (!sets.length) return true;
+  sets.push("updated_at = now()");
+  const r = await q("UPDATE promotions SET " + sets.join(", ") + " WHERE id = $1", vals);
+  return r.rowCount > 0;
+}
+
+/* Replaces a promotion's targets and/or exclusions wholesale (delete +
+   re-insert), in one transaction. Pass `null` for a list to leave it as-is. */
+async function replacePromotionTargeting(id, targets, exclusions) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    if (targets != null) {
+      await client.query("DELETE FROM promotion_targets WHERE promotion_id = $1", [id]);
+      for (const t of targets) {
+        await client.query(
+          "INSERT INTO promotion_targets (promotion_id, target_type, target_id) VALUES ($1,$2,$3)",
+          [id, t.type, t.id ?? null]
+        );
+      }
+    }
+    if (exclusions != null) {
+      await client.query("DELETE FROM promotion_exclusions WHERE promotion_id = $1", [id]);
+      for (const e of exclusions) {
+        await client.query(
+          "INSERT INTO promotion_exclusions (promotion_id, exclusion_type, exclusion_id) VALUES ($1,$2,$3)",
+          [id, e.type, e.id ?? null]
+        );
+      }
+    }
+    await client.query("COMMIT");
+    return true;
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+/* Hard delete — only ever offered to the admin UI for `draft` promotions
+   (anything that went live is cancelled instead, never deleted, to preserve
+   history). Enforced by the caller, not here. */
+async function deletePromotion(id) {
+  const r = await q("DELETE FROM promotions WHERE id = $1", [id]);
+  return r.rowCount > 0;
+}
+
+async function listPromotionAuditLog(promotionId) {
+  const r = await q(
+    `SELECT id, type, actor, meta, created_at FROM audit_log
+      WHERE type LIKE 'promotion.%' AND meta->>'promotionId' = $1
+      ORDER BY created_at DESC`,
+    [String(promotionId)]
+  );
+  return r.rows;
+}
+
 /* ---------- reviews ---------- */
 
 function rowToReview(r) {
@@ -1013,17 +1435,142 @@ function rowToReview(r) {
     title: r.title || "",
     text: r.text,
     userEmail: r.user_email,
+    orderId: r.order_id || null,
+    orderItemId: r.order_item_id || null,
+    isVerifiedPurchase: !!r.is_verified_purchase,
     status: r.status,
+    moderationReason: r.moderation_reason || null,
+    moderatedBy: r.moderated_by || null,
+    moderatedAt: r.moderated_at || null,
+    helpfulCount: r.helpful_count || 0,
     createdAt: r.created_at,
+    updatedAt: r.updated_at,
+    reply: r.reply_body
+      ? { body: r.reply_body, createdAt: r.reply_created_at, updatedAt: r.reply_updated_at }
+      : null,
   };
 }
 
+const REVIEW_WITH_REPLY_SELECT = `
+  SELECT r.*, rr.body AS reply_body, rr.created_at AS reply_created_at, rr.updated_at AS reply_updated_at
+    FROM reviews r
+    LEFT JOIN review_replies rr ON rr.review_id = r.id
+`;
+
+/** A duplicate-review conflict — the unique index on order_item_id is the
+   real guard (race-safe); this error class lets callers give a clean 409. */
+class DuplicateReviewError extends Error {
+  constructor() {
+    super("duplicate_review");
+    this.code = "duplicate_review";
+  }
+}
+
 async function createReview(rev) {
-  await q(
-    `INSERT INTO reviews (id, product_id, name, rating, title, text, user_email, status)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,'pending')`,
-    [rev.id, rev.productId, rev.name, rev.rating, rev.title || "", rev.text, rev.userEmail]
+  try {
+    await q(
+      `INSERT INTO reviews
+         (id, product_id, name, rating, title, text, user_email, order_id, order_item_id, is_verified_purchase, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'pending')`,
+      [
+        rev.id, rev.productId, rev.name, rev.rating, rev.title || "", rev.text, rev.userEmail,
+        rev.orderId || null, rev.orderItemId || null, !!rev.isVerifiedPurchase,
+      ]
+    );
+  } catch (e) {
+    if (e.code === "23505") throw new DuplicateReviewError();
+    throw e;
+  }
+}
+
+/* Has this specific purchased line item already been reviewed? The unique
+   index enforces this atomically at INSERT time; this is only used to give
+   the shopper an earlier, friendlier "already reviewed" message. */
+async function hasReviewedOrderItem(orderItemId) {
+  if (!orderItemId) return false;
+  const r = await q("SELECT 1 FROM reviews WHERE order_item_id = $1 LIMIT 1", [orderItemId]);
+  return r.rowCount > 0;
+}
+
+/* Verified-purchase lookup. Two entry points:
+     - accessToken: the same guest order-tracking token already emailed to
+       guests (server.js resolveOrderByAccessToken) — no new email flow needed.
+     - email: a logged-in shopper's own delivered orders.
+   Returns { orderId, orderItemId } when the product was actually delivered
+   in that order, else null (review can still be submitted, just unverified). */
+async function findReviewableOrderItem({ email, accessToken, productId }) {
+  let order = null;
+  if (accessToken) {
+    const r = await q(
+      "SELECT id, items, shipping_status FROM orders WHERE access_token = $1",
+      [accessToken]
+    );
+    order = r.rows[0] || null;
+  } else if (email) {
+    const e = String(email).trim().toLowerCase();
+    const r = await q(
+      `SELECT id, items, shipping_status FROM orders
+        WHERE shipping_status = 'delivered'
+          AND (lower(btrim(coalesce(customer->>'email',''))) = $1 OR lower(btrim(coalesce(user_email,''))) = $1)
+          AND items @> $2::jsonb
+        ORDER BY created_at DESC LIMIT 1`,
+      [e, JSON.stringify([{ id: productId }])]
+    );
+    order = r.rows[0] || null;
+  }
+  if (!order || order.shipping_status !== "delivered") return null;
+  const items = Array.isArray(order.items) ? order.items : [];
+  if (!items.some((it) => it.id === productId)) return null;
+  return { orderId: order.id, orderItemId: order.id + ":" + productId };
+}
+
+/** Paginated, filterable approved reviews for one product — the storefront
+   product page. Includes the store's reply (if any) per review. */
+async function productReviews(productId, opts) {
+  opts = opts || {};
+  const query = opts.read ? qRead : q;
+  const page = Math.max(1, parseInt(opts.page, 10) || 1);
+  const limit = Math.max(1, Math.min(200, parseInt(opts.limit, 10) || 5));
+  const offset = (page - 1) * limit;
+  const verifiedOnly = !!opts.verifiedOnly;
+  const sort =
+    opts.sort === "rating_high" ? "r.rating DESC, r.created_at DESC" :
+    opts.sort === "rating_low" ? "r.rating ASC, r.created_at DESC" :
+    opts.sort === "helpful" ? "r.helpful_count DESC, r.created_at DESC" :
+    "r.created_at DESC";
+
+  const where = "WHERE r.product_id = $1 AND r.status = 'approved'" + (verifiedOnly ? " AND r.is_verified_purchase" : "");
+  const total = await query(`SELECT COUNT(*)::int AS n FROM reviews r ${where}`, [productId]);
+  const r = await query(
+    `${REVIEW_WITH_REPLY_SELECT} ${where} ORDER BY ${sort} LIMIT $2 OFFSET $3`,
+    [productId, limit, offset]
   );
+  return {
+    reviews: r.rows.map(rowToReview),
+    pagination: pagination(total.rows[0].n, page, limit),
+  };
+}
+
+/** Rating summary + distribution for one product (approved reviews only). */
+async function productReviewStats(productId, opts) {
+  const query = opts && opts.read ? qRead : q;
+  const summary = await query(
+    `SELECT COUNT(*)::int AS total, COALESCE(AVG(rating), 0)::float AS average
+       FROM reviews WHERE product_id = $1 AND status = 'approved'`,
+    [productId]
+  );
+  const dist = await query(
+    `SELECT rating, COUNT(*)::int AS count FROM reviews
+      WHERE product_id = $1 AND status = 'approved' GROUP BY rating`,
+    [productId]
+  );
+  const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  dist.rows.forEach((row) => { distribution[row.rating] = row.count; });
+  return {
+    total: summary.rows[0].total,
+    average: Math.round(summary.rows[0].average * 100) / 100,
+    distribution,
+  };
 }
 
 /** Approved reviews for one product (shown on the storefront). */
@@ -1084,16 +1631,39 @@ async function reviewStats(opts) {
 }
 
 /** All reviews (admin moderation), newest first, pending first. */
-async function listReviews() {
+/** Admin moderation queue — paginated, optionally filtered to one status
+   (the tabs: pending/approved/rejected/flagged/removed). Joins in the
+   product title so the list is self-contained. */
+async function listReviewsPage(opts) {
+  opts = opts || {};
+  const p = pageOpts(opts, 20);
+  const status = opts.status && opts.status !== "all" ? String(opts.status) : null;
+  const where = status ? "WHERE status = $1" : "";
+  const totalParams = status ? [status] : [];
+  const total = await q(`SELECT COUNT(*)::int AS n FROM reviews ${where}`, totalParams);
+  const params = status ? [status, p.limit, p.offset] : [p.limit, p.offset];
   const r = await q(
-    `SELECT * FROM reviews
-     ORDER BY (status = 'pending') DESC, created_at DESC`
+    `SELECT * FROM reviews ${where}
+     ORDER BY (status = 'pending') DESC, (status = 'flagged') DESC, created_at DESC
+     LIMIT $${status ? 2 : 1} OFFSET $${status ? 3 : 2}`,
+    params
   );
-  return r.rows.map(rowToReview);
+  return {
+    reviews: r.rows.map(rowToReview),
+    pagination: pagination(total.rows[0].n, p.page, p.limit),
+  };
 }
 
-async function setReviewStatus(id, status) {
-  const r = await q("UPDATE reviews SET status = $2 WHERE id = $1", [id, status]);
+/* `reason` is required by the caller (server.js) whenever status isn't
+   'approved' — content-based moderation reason, never "didn't like it". */
+async function setReviewStatus(id, { status, reason, moderatedBy }) {
+  const r = await q(
+    `UPDATE reviews
+        SET status = $2, moderation_reason = $3, moderated_by = $4,
+            moderated_at = now(), updated_at = now()
+      WHERE id = $1`,
+    [id, status, reason || null, moderatedBy || null]
+  );
   return r.rowCount > 0;
 }
 
@@ -1102,9 +1672,43 @@ async function deleteReview(id) {
   return r.rowCount > 0;
 }
 
+/* Counts anything needing admin attention (pending + flagged), used for the
+   admin sidebar/dashboard badge. */
 async function pendingReviewCount() {
-  const r = await q("SELECT COUNT(*)::int AS n FROM reviews WHERE status = 'pending'");
+  const r = await q("SELECT COUNT(*)::int AS n FROM reviews WHERE status IN ('pending', 'flagged')");
   return r.rows[0].n;
+}
+
+/* ---------- review replies (one public store reply per review) ---------- */
+
+async function upsertReviewReply(reviewId, adminId, body) {
+  await q(
+    `INSERT INTO review_replies (review_id, admin_id, body)
+     VALUES ($1,$2,$3)
+     ON CONFLICT (review_id) DO UPDATE SET body = EXCLUDED.body, admin_id = EXCLUDED.admin_id, updated_at = now()`,
+    [reviewId, adminId || null, body]
+  );
+}
+
+async function deleteReviewReply(reviewId) {
+  const r = await q("DELETE FROM review_replies WHERE review_id = $1", [reviewId]);
+  return r.rowCount > 0;
+}
+
+/* ---------- "was this helpful" votes ---------- */
+
+/* Idempotent per (review, voter) — a repeat vote from the same anonymous
+   voter key is a silent no-op, not a double count. */
+async function voteReviewHelpful(reviewId, voterKey) {
+  const ins = await q(
+    "INSERT INTO review_helpful_votes (review_id, voter_key) VALUES ($1,$2) ON CONFLICT DO NOTHING",
+    [reviewId, voterKey]
+  );
+  if (ins.rowCount > 0) {
+    await q("UPDATE reviews SET helpful_count = helpful_count + 1 WHERE id = $1", [reviewId]);
+  }
+  const r = await q("SELECT helpful_count FROM reviews WHERE id = $1", [reviewId]);
+  return r.rows[0] ? r.rows[0].helpful_count : 0;
 }
 
 /* ---------- orders ---------- */
@@ -1119,12 +1723,19 @@ function rowToOrder(r) {
     stripeSessionId: r.stripe_session_id,
     coupon: r.coupon,
     discount: parseFloat(r.discount),
+    /* Recorded at charge time — never recomputed, so an old receipt keeps
+       adding up even after the fee rules change. Null on rows created before
+       migration 034; callers fall back to recomputing for those. */
+    shippingFee: r.shipping_fee == null ? null : parseFloat(r.shipping_fee),
+    codFee: r.cod_fee == null ? null : parseFloat(r.cod_fee),
+    couponFreeShipping: !!r.coupon_free_shipping,
     total: parseFloat(r.total),
     lang: r.lang,
     userEmail: r.user_email,
     customer: r.customer,
     gift: r.gift,
     items: r.items,
+    promotionSnapshots: Array.isArray(r.promotion_snapshots) ? r.promotion_snapshots : [],
     tracking: r.tracking || "",
     courier: r.courier || "",
     assignee: r.assignee || "",
@@ -1163,8 +1774,8 @@ async function nextOrderNumber() {
 
 async function createOrder(o) {
   await q(
-    `INSERT INTO orders (id, number, status, payment, payment_status, coupon, discount, total, lang, user_email, customer, gift, items, access_token)
-     VALUES ($1,$2,'new',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+    `INSERT INTO orders (id, number, status, payment, payment_status, coupon, discount, total, lang, user_email, customer, gift, items, access_token, promotion_snapshots, shipping_fee, cod_fee, coupon_free_shipping)
+     VALUES ($1,$2,'new',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
     [
       o.id,
       o.number,
@@ -1179,6 +1790,10 @@ async function createOrder(o) {
       JSON.stringify(o.gift),
       JSON.stringify(o.items),
       o.accessToken || null,
+      JSON.stringify(o.promotionSnapshots || []),
+      o.shippingFee == null ? null : o.shippingFee,
+      o.codFee == null ? null : o.codFee,
+      !!o.couponFreeShipping,
     ]
   );
 }
@@ -1362,6 +1977,21 @@ async function updateOrder(id, fields) {
   return r.rowCount > 0;
 }
 
+/* Orders with a real ACS voucher that haven't reached a final state yet —
+   what the ACS tracking-sync cron job needs to check. `limit` bounds how many
+   ACS calls one run makes (ACS caps requests at 10/sec by default). */
+async function listActiveAcsShipments(limit) {
+  const r = await q(
+    `SELECT * FROM orders
+      WHERE courier = 'acs' AND tracking <> ''
+        AND shipping_status NOT IN ('delivered', 'returned')
+      ORDER BY updated_at ASC
+      LIMIT $1`,
+    [Math.max(1, Math.min(200, limit || 50))]
+  );
+  return r.rows.map(rowToOrder);
+}
+
 async function getOrderByStripeSession(sessionId) {
   const r = await q("SELECT * FROM orders WHERE stripe_session_id = $1", [sessionId]);
   return r.rowCount ? rowToOrder(r.rows[0]) : null;
@@ -1440,26 +2070,93 @@ async function reserveStock(items) {
 }
 
 /* Give stock back (order cancelled). Only touches limited-stock rows. */
+/* Puts stock back for one order's items using an existing client, so the caller
+   can keep it inside a wider transaction. */
+async function releaseStockWith(client, items) {
+  for (const it of items || []) {
+    const qty = Math.max(0, parseInt(it.qty, 10) || 0);
+    if (!qty || !it.id) continue;
+    if (typeof it.id === "string" && it.id.indexOf("pv-") === 0) {
+      await client.query(
+        "UPDATE product_variants SET stock = stock + $2 WHERE id = $1 AND stock IS NOT NULL",
+        [it.id, qty]
+      );
+    } else {
+      await client.query(
+        "UPDATE catalog_overrides SET stock = stock + $2 WHERE id = $1 AND stock IS NOT NULL",
+        [it.id, qty]
+      );
+    }
+  }
+}
+
 async function releaseStock(items) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    for (const it of items || []) {
-      const qty = Math.max(0, parseInt(it.qty, 10) || 0);
-      if (!qty || !it.id) continue;
-      if (typeof it.id === "string" && it.id.indexOf("pv-") === 0) {
-        await client.query(
-          "UPDATE product_variants SET stock = stock + $2 WHERE id = $1 AND stock IS NOT NULL",
-          [it.id, qty]
-        );
-      } else {
-        await client.query(
-          "UPDATE catalog_overrides SET stock = stock + $2 WHERE id = $1 AND stock IS NOT NULL",
-          [it.id, qty]
-        );
-      }
+    await releaseStockWith(client, items);
+    await client.query("COMMIT");
+  } catch (e) {
+    await client.query("ROLLBACK");
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Cancels card orders abandoned at the payment step and puts their stock back.
+ *
+ * Stock is decremented the moment an order is created (see reserveStock), i.e.
+ * BEFORE the customer reaches the payment page. If they never pay — closed tab,
+ * failed card, expired session — the order stays `pending` forever and the
+ * stock stays locked, so a product reads "sold out" although nobody bought it.
+ *
+ * Only `payment_status = 'pending'` is swept: that value is used exclusively by
+ * the card flow. COD ('cod_pending') and bank transfer ('offline') are
+ * legitimately unpaid for a long time and must never be touched. `status =
+ * 'new'` additionally protects anything an admin has already moved forward.
+ *
+ * `order_status_v2 IS NULL` restricts this to LEGACY orders. When
+ * CHECKOUT_V2_ENABLED=true the v2 checkout creates orders with the same
+ * status/payment_status pair, but its stock lives in inventory_reservations —
+ * catalog_overrides was never decremented for it. Adding stock back here would
+ * invent inventory that does not exist. V2 orders are freed instead by
+ * expireInventoryReservations() in the same maintenance run.
+ *
+ * Claiming and stock release share one transaction, and rows are taken with
+ * FOR UPDATE SKIP LOCKED, so concurrent cron runs can never double-release.
+ * Provider-agnostic on purpose — it keeps working when Stripe is replaced.
+ */
+async function expireStalePendingOrders(opts) {
+  const minutes = Math.max(1, parseInt((opts && opts.olderThanMinutes) || 120, 10));
+  const limit = Math.max(1, parseInt((opts && opts.limit) || 100, 10));
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const claimed = await client.query(
+      `SELECT id, number, items, created_at
+         FROM orders
+        WHERE payment_status = 'pending'
+          AND status = 'new'
+          AND order_status_v2 IS NULL
+          AND created_at < now() - ($1 || ' minutes')::interval
+        ORDER BY created_at
+        LIMIT $2
+        FOR UPDATE SKIP LOCKED`,
+      [String(minutes), limit]
+    );
+    const expired = [];
+    for (const row of claimed.rows) {
+      await releaseStockWith(client, row.items);
+      await client.query(
+        "UPDATE orders SET status = 'cancelled', payment_status = 'failed' WHERE id = $1",
+        [row.id]
+      );
+      expired.push({ id: row.id, number: row.number });
     }
     await client.query("COMMIT");
+    return { expired: expired.length, orders: expired };
   } catch (e) {
     await client.query("ROLLBACK");
     throw e;
@@ -1546,8 +2243,19 @@ async function deleteUserAccount(email) {
   }
 }
 
+/* Closes both pools, waiting for in-flight queries to finish. Called by the
+   server's graceful-shutdown handler so a deploy/restart never kills a query
+   (or a half-finished checkout transaction) mid-flight. */
+async function close() {
+  const pools = [pool, readPool].filter(Boolean);
+  pool = null;
+  readPool = null;
+  await Promise.all(pools.map((p) => p.end().catch(() => {})));
+}
+
 module.exports = {
   init,
+  close,
   getPool,
   DATA_DIR,
   logEvent,
@@ -1562,6 +2270,7 @@ module.exports = {
   listUsers,
   listUsersPage,
   updateUser,
+  setUserActive,
   setUserPassword,
   setAuthCode,
   getAuthCode,
@@ -1569,7 +2278,13 @@ module.exports = {
   deleteAuthCode,
   addSubscriber,
   listSubscribers,
+  listMarketingRecipients,
+  listServiceRecipients,
+  createAnnouncement,
+  finishAnnouncement,
+  listAnnouncements,
   listSubscribersPage,
+  unsubscribeSubscriber,
   deleteSubscriber,
   addMessage,
   listMessages,
@@ -1603,15 +2318,34 @@ module.exports = {
   updateCoupon,
   deleteCoupon,
   incrementCouponUse,
+  hasPreviousOrder,
+  hasRedeemedCoupon,
+  recordCouponRedemption,
+  listPromotions,
+  listCandidatePromotions,
+  getPromotion,
+  createPromotion,
+  updatePromotion,
+  replacePromotionTargeting,
+  deletePromotion,
+  listPromotionAuditLog,
   createReview,
+  DuplicateReviewError,
+  hasReviewedOrderItem,
+  findReviewableOrderItem,
+  productReviews,
+  productReviewStats,
   approvedReviews,
   approvedReviewsAll,
   approvedReviewById,
   reviewStats,
-  listReviews,
+  listReviewsPage,
   setReviewStatus,
   deleteReview,
   pendingReviewCount,
+  upsertReviewReply,
+  deleteReviewReply,
+  voteReviewHelpful,
   nextOrderNumber,
   createOrder,
   listOrders,
@@ -1623,9 +2357,11 @@ module.exports = {
   ordersByEmail,
   getOrder,
   updateOrder,
+  listActiveAcsShipments,
   getOrderByStripeSession,
   getOrderByAccessToken,
   overviewCounts,
   reserveStock,
   releaseStock,
+  expireStalePendingOrders,
 };

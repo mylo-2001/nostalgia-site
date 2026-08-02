@@ -41,10 +41,18 @@ function isCloudinaryUrl(url) {
   return /^https?:\/\/res\.cloudinary\.com\//i.test(String(url || ""));
 }
 
+/* Cap delivery at 1200px wide. Without a width Cloudinary serves the original
+   upload, so a 3000px studio photo was being sent to a 300px product card.
+   c_limit only shrinks — a smaller upload is never upscaled — and the aspect
+   ratio is preserved, so nothing is cropped. 1200 still covers the largest
+   place a product photo is shown (the product page on a retina screen). */
 function deliveryUrl(publicId) {
   return cloudinary.url(publicId, {
     secure: true,
-    transformation: [{ fetch_format: "auto", quality: "auto" }],
+    transformation: [
+      { width: 1200, crop: "limit" },
+      { fetch_format: "auto", quality: "auto" },
+    ],
   });
 }
 

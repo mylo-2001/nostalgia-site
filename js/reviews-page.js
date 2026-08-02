@@ -56,7 +56,7 @@
       '<span class="reviews-card__stars">' + stars(r.rating) + "</span>" +
       '<span class="reviews-card__date">' + escapeHtml(fmtDate(r.createdAt)) + "</span></div>" +
       '<div class="reviews-card__author">' + escapeHtml(r.name) +
-      ' <span class="reviews-card__verified">' + escapeHtml(t("reviews_verified")) + "</span></div>" +
+      (r.isVerifiedPurchase ? ' <span class="reviews-card__verified">✓ ' + escapeHtml(t("reviews_verified")) + "</span>" : "") + "</div>" +
       "<h2 class=\"reviews-card__title\">" + escapeHtml(r.title) + "</h2>" +
       '<p class="reviews-card__text">' + escapeHtml(r.excerpt || r.text) + "</p>" +
       '<span class="reviews-card__product">' + escapeHtml(r.productTitle) + "</span></a>"

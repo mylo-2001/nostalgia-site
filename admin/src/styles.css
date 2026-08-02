@@ -246,6 +246,24 @@ a { color: var(--gold); }
 .npthumb img { width: 100%; height: 100%; object-fit: cover; }
 .npthumb button { position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; border: none; border-radius: 50%; background: rgba(0,0,0,.6); color: #fff; cursor: pointer; line-height: 1; font-size: 14px; }
 
+/* ---- Promotions engine ---- */
+.promo-editor { max-width: 980px; margin-top: 4px; }
+.promo-step { padding: 14px 0; border-top: 1px solid var(--border); }
+.promo-step:first-of-type { border-top: none; padding-top: 0; }
+.promo-step h4 { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-muted); }
+.promo-radio-row { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 12px; }
+.promo-radio { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; cursor: pointer; }
+.promo-picker { max-width: 460px; }
+.promo-picker__list { max-height: 220px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-soft); padding: 6px 10px; display: flex; flex-direction: column; gap: 2px; }
+.promo-picker__item { display: flex; align-items: center; gap: 8px; font-size: 13.5px; padding: 5px 2px; }
+.promo-picker__item span:first-of-type { flex: 1; }
+.promo-exclusions { max-width: 460px; }
+.promo-preview { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 13.5px; }
+.promo-confirm { margin-top: 14px; padding: 12px 14px; border: 1px solid var(--danger); border-radius: 8px; background: rgba(192, 80, 63, 0.06); }
+.field-hint { margin: 4px 0 0; font-size: 11.5px; line-height: 1.4; color: var(--ink-muted); font-weight: 400; }
+.promo-radio-row { align-items: flex-start; }
+.promo-radio-col { align-items: flex-start; flex-direction: column; gap: 2px; max-width: 260px; }
+
 @media (max-width: 800px) {
   .page-heading { align-items: stretch; flex-direction: column; }
   .settings-inline-form { grid-template-columns: 1fr; }

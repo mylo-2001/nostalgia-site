@@ -10,7 +10,7 @@
     "static": "npx --yes serve . -l 5173 --no-request-logging",
     "preview": "npm run start",
     "test": "node --test \"test/**/*.test.js\"",
-    "test:unit": "node --test test/order-domain.unit.test.js test/order-state-machine.unit.test.js test/pricing-engine.unit.test.js test/pricing-service.unit.test.js test/inventory-service.unit.test.js test/order-creation-service.unit.test.js test/stripe-provider.unit.test.js test/risk-engine.unit.test.js test/admin-rbac.unit.test.js test/notification-outbox.unit.test.js test/admin-session.unit.test.js test/admin-me-route.unit.test.js test/product-variants.unit.test.js test/product-content.unit.test.js test/monitoring.unit.test.js test/v2-router.unit.test.js test/cookie-consent.unit.test.js test/checkout-accessibility.unit.test.js test/fiscal-provider.unit.test.js",
+    "test:unit": "node --test test/order-domain.unit.test.js test/order-state-machine.unit.test.js test/pricing-engine.unit.test.js test/pricing-service.unit.test.js test/inventory-service.unit.test.js test/order-creation-service.unit.test.js test/stripe-provider.unit.test.js test/risk-engine.unit.test.js test/admin-rbac.unit.test.js test/notification-outbox.unit.test.js test/admin-session.unit.test.js test/admin-me-route.unit.test.js test/product-variants.unit.test.js test/product-content.unit.test.js test/monitoring.unit.test.js test/v2-router.unit.test.js test/cookie-consent.unit.test.js test/checkout-accessibility.unit.test.js test/fiscal-provider.unit.test.js test/acs.unit.test.js",
     "test:integration": "node --test test/order-domain.integration.test.js test/order-state-service.integration.test.js test/pricing-service.integration.test.js test/inventory-service.integration.test.js test/order-creation-service.integration.test.js test/payment-service.integration.test.js test/cod-risk.integration.test.js test/admin-order-service.integration.test.js test/return-refund-service.integration.test.js test/notification-outbox.integration.test.js test/admin-session.integration.test.js test/product-variants.integration.test.js test/monitoring.integration.test.js test/payment-retry.integration.test.js test/fiscal-document-service.integration.test.js",
     "test:integration:local": "node scripts/run-order-domain-integration.js",
     "migrate": "node server/migrate.js",
@@ -21,13 +21,16 @@
     "restore:test": "node scripts/restore-test.js",
     "seed:test": "node scripts/seed-test-data.js --apply",
     "seed:test:clear": "node scripts/seed-test-data.js --clear",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "problems": "node scripts/build-problems-report.js",
+    "telegram:ids": "node scripts/telegram-chat-ids.js"
   },
   "dependencies": {
     "argon2": "^0.44.0",
     "cloudinary": "^2.10.0",
     "express": "^5.2.1",
     "nodemailer": "^9.0.1",
+    "pdf-lib": "^1.17.1",
     "pg": "^8.21.0",
     "stripe": "^22.2.0"
   },

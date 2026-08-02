@@ -6,6 +6,7 @@ interface SettingsData {
   analytics: { configured: boolean };
   email: { resend: boolean; smtp: boolean };
   cron: { configured: boolean };
+  acs: { configured: boolean };
 }
 
 interface MfaStatus {
@@ -117,6 +118,7 @@ export function Settings() {
             <tr><td>Email — Resend</td><td><Dot on={data.email.resend} /></td></tr>
             <tr><td>Email — SMTP</td><td><Dot on={data.email.smtp} /></td></tr>
             <tr><td>Cron token</td><td><Dot on={data.cron.configured} /></td></tr>
+            <tr><td>ACS Courier (αποστολές)</td><td><Dot on={data.acs.configured} /></td></tr>
           </tbody>
         </table>
       </section>

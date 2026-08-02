@@ -2,6 +2,18 @@
   var STORAGE_KEY = "nostalgia-cookie-consent";
   var CONSENT_DAYS = 365;
 
+  /* Simple line-style cookie icon (currentColor) — no emoji. */
+  var COOKIE_ICON =
+    '<svg class="cookie-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+    '<path d="M20.5 12.8a8.5 8.5 0 11-9.3-9.3c-.15.9.55 1.75 1.5 1.75a2 2 0 002-2c0-.2-.02-.4-.06-.58A8.5 8.5 0 0120.5 12.8z" ' +
+    'stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>' +
+    '<circle cx="9" cy="9.5" r="1.15" fill="currentColor"/>' +
+    '<circle cx="14.5" cy="8.5" r="1.15" fill="currentColor"/>' +
+    '<circle cx="8.5" cy="14.5" r="1.15" fill="currentColor"/>' +
+    '<circle cx="13.5" cy="15.5" r="1.15" fill="currentColor"/>' +
+    '<circle cx="16" cy="12" r="1.15" fill="currentColor"/>' +
+    "</svg>";
+
   function t(key) {
     if (window.NostalgiaI18n && typeof window.NostalgiaI18n.t === "function") {
       return window.NostalgiaI18n.t(key);
@@ -103,7 +115,8 @@
       '    <img class="cookie-banner__logo" src="logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />' +
       "  </div>" +
       '  <button type="button" class="cookie-banner__skip" data-cookie-continue-without data-i18n="cookie_continue_without">Συνέχεια χωρίς αποδοχή</button>' +
-      '  <h2 class="cookie-banner__title" id="cookie-banner-title" data-i18n="cookie_banner_title">Καλώς ήρθατε στη Nostalgia Collection</h2>' +
+      '  <h2 class="cookie-banner__title" id="cookie-banner-title">' + COOKIE_ICON +
+      '<span data-i18n="cookie_banner_title">Καλώς ήρθατε στη Nostalgia Collection</span></h2>' +
       '  <p class="cookie-banner__text">' +
       '    <span data-i18n="cookie_banner_text">Η Nostalgia Collection χρησιμοποιεί cookies πρώτου και τρίτου μέρους, καθώς και παρόμοιες τεχνολογίες παρακολούθησης, για τη σωστή λειτουργία του ιστότοπου, την ανάλυση της επισκεψιμότητας και την εξατομίκευση της εμπειρίας σας.</span> ' +
       '    <a href="/privacy#cookies" data-i18n="cookie_privacy_policy">Πολιτική Απορρήτου</a>.' +
@@ -125,7 +138,8 @@
       '<div class="cookie-settings__backdrop" data-cookie-settings-close></div>' +
       '<div class="cookie-settings__panel">' +
       '  <button type="button" class="cookie-settings__close" data-cookie-settings-close aria-label="Close">×</button>' +
-      '  <h2 class="cookie-settings__title" id="cookie-settings-title" data-i18n="cookie_settings_title">Κέντρο Προτιμήσεων Απορρήτου</h2>' +
+      '  <h2 class="cookie-settings__title" id="cookie-settings-title">' + COOKIE_ICON +
+      '<span data-i18n="cookie_settings_title">Κέντρο Προτιμήσεων Απορρήτου</span></h2>' +
       '  <p class="cookie-settings__lead">' +
       '    <span data-i18n="cookie_settings_lead">Χρησιμοποιούμε cookies για να βελτιώνουμε την εμπειρία σας, να αναλύουμε την επισκεψιμότητα και να εξατομικεύουμε το περιεχόμενο. Μπορείτε να επιλέξετε ποιες κατηγορίες επιθυμείτε να ενεργοποιήσετε.</span> ' +
       '    <a href="/privacy#cookies" data-i18n="cookie_more_info">Περισσότερες πληροφορίες</a>.' +

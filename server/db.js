@@ -633,6 +633,56 @@ async function listSubscribers() {
   return r.rows.map(rowToSubscriber);
 }
 
+/* ---------- cookie consent log ----------
+   Append-only: every choice is a new row, never an update. A consent record
+   that can be overwritten proves nothing about what was agreed and when, and
+   the history is exactly what a regulator asks for. */
+
+async function recordCookieConsent(c) {
+  const r = await q(
+    `INSERT INTO cookie_consents (visitor_id, analytics, marketing, policy_version, source, ip_hash, user_agent)
+     VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id, created_at`,
+    [
+      String(c.visitorId || "").slice(0, 64),
+      !!c.analytics,
+      !!c.marketing,
+      String(c.policyVersion || "v1").slice(0, 20),
+      ["banner", "settings", "revoked"].indexOf(c.source) >= 0 ? c.source : "banner",
+      c.ipHash || null,
+      String(c.userAgent || "").slice(0, 300) || null,
+    ]
+  );
+  return r.rows[0];
+}
+
+/** Latest choice per visitor, newest first — the admin's evidence view. */
+async function listCookieConsents(limit) {
+  const r = await q(
+    `SELECT id, visitor_id, analytics, marketing, policy_version, source, created_at
+       FROM cookie_consents ORDER BY created_at DESC LIMIT $1`,
+    [Math.min(Math.max(parseInt(limit, 10) || 100, 1), 500)]
+  );
+  return r.rows.map((x) => ({
+    id: x.id,
+    visitorId: x.visitor_id,
+    analytics: x.analytics,
+    marketing: x.marketing,
+    policyVersion: x.policy_version,
+    source: x.source,
+    createdAt: x.created_at,
+  }));
+}
+
+/** Every record for one browser — what you produce if a visitor disputes. */
+async function cookieConsentHistory(visitorId) {
+  const r = await q(
+    `SELECT analytics, marketing, policy_version, source, created_at
+       FROM cookie_consents WHERE visitor_id = $1 ORDER BY created_at DESC LIMIT 100`,
+    [String(visitorId || "").slice(0, 64)]
+  );
+  return r.rows;
+}
+
 /* ---------- mass-mail audiences ----------
    Two audiences on two different legal bases — see the comment at the top of
    migrations/033_announcements.up.sql. Both queries are the ONLY sanctioned
@@ -2374,6 +2424,9 @@ module.exports = {
   deleteAuthCode,
   addSubscriber,
   listSubscribers,
+  recordCookieConsent,
+  listCookieConsents,
+  cookieConsentHistory,
   listMarketingRecipients,
   listCampaignRecipients,
   createMarketingCampaign,

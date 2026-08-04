@@ -8,7 +8,15 @@
   var hero = document.querySelector(".hero-home");
   var enterBtn = document.getElementById("site-intro-enter");
   var logos = intro && intro.querySelector(".site-intro__logos");
-  var forceSiteMotion = true;
+  // Respect reduced-motion by default. Developers can opt in temporarily
+  // with localStorage.setItem("nostalgia-force-site-motion", "1").
+  var forceSiteMotion = false;
+  try {
+    forceSiteMotion =
+      window.localStorage.getItem("nostalgia-force-site-motion") === "1";
+  } catch (error) {
+    forceSiteMotion = false;
+  }
   document.documentElement.classList.toggle("force-site-motion", forceSiteMotion);
   var reduce =
     !forceSiteMotion &&

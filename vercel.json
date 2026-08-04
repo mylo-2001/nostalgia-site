@@ -1,12 +1,16 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
-    { "source": "/(.*)", "destination": "/api" }
+    { "source": "/api/:path*", "destination": "/api" },
+    {
+      "source": "/((?!js(?:/|$)|css(?:/|$)|images(?:/|$)|fonts(?:/|$)|robots\\.txt$).*)",
+      "destination": "/api"
+    }
   ],
   "functions": {
     "api/**/*.js": {
       "maxDuration": 30,
-      "includeFiles": "{html/**,css/**,js/**,images/logo/**,admin/dist/**,images/product photo/**,images/home page photo/**,images/home-photo-beforemenu/**,images/collections-hero/**,images/4-epoxes-photo/**,fonts/**}"
+      "includeFiles": "{html/**,css/**,js/**,images/logo/**,images/sunergates-logo/**,admin/dist/**,images/product photo/**,images/home page photo/**,images/home-photo-beforemenu/**,images/collections-hero/**,images/4-epoxes-photo/**,fonts/**}"
     }
   },
   "crons": [

@@ -723,6 +723,135 @@
   }
 }
 
+/* ——— Scent Finder profile chips ——— */
+.scent-finder__profile {
+  width: min(100%, 34rem);
+  margin: 1.25rem auto 0;
+  padding-top: 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+.scent-finder__profile-label {
+  margin: 0 0 .65rem;
+  color: var(--ink-muted);
+  font-size: .68rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.scent-finder__profile-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .45rem;
+}
+
+.scent-finder__profile-chip {
+  padding: .38rem .7rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
+  border-radius: 999px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  font-size: .76rem;
+}
+
+/* ——— Product fragrance journey ——— */
+.product-scent-journey {
+  margin: 1.8rem 0 1.5rem;
+  padding: 1.5rem 1.35rem 1.35rem;
+  border-top: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+}
+
+.product-scent-journey__eyebrow {
+  margin: 0 0 .45rem;
+  color: var(--accent);
+  font-size: .68rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+
+.product-scent-journey__title {
+  margin: 0 0 1.2rem;
+  color: var(--ink);
+  font-family: var(--font-display, Georgia, serif);
+  font-size: clamp(1.25rem, 2vw, 1.7rem);
+  font-weight: 400;
+}
+
+.product-scent-journey__track {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .85rem;
+}
+
+.product-scent-journey__track::before {
+  content: "";
+  position: absolute;
+  top: 1rem;
+  left: 9%;
+  right: 9%;
+  border-top: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.product-scent-journey__stage {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  text-align: center;
+  animation: scentJourneyRise .7s cubic-bezier(.22,.61,.36,1) both;
+}
+
+.product-scent-journey__stage--1 { animation-delay: .12s; }
+.product-scent-journey__stage--2 { animation-delay: .24s; }
+
+.product-scent-journey__mark {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  margin: 0 auto .7rem;
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  color: var(--accent);
+  background: var(--surface-paper);
+  font-size: 1rem;
+}
+
+.product-scent-journey__label {
+  margin: 0 0 .35rem;
+  color: var(--accent);
+  font-size: .67rem;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.product-scent-journey__value {
+  margin: 0;
+  color: var(--ink);
+  font-size: .88rem;
+  line-height: 1.5;
+}
+
+@keyframes scentJourneyRise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-scent-journey__stage { animation: none; }
+}
+
+@media (max-width: 600px) {
+  .product-scent-journey__track { grid-template-columns: 1fr; gap: 1rem; }
+  .product-scent-journey__track::before { top: 1rem; bottom: 1rem; left: calc(50% - .5px); right: auto; border-top: 0; border-left: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); }
+  .product-scent-journey__stage { display: grid; grid-template-columns: 2rem 1fr; column-gap: .7rem; align-items: center; text-align: left; }
+  .product-scent-journey__mark { grid-row: span 2; margin: 0; }
+  .product-scent-journey__label { margin: 0; }
+}
+
 /* ——— Gift Experience ——— */
 .gift-page {
   padding-bottom: 3rem;

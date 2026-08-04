@@ -523,6 +523,13 @@
   function buildProductInfo(product) {
     var details = mergeDetails(product);
     var available = product.stock == null || Number(product.stock) > 0;
+    var limitedSignal = product.limited
+      ? '<span class="product-info__limited-signal"><span class="product-info__limited-dot" aria-hidden="true"></span>' +
+        (product.stock != null
+          ? (curLang() === "en" ? "Limited batch · " : "Περιορισμένη σειρά · ") + String(product.stock) + (curLang() === "en" ? " left" : " διαθέσιμα")
+          : (curLang() === "en" ? "Limited batch" : "Περιορισμένη σειρά")) +
+        "</span>"
+      : "";
     var meta =
       '<div class="product-info__meta">' +
       priceHtml(product) +
@@ -532,6 +539,8 @@
       (product.sku
         ? '<span class="product-info__sku">SKU: ' + escapeHtml(product.sku) + "</span>"
         : "") +
+      limitedSignal +
+      '<span class="product-info__proof" id="product-info-proof" hidden></span>' +
       "</div>";
 
     var shortDesc = details.description
@@ -543,10 +552,38 @@
       tags: buildBadgesHtml(details.badges, details),
       shortDesc: shortDesc,
       features: buildFeaturesHtml(details),
+      scentJourney: buildScentJourneyHtml(details),
       variants: buildVariantsHtml(product) || buildColorLine(product, details),
       accordions: buildAccordions(details),
       layoutClass: "product-info--" + details.layout,
     };
+  }
+
+  function buildScentJourneyHtml(details) {
+    if (!details || !details.scentNotes || typeof details.scentNotes !== "object") return "";
+    var notes = details.scentNotes;
+    var stages = [
+      { key: "product_scent_top", icon: "✦", value: notes.top },
+      { key: "product_scent_heart", icon: "◌", value: notes.heart },
+      { key: "product_scent_base", icon: "⌁", value: notes.base },
+    ].filter(function (stage) { return stage.value && String(stage.value).trim(); });
+    if (!stages.length) return "";
+    return (
+      '<section class="product-scent-journey" aria-labelledby="product-scent-journey-title">' +
+      '<p class="product-scent-journey__eyebrow">' + (curLang() === "en" ? "The fragrance journey" : "Η διαδρομή του αρώματος") + "</p>" +
+      '<h2 class="product-scent-journey__title" id="product-scent-journey-title">' + (curLang() === "en" ? "Let the scent unfold" : "Άφησε το άρωμα να ξεδιπλωθεί") + "</h2>" +
+      '<div class="product-scent-journey__track">' +
+      stages.map(function (stage, i) {
+        return (
+          '<article class="product-scent-journey__stage product-scent-journey__stage--' + i + '">' +
+          '<span class="product-scent-journey__mark" aria-hidden="true">' + stage.icon + "</span>" +
+          '<p class="product-scent-journey__label">' + t(stage.key) + "</p>" +
+          '<p class="product-scent-journey__value">' + escapeHtml(stage.value) + "</p>" +
+          "</article>"
+        );
+      }).join("") +
+      "</div></section>"
+    );
   }
 
   /* Resolve a single colour for products that don't have colour variants:
@@ -794,6 +831,7 @@
       info.tags +
       info.shortDesc +
       info.features +
+      info.scentJourney +
       info.variants +
       '    <label class="product-info__qty-label" for="product-qty" data-i18n="product_qty_label">' +
       t("product_qty_label") +
@@ -1110,6 +1148,15 @@
     var showMore = document.getElementById("review-show-more");
     var summary = data.summary || { average: 0, total: 0, distribution: {} };
     var reviews = data.reviews || [];
+    var proofEl = document.getElementById("product-info-proof");
+    if (proofEl) {
+      proofEl.hidden = !(summary.total > 0);
+      proofEl.textContent = summary.total > 0
+        ? (curLang() === "en"
+          ? "Loved by " + summary.total + " customer" + (summary.total === 1 ? "" : "s")
+          : "Αγαπήθηκε από " + summary.total + " " + (summary.total === 1 ? "πελάτη" : "πελάτες"))
+        : "";
+    }
 
     if (summaryEl) {
       summaryEl.innerHTML =

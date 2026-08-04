@@ -1184,6 +1184,95 @@ body.cart-modal-open {
   color: var(--ink);
 }
 
+/* Coupon field on the checkout summary */
+.checkout-coupon {
+  margin: -0.35rem -0.15rem 1.35rem;
+  padding: 0.85rem 0.15rem 1.35rem;
+  border-bottom: 1px solid var(--rule-hairline);
+}
+
+.checkout-coupon__label {
+  display: block;
+  margin: 0 0 0.55rem;
+  font-family: var(--font-display);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.checkout-coupon__row {
+  display: flex;
+  align-items: stretch;
+}
+
+.checkout-coupon__input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.7rem 0.72rem;
+  border: 1px solid var(--rule-strong);
+  border-right: 0;
+  border-radius: 2px 0 0 2px;
+  background: var(--surface-canvas);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.82rem;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+.checkout-coupon__apply {
+  flex: 0 0 7.2rem;
+  padding: 0.7rem 0.55rem;
+  border: 1px solid var(--ink);
+  border-radius: 0 2px 2px 0;
+  background: var(--ink);
+  color: var(--surface-paper);
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.checkout-coupon__apply:hover {
+  background: var(--gold);
+  border-color: var(--gold);
+}
+
+.checkout-coupon__list {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.7rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.checkout-coupon__chip {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--rule-hairline);
+  color: var(--ink-muted);
+  font-size: 0.8rem;
+}
+
+.checkout-coupon__chip-value {
+  color: var(--gold);
+}
+
+.checkout-coupon__feedback {
+  margin: 0.55rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.checkout-coupon__feedback.is-error { color: #9a4e43; }
+.checkout-coupon__feedback.is-success { color: #68784d; }
+
 .cart-page--editorial .cart-summary__coupon-code {
   font-family: var(--font-nav);
   font-size: 0.72rem;
@@ -2266,6 +2355,29 @@ body.cart-modal-open {
 
 .product-info__avail--out {
   color: var(--sale, #b23b2e);
+}
+
+.product-info__limited-signal {
+  display: inline-flex;
+  align-items: center;
+  gap: .38rem;
+  color: var(--accent);
+  font-size: .72rem;
+  letter-spacing: .04em;
+}
+
+.product-info__limited-dot {
+  width: .42rem;
+  height: .42rem;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 .22rem color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.product-info__proof {
+  color: var(--ink-muted, #8a7f70);
+  font-size: .72rem;
+  font-style: italic;
 }
 
 .product-info__sku {

@@ -53,6 +53,7 @@ const { processRefundWebhook } = require("./services/return-refund-service");
 const { expireInventoryReservations } = require("./services/inventory-service");
 const { processNotificationBatch } = require("./services/notification-outbox-service");
 const { enqueueCampaign, processQueuedCampaigns } = require("./services/marketing-campaign-service");
+const { runRetention } = require("./services/retention-service");
 const { EmailNotificationSender } = require("./notifications/email-notification-sender");
 const { collectOperationalMetrics, evaluateOperationalAlerts, runTrackedJob } =
   require("./services/monitoring-service");
@@ -1137,6 +1138,25 @@ app.get("/api/cron/maintenance", requireCron, ah(async (req, res) => {
   res.json({ ok: true, result, requestId: req.requestId });
 }));
 
+/* Applies the retention rules (GDPR art. 5(1)(e)) — see
+   services/retention-service.js. Its own endpoint rather than part of
+   /api/cron/maintenance because that one runs every five minutes, and
+   deleting personal data is a once-a-day concern.
+
+   Still a no-op until RETENTION_ENABLED=true: run it as a dry run first, read
+   what it reports, and only then let it delete anything. */
+app.get("/api/cron/retention", requireCron, ah(async (req, res) => {
+  const result = await runRetention({ pool: db.getPool(), apply: true });
+  if (result.applied && result.totalMatched > 0) {
+    console.log("[retention] applied — " + result.totalMatched + " record(s) affected");
+    db.logEvent("retention.applied", "cron", null, {
+      totalMatched: result.totalMatched,
+      steps: result.steps,
+    }).catch(() => {});
+  }
+  res.json({ ok: true, ...result, requestId: req.requestId });
+}));
+
 /* Pulls current status for every active ACS shipment and updates our own
    shipping_status — the automatic counterpart to the admin's manual
    "Ανανέωση tracking ACS" button. Meant to be hit every few minutes by the
@@ -1487,6 +1507,29 @@ app.post("/api/newsletter", ah(async (req, res) => {
 /* One-click unsubscribe link from marketing emails — no login, verified via
    an HMAC token (security.newsletterUnsubscribeToken) instead of a session,
    since the recipient is reading this from their inbox, not the site. */
+/* Records a cookie-banner choice. Public and unauthenticated by necessity —
+   the visitor has no account and the whole point is to log the decision of
+   someone who may never create one. Rate-limited like any other open endpoint;
+   a flood here would only pollute our own evidence log. */
+app.post("/api/cookie-consent", ah(async (req, res) => {
+  const b = req.body || {};
+  const visitorId = str(b.visitorId, 64);
+  /* No id means no way to tie the record to a later dispute, which is the
+     only reason the row exists. */
+  if (!visitorId) return bad(res, 400, "missing_visitor_id");
+
+  const saved = await db.recordCookieConsent({
+    visitorId,
+    analytics: !!b.analytics,
+    marketing: !!b.marketing,
+    policyVersion: str(b.policyVersion, 20) || "v1",
+    source: str(b.source, 20),
+    ipHash: security.hashIpForConsent(clientIp(req)),
+    userAgent: str(req.headers["user-agent"], 300),
+  });
+  res.json({ ok: true, id: saved.id, at: saved.created_at });
+}));
+
 app.get("/api/newsletter/unsubscribe", ah(async (req, res) => {
   const email = normEmail(req.query.email);
   const token = String(req.query.token || "");
@@ -1965,7 +2008,8 @@ app.post("/api/orders", ah(async (req, res) => {
     discount,
     freeShipping: couponFreeShipping,
   } = await resolveCoupons(couponCodes, subtotal, couponEmail);
-  const payment = b.payment === "cod" ? "cod" : "stripe";
+  if (b.payment === "cod") return bad(res, 400, "card_payment_only");
+  const payment = "stripe";
   const courier = fees.normalizeCourier(customer.courier);
   if (!courier) return bad(res, 400, "invalid_courier");
   const { shipping: shippingFee, cod: codFee, feesTotal } = fees.orderExtraFees(payment, subtotal, {
@@ -1990,7 +2034,7 @@ app.post("/api/orders", ah(async (req, res) => {
     accessToken: crypto.randomBytes(24).toString("hex"),
     payment,
     /* COD is NEVER "paid" at creation — it is collected on delivery. */
-    paymentStatus: payment === "cod" ? "cod_pending" : stripeFlow ? "pending" : "offline",
+    paymentStatus: stripeFlow ? "pending" : "offline",
     coupon: appliedCoupons.map((c) => c.code).join(", "),
     discount,
     shippingFee,
@@ -2071,8 +2115,8 @@ app.post("/api/orders", ah(async (req, res) => {
       const origin = siteOrigin(req);
       const feeLabels =
         order.lang === "en"
-          ? { shipping: "Shipping", cod: "Cash on delivery fee" }
-          : { shipping: "Μεταφορικά", cod: "Αντικαταβολή" };
+          ? { shipping: "Shipping" }
+          : { shipping: "Μεταφορικά" };
       const lineItems = items.map((it) => ({
         quantity: it.qty,
         price_data: {
@@ -2088,16 +2132,6 @@ app.post("/api/orders", ah(async (req, res) => {
             currency: "eur",
             unit_amount: Math.round(shippingFee * 100),
             product_data: { name: feeLabels.shipping },
-          },
-        });
-      }
-      if (codFee > 0) {
-        lineItems.push({
-          quantity: 1,
-          price_data: {
-            currency: "eur",
-            unit_amount: Math.round(codFee * 100),
-            product_data: { name: feeLabels.cod },
           },
         });
       }
@@ -3222,6 +3256,33 @@ app.post("/api/admin/announcements", requireAdmin, ah(async (req, res) => {
   res.json({ ok: true, announcement: saved, result });
 }));
 
+/* ---------- GDPR evidence + retention ---------- */
+
+/** The consent log, newest first — what you show if the DPA asks. */
+app.get("/api/admin/cookie-consents", requireAdmin, ah(async (req, res) => {
+  res.json({ ok: true, consents: await db.listCookieConsents(req.query.limit) });
+}));
+
+/** Every choice one browser ever made, for a specific dispute. */
+app.get("/api/admin/cookie-consents/:visitorId", requireAdmin, ah(async (req, res) => {
+  res.json({ ok: true, history: await db.cookieConsentHistory(req.params.visitorId) });
+}));
+
+/* Dry run by default: shows exactly how many rows each rule would touch
+   without touching any of them. Pass ?apply=true (and set RETENTION_ENABLED)
+   to actually run it — deleting customer data should take two deliberate
+   decisions, not one. */
+app.post("/api/admin/retention/run", requireAdmin, ah(async (req, res) => {
+  const apply = String((req.body && req.body.apply) || req.query.apply) === "true";
+  const result = await runRetention({ pool: db.getPool(), apply });
+  if (result.applied) {
+    audit(req, "admin.retention.applied", req.admin && req.admin.sub, {
+      totalMatched: result.totalMatched,
+    });
+  }
+  res.json({ ok: true, ...result });
+}));
+
 app.get("/api/admin/announcements", requireAdmin, ah(async (req, res) => {
   res.json({ ok: true, announcements: await db.listAnnouncements(req.query.limit) });
 }));
@@ -4304,7 +4365,7 @@ app.get("/llms.txt", ah(async (req, res) => {
     "> Χειροποίητα αρωματικά κεριά και αρώματα σπιτιού, φτιαγμένα σε μικρές " +
       "παρτίδες στη Θεσσαλονίκη. Handmade scented candles and home fragrance " +
       "from Greece, made in small batches. Αποστολές σε Ελλάδα και Κύπρο με ACS " +
-      "Courier · πληρωμή με κάρτα ή αντικαταβολή · δίγλωσσος ιστότοπος " +
+      "Courier · πληρωμή με κάρτα · δίγλωσσος ιστότοπος " +
       "(ελληνικά / English).",
     "",
     "## Τι πουλάμε / What we sell",
@@ -4353,8 +4414,7 @@ app.get("/llms.txt", ah(async (req, res) => {
     "- [Αποστολές και επιστροφές](" + base + "/shipping-returns): ACS Courier σε " +
       "Ελλάδα και Κύπρο. Μεταφορικά " + fmtMoney(fees.SHIPPING_FEE) + ", δωρεάν " +
       "άνω των " + fmtMoney(fees.FREE_SHIPPING_MIN) + ". Επιστροφές εντός 14 ημερών.",
-    "- [Τρόποι πληρωμής](" + base + "/payments): Κάρτα ή αντικαταβολή " +
-      "(+" + fmtMoney(fees.COD_FEE) + ").",
+    "- [Τρόποι πληρωμής](" + base + "/payments): Κάρτα.",
     "- [Συχνές ερωτήσεις](" + base + "/faq): Χρόνοι παράδοσης, διάρκεια καύσης, " +
       "υλικά, φροντίδα κεριού.",
     "",
@@ -4717,6 +4777,12 @@ app.use((req, res) => {
 app.use((err, req, res, next) => {
   console.error("[server]", err);
   if (res.headersSent) return next(err);
+  /* express.json marks an over-limit body as `entity.too.large`. Preserve
+     the client error status instead of turning a safe validation rejection
+     into a misleading 500. */
+  if (err && (err.status === 413 || err.type === "entity.too.large")) {
+    return bad(res, 413, "payload_too_large");
+  }
   bad(res, 500, "server_error");
 });
 

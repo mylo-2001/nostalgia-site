@@ -1,7 +1,6 @@
 (function () {
   /** Flat order fees (EUR) — keep in sync with server/fees.js */
   var SHIPPING_FEE = 3.5;
-  var COD_FEE = 3.5;
   var FREE_SHIPPING_MIN = 120;
   var COUPON_META_KEY = "nostalgia-coupon-meta";
   /* Legacy single-coupon keys, kept in sync so anything still reading them
@@ -135,8 +134,7 @@
     var base = Number(subtotal) || 0;
     var freeShipping = base >= FREE_SHIPPING_MIN || couponGrantsFreeShipping();
     var shipping = freeShipping ? 0 : SHIPPING_FEE;
-    var cod = payment === "cod" ? COD_FEE : 0;
-    return { shipping: shipping, cod: cod, feesTotal: shipping + cod, freeShipping: freeShipping };
+    return { shipping: shipping, feesTotal: shipping, freeShipping: freeShipping };
   }
 
   function formatFee(amount, lang) {
@@ -206,7 +204,6 @@
 
   window.NostalgiaOrderFees = {
     SHIPPING_FEE: SHIPPING_FEE,
-    COD_FEE: COD_FEE,
     FREE_SHIPPING_MIN: FREE_SHIPPING_MIN,
     COUPON_META_KEY: COUPON_META_KEY,
     COUPON_CODE_KEY: COUPON_CODE_KEY,

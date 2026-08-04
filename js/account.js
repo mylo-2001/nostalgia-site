@@ -385,7 +385,7 @@
   function orderStatusLabel(status) { return pickStatusLabel(ORDER_STATUS_LABELS, status); }
   function payStatusLabel(status) { return pickStatusLabel(PAY_STATUS_LABELS, status); }
   function shipStatusLabel(status) { return pickStatusLabel(SHIP_STATUS_LABELS, status); }
-  function payMethodLabel(o) { return o.payment === "cod" ? (isEnglish() ? "Cash on delivery" : "Αντικαταβολή") : (isEnglish() ? "Card" : "Κάρτα"); }
+  function payMethodLabel() { return isEnglish() ? "Card" : "Κάρτα"; }
   function courierLabelAcc(key) { var id = String(key || "").toLowerCase(); return COURIER_LABELS_ACC[id] || (key ? String(key) : ""); }
   function orderCancellable(o) {
     if (o.status === "cancelled" || o.status === "completed") return false;

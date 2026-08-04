@@ -12,9 +12,10 @@
  * with a "step 4" confirmation after that page change, so this stops at
  * step 3; the registration email already explains how the two codes combine.
  *
- * Shown once per visitor: suppressed for good after subscribing, suppressed
- * for a week after an explicit dismissal, never for logged-in visitors, and
- * never on checkout/cart/account where it would interrupt something else.
+ * Shown once per visitor after the visitor reaches the configured scroll
+ * depth: suppressed for good after subscribing, suppressed for a week after
+ * an explicit dismissal, never for logged-in visitors, and never on
+ * checkout/cart/account where it would interrupt something else.
  */
 (function () {
   "use strict";
@@ -22,8 +23,7 @@
   var STATE_KEY = "nostalgia-welcome-offer";
   var EMAIL_KEY = "nostalgia-offer-email";
   var DISMISS_DAYS = 7;
-  var DELAY_MS = 10000;
-  var SCROLL_RATIO = 0.4;
+  var SCROLL_RATIO = 0.65;
   /* Pages where a popup would get in the way of an active purchase. */
   var SKIP_PATHS = ["/checkout", "/cart", "/order-success", "/track", "/account"];
 
@@ -347,8 +347,6 @@
   function schedule() {
     if (suppressed() || loggedIn() || skipPage()) return;
 
-    var timer = setTimeout(maybeOpen, DELAY_MS);
-
     function onScroll() {
       var doc = document.documentElement;
       var scrolled = doc.scrollTop / Math.max(1, doc.scrollHeight - doc.clientHeight);
@@ -359,23 +357,10 @@
     }
     window.addEventListener("scroll", onScroll, { passive: true });
 
-    /* Exit intent — desktop only (a touch device has no mouse to leave). */
-    function onMouseOut(e) {
-      if (!e.relatedTarget && !e.toElement && e.clientY <= 0) {
-        document.removeEventListener("mouseout", onMouseOut);
-        maybeOpen();
-      }
-    }
-    if (window.matchMedia && window.matchMedia("(pointer: fine)").matches) {
-      document.addEventListener("mouseout", onMouseOut);
-    }
-
     /* Clean up once it has actually fired. */
     var stop = setInterval(function () {
       if (triggered) {
-        clearTimeout(timer);
         window.removeEventListener("scroll", onScroll);
-        document.removeEventListener("mouseout", onMouseOut);
         clearInterval(stop);
       }
     }, 500);

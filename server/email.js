@@ -281,8 +281,7 @@ function buildHtml(order, lang) {
       : fees.orderExtraFees(order.payment, itemsSubtotal, {
           couponFreeShipping: !!order.couponFreeShipping,
         }).shipping;
-  const codFee =
-    order.codFee != null ? order.codFee : order.payment === "cod" ? fees.COD_FEE : 0;
+  const codFee = 0;
   const total =
     order.total != null ? order.total : itemsSubtotal - (order.discount || 0) + shippingFee + codFee;
 
@@ -290,7 +289,7 @@ function buildHtml(order, lang) {
   const win = deliveryWindow(orderDate, en);
   /* COD is confirmed on placement; a card order is only confirmed once the
      payment actually settles, so it must not claim otherwise. */
-  const confirmed = order.payment === "cod" || order.paymentStatus === "paid";
+  const confirmed = order.paymentStatus === "paid";
 
   function productImageUrl(image) {
     if (!image) return "";
@@ -302,7 +301,7 @@ function buildHtml(order, lang) {
   const facts = [
     ["doc", tr.orderCode, "#" + esc(order.number)],
     ["calendar", tr.dateLabel, esc(shortDate(orderDate, en))],
-    ["card", tr.payment, esc(order.payment === "cod" ? tr.payCod : tr.payCard)],
+    ["card", tr.payment, esc(tr.payCard)],
     ["check", tr.statusLabel, esc(confirmed ? tr.statusConfirmed : tr.statusPending)],
   ];
   const factCells = facts
@@ -373,7 +372,7 @@ function buildHtml(order, lang) {
         : esc(order.couponFreeShipping ? tr.freeShippingCoupon : tr.freeShipping),
       shippingFee ? null : "#4f7048"
     ) +
-    (codFee ? sumRow(tr.codFee, euro(codFee, en)) : "");
+    "";
 
   const addressLines =
     esc(((c.firstname || "") + " " + (c.lastname || "")).trim()) + "<br>" +
@@ -480,7 +479,7 @@ function buildText(order, lang) {
     0
   );
   const shippingFee = order.shippingFee != null ? order.shippingFee : fees.orderExtraFees(order.payment, itemsSubtotal).shipping;
-  const codFee = order.codFee != null ? order.codFee : order.payment === "cod" ? fees.COD_FEE : 0;
+  const codFee = 0;
 
   const lines = ["NOSTALGIA COLLECTION", "", tr.greeting(c.firstname || ""), tr.success, "", tr.orderCode + ": #" + order.number];
   if (order.accessToken) lines.push("", tr.trackBtn + ": " + base + "/track?token=" + order.accessToken);
@@ -497,7 +496,7 @@ function buildText(order, lang) {
   );
   if (codFee) lines.push(tr.codFee + ": " + money(codFee));
   if (order.total) lines.push(tr.total + ": " + money(order.total));
-  lines.push("", tr.payment + ": " + (order.payment === "cod" ? tr.payCod : tr.payCard));
+  lines.push("", tr.payment + ": " + tr.payCard);
   lines.push(tr.courier + ": " + (courier || tr.courierTbd));
   lines.push("", tr.shipTo + ":", (c.firstname + " " + c.lastname).trim(),
     ((c.street || "") + " " + (c.streetNumber || "") + ", " + (c.postal || "") + " " + (c.city || "")).trim() + (c.prefecture ? ", " + c.prefecture : ""));

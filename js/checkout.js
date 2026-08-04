@@ -3,6 +3,7 @@
   var shippingData = null;
   var orderCaptcha = null;
   var checkoutSubmitting = false;
+  var checkoutCouponBound = false;
 
   function v2Context(lines, payment) {
     var currentShipping = Object.assign({}, shippingData || {});
@@ -82,7 +83,7 @@
 
   function getPayMethod() {
     var selected = document.querySelector('input[name="pay_method"]:checked');
-    return selected ? selected.value : "stripe";
+    return selected && selected.value === "card" ? "card" : "card";
   }
 
   function getCourier() {
@@ -129,18 +130,17 @@
     if (window.NostalgiaOrderFees && typeof window.NostalgiaOrderFees.couponDiscount === "function") {
       discount = window.NostalgiaOrderFees.couponDiscount(subtotal);
     }
-    var payment = step === 2 ? getPayMethod() : "stripe";
+    var payment = "card";
     var fees = window.NostalgiaOrderFees
       ? window.NostalgiaOrderFees.extraFees(payment, subtotal)
-      : { shipping: 0, cod: 0 };
-    var total = Math.max(0, subtotal - discount + fees.shipping + fees.cod);
+      : { shipping: 0 };
+    var total = Math.max(0, subtotal - discount + fees.shipping);
     return {
       productSubtotal: productSubtotal,
       giftFees: giftFees,
       subtotal: subtotal,
       discount: discount,
       shipping: fees.shipping,
-      cod: fees.cod,
       total: total,
       gift: gift,
     };
@@ -358,16 +358,89 @@
       var fmt = window.NostalgiaOrderFees.formatFee;
       parts.push("");
       parts.push(t("cart_shipping_label") + ": " + fmt(fees.shipping, getLang()));
-      if (fees.cod > 0) {
-        parts.push(t("checkout_cod_fee_label") + ": " + fmt(fees.cod, getLang()));
-      }
     }
     parts.push("");
-    parts.push(t("checkout_payment_title") + ": " + (payment === "cod" ? t("checkout_pay_cod") : t("checkout_pay_stripe")));
+    parts.push(t("checkout_payment_title") + ": " + t("checkout_pay_card"));
     parts.push("");
     parts.push(t("cart_summary_title") + ":");
     parts.push.apply(parts, rows);
     return parts.join("\n");
+  }
+
+  function checkoutCouponFeedback(message, isError) {
+    var el = document.getElementById("checkout-coupon-feedback");
+    if (!el) return;
+    el.textContent = message || "";
+    el.hidden = !message;
+    el.classList.toggle("is-error", !!isError && !!message);
+    el.classList.toggle("is-success", !isError && !!message);
+  }
+
+  function checkoutCouponReason(reason) {
+    var messages = {
+      already_used: "Το κουπόνι έχει ήδη χρησιμοποιηθεί.",
+      not_first_order: "Το κουπόνι ισχύει μόνο για την πρώτη παραγγελία.",
+      expired: "Το κουπόνι έχει λήξει.",
+      exhausted: "Το κουπόνι έχει εξαντληθεί.",
+      email_required: "Συμπλήρωσε πρώτα το email σου και δοκίμασε ξανά.",
+    };
+    return messages[reason] || "Ο κωδικός κουπονιού δεν είναι έγκυρος.";
+  }
+
+  function syncCheckoutCouponUi() {
+    var listEl = document.getElementById("checkout-coupon-list");
+    if (!listEl) return;
+    var f = window.NostalgiaOrderFees;
+    var list = f && typeof f.readCoupons === "function" ? f.readCoupons() : [];
+    listEl.innerHTML = list.map(function (c) {
+      var value = c.type === "percent" ? "−" + c.value + "%" : c.freeShipping && !c.value ? "Δωρεάν μεταφορικά" : "−€" + Number(c.value).toFixed(2);
+      return '<li class="checkout-coupon__chip"><span>' + escapeHtml(c.code) + '</span><span class="checkout-coupon__chip-value">' + escapeHtml(value) + '</span><button type="button" data-checkout-coupon-remove="' + escapeHtml(c.code) + '" aria-label="Αφαίρεση">×</button></li>';
+    }).join("");
+  }
+
+  function bindCheckoutCoupon() {
+    var form = document.getElementById("checkout-coupon-form");
+    var input = document.getElementById("checkout-coupon-input");
+    if (!form || !input || checkoutCouponBound) return;
+    checkoutCouponBound = true;
+    syncCheckoutCouponUi();
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var code = input.value.trim().toUpperCase();
+      if (!code) return checkoutCouponFeedback("Γράψε έναν κωδικό κουπονιού.", true);
+      var f = window.NostalgiaOrderFees;
+      if (f && f.readCoupons().some(function (c) { return c.code === code; })) {
+        return checkoutCouponFeedback("Το κουπόνι έχει ήδη προστεθεί.", true);
+      }
+      var emailEl = document.getElementById("checkout-email");
+      var email = emailEl ? emailEl.value.trim() : "";
+      checkoutCouponFeedback("Έλεγχος κουπονιού…", false);
+      var apply = function (meta) {
+        if (f && typeof f.addCoupon === "function") f.addCoupon(meta || { code: code, type: "percent", value: 0 });
+        input.value = "";
+        checkoutCouponFeedback("Το κουπόνι εφαρμόστηκε.", false);
+        syncCheckoutCouponUi();
+        renderSummary();
+      };
+      if (window.NostalgiaAPI && window.NostalgiaAPI.isAvailable()) {
+        window.NostalgiaAPI.post("/api/coupons/validate", { code: code, email: email })
+          .then(function (res) {
+            if (res.ok && res.valid) return apply(res.coupon || { code: code });
+            checkoutCouponFeedback(checkoutCouponReason(res.reason), true);
+          })
+          .catch(function () { apply({ code: code }); });
+      } else {
+        apply({ code: code, type: "percent", value: 0 });
+      }
+    });
+    form.addEventListener("click", function (e) {
+      var btn = e.target.closest ? e.target.closest("[data-checkout-coupon-remove]") : null;
+      if (!btn) return;
+      var f = window.NostalgiaOrderFees;
+      if (f && typeof f.removeCoupon === "function") f.removeCoupon(btn.getAttribute("data-checkout-coupon-remove"));
+      syncCheckoutCouponUi();
+      renderSummary();
+    });
   }
 
   function renderSummary() {
@@ -456,17 +529,6 @@
     var discountRowClass =
       totals.discount > 0 ? " checkout-summary__row--discount" : "";
 
-    var codRow = "";
-    if (step === 2 && totals.cod > 0) {
-      codRow =
-        '<div class="checkout-summary__row checkout-summary__row--fee">' +
-        '<span data-i18n="checkout_cod_fee_label">' +
-        escapeHtml(t("checkout_cod_fee_label")) +
-        "</span>" +
-        "<span>" +
-        escapeHtml(formatSummaryPrice(totals.cod)) +
-        "</span></div>";
-    }
 
     el.innerHTML =
       addressBlock +
@@ -498,7 +560,6 @@
       "<span>" +
       escapeHtml(discountDisplay) +
       "</span></div>" +
-      codRow +
       '<div class="checkout-summary__row checkout-summary__row--total">' +
       '<span data-i18n="cart_total_label">' +
       escapeHtml(t("cart_total_label")) +
@@ -759,7 +820,7 @@
           btn.hidden = true;
           if (result) {
             result.hidden = false;
-            result.textContent = res.refunded ? t("checkout_cancel_done_refund") : t("checkout_cancel_done_cod");
+        result.textContent = res.refunded ? t("checkout_cancel_done_refund") : t("checkout_cancel_done");
           }
         } else {
           btn.disabled = false;
@@ -834,7 +895,7 @@
       "order-success-date",
       d.toLocaleDateString(locale) + " · " + d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
     );
-    setSuccessValue("order-success-pay-method", payment === "cod" ? t("pay_method_cod") : t("pay_method_card"));
+    setSuccessValue("order-success-pay-method", t("pay_method_card"));
     var courierRow = document.getElementById("order-success-courier-row");
     if (extra.courier) {
       setSuccessValue("order-success-courier", courierLabel(extra.courier));
@@ -845,7 +906,7 @@
 
     if (payIcon) {
       payIcon.className = "order-success__pay-icon order-success__pay-icon--" + payment;
-      payIcon.innerHTML = payment === "cod" ? PAY_ICON_COD : PAY_ICON_STRIPE;
+      payIcon.innerHTML = PAY_ICON_STRIPE;
     }
 
     if (productsEl) {
@@ -1039,7 +1100,7 @@
     document.querySelectorAll('input[name="pay_method"]').forEach(function (radio) {
       radio.addEventListener("change", function () {
         var note = document.getElementById("checkout-stripe-note");
-        if (note) note.hidden = getPayMethod() !== "stripe";
+        if (note) note.hidden = false;
         renderSummary();
         updateCta();
       });
@@ -1360,6 +1421,7 @@
     updateDocTypeUI();
     updateGiftUI();
     bindEvents();
+    bindCheckoutCoupon();
     initAccountBanner();
     if (window.NostalgiaCheckoutV2) {
       window.NostalgiaCheckoutV2.loadConfig().then(renderSummary);

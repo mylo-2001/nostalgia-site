@@ -318,14 +318,13 @@
   letter-spacing: 0.2em;
   text-transform: uppercase;
   padding: 0.82rem 2rem;
-  /* Refined ghost button (Trudon "DISCOVER"): transparent with a thin warm
-     outline; fills softly on hover. Lets the photography stay the hero. */
-  background: transparent;
-  color: #f3e4c4;
-  border: 1px solid rgba(236, 214, 164, 0.55);
+  /* One clear hero action: a quiet filled-gold seal against the photography. */
+  background: linear-gradient(135deg, #e2c48d 0%, #b48a4c 100%);
+  color: #1c130a;
+  border: 1px solid rgba(255, 239, 199, 0.72);
   border-radius: 2px;
   cursor: pointer;
-  box-shadow: none;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.25);
   transition:
     background var(--transition),
     border-color var(--transition),
@@ -342,10 +341,11 @@
 }
 
 .hero-home__cta:hover {
-  background: rgba(236, 214, 164, 0.92);
-  border-color: rgba(236, 214, 164, 0.92);
+  background: linear-gradient(135deg, #f0d9a9 0%, #c49b5c 100%);
+  border-color: rgba(255, 239, 199, 0.95);
   color: #1c130a;
   transform: translateY(-2px);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 /* Hero εμφάνιση: ίδιο clip-path wipe σε όλα τα στοιχεία, μόνο stagger στα delays */

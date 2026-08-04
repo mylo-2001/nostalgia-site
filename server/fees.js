@@ -2,7 +2,6 @@
 
 /** Flat order fees (EUR) — keep in sync with js/order-fees.js */
 const SHIPPING_FEE = 3.5;
-const COD_FEE = 3.5;
 const FREE_SHIPPING_MIN = 120;
 
 const COURIERS = {
@@ -15,8 +14,7 @@ function orderExtraFees(payment, subtotal, opts) {
   const base = Number(subtotal) || 0;
   const freeShipping = base >= FREE_SHIPPING_MIN || !!opts.couponFreeShipping;
   const shipping = freeShipping ? 0 : SHIPPING_FEE;
-  const cod = payment === "cod" ? COD_FEE : 0;
-  return { shipping, cod, feesTotal: shipping + cod, freeShipping };
+  return { shipping, cod: 0, feesTotal: shipping, freeShipping };
 }
 
 function normalizeCourier(raw) {
@@ -30,7 +28,6 @@ function courierLabel(key) {
 
 module.exports = {
   SHIPPING_FEE,
-  COD_FEE,
   FREE_SHIPPING_MIN,
   COURIERS,
   orderExtraFees,

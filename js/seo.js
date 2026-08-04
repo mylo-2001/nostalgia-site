@@ -64,7 +64,7 @@
     },
     payments: {
       title: "Τρόποι Πληρωμής · Nostalgia Collection",
-      desc: "Αποδεκτοί τρόποι πληρωμής, αντικαταβολή και πολιτική επιστροφής χρημάτων στη Nostalgia Collection.",
+      desc: "Ασφαλείς πληρωμές με κάρτα και πολιτική επιστροφής χρημάτων στη Nostalgia Collection.",
     },
     terms: {
       title: "Όροι Χρήσης · Nostalgia Collection",

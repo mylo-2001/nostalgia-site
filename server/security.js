@@ -102,6 +102,22 @@ function isUuid(v) {
   return UUID_RE.test(String(v || ""));
 }
 
+/* Salted, one-way hash of a visitor IP for the cookie-consent log.
+ * Keyed on SESSION_SECRET with its own purpose prefix, so it cannot be
+ * cross-referenced with any other derived value — and, because it is an HMAC
+ * rather than a bare hash, an attacker who obtains the table cannot brute the
+ * (tiny) IPv4 space back to addresses without also holding the secret.
+ * Returns "" when there is no address rather than hashing an empty string. */
+function hashIpForConsent(ip) {
+  const raw = String(ip || "").trim();
+  if (!raw) return "";
+  return crypto
+    .createHmac("sha256", process.env.SESSION_SECRET || "")
+    .update("cookie-consent-ip:" + raw)
+    .digest("hex")
+    .slice(0, 32);
+}
+
 /* ---------- One-click newsletter unsubscribe (no login needed) ----------
  * A short HMAC of the email, keyed on SESSION_SECRET with a purpose prefix
  * so it can't be confused with any other token derived from the same
@@ -296,6 +312,7 @@ module.exports = {
   verifyTurnstile,
   isUuid,
   newsletterUnsubscribeToken,
+  hashIpForConsent,
   verifyNewsletterUnsubscribeToken,
   enforceHttps,
   securityHeaders,

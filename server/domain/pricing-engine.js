@@ -275,11 +275,8 @@ function calculatePrice(input) {
   }
 
   const paymentMethod = input.paymentMethod;
-  if (!['card', 'cod'].includes(paymentMethod)) {
-    fail("INVALID_PAYMENT_METHOD", "Payment method must be card or cod");
-  }
-  if (paymentMethod === "cod" && !shipping.codAllowed) {
-    fail("COD_NOT_ALLOWED", "Cash on delivery is unavailable for this shipping method");
+  if (paymentMethod !== "card") {
+    fail("INVALID_PAYMENT_METHOD", "Only card payment is available");
   }
 
   const thresholdReached = shipping.freeShippingThresholdMinor !== null
@@ -291,11 +288,7 @@ function calculatePrice(input) {
     shipping.shippingVatRateUnits,
     shipping.shippingPriceIncludesTax
   );
-  const codFee = feeBreakdown(
-    paymentMethod === "cod" ? shipping.codFeeMinor : 0n,
-    shipping.codVatRateUnits,
-    shipping.codPriceIncludesTax
-  );
+  const codFee = feeBreakdown(0n, shipping.codVatRateUnits, shipping.codPriceIncludesTax);
 
   const discountTotalMinor = saleDiscountTotalMinor + couponDiscountTotalMinor;
   const vatTotalMinor = productVatTotalMinor + shippingFee.vatMinor + codFee.vatMinor;

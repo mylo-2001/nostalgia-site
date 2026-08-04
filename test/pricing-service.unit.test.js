@@ -15,12 +15,12 @@ test("pricing request accepts identifiers and merges duplicate lines", () => {
       { productId: "p-1", variantId: "v-1", quantity: 2 },
     ],
     shippingMethodId: "home",
-    paymentMethod: "COD",
+    paymentMethod: "card",
     destinationCountry: "gr",
     couponCode: " save10 ",
   });
   assert.deepEqual(normalized.items, [{ productId: "p-1", variantId: "v-1", quantity: 3 }]);
-  assert.equal(normalized.paymentMethod, "cod");
+  assert.equal(normalized.paymentMethod, "card");
   assert.equal(normalized.destinationCountry, "GR");
   assert.equal(normalized.couponCode, "SAVE10");
 });
@@ -38,4 +38,3 @@ test("pricing request rejects browser-supplied monetary fields", () => {
       && error.code === "CLIENT_PRICING_FIELD_FORBIDDEN"
   );
 });
-

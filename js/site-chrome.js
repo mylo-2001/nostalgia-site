@@ -180,6 +180,11 @@
       '          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3a9 9 0 0 0-3.3 17.4l1.2-4.4c-.3-.7-.6-1.7-.6-2.8 0-2.3 1.3-4 3.1-4 1.5 0 2.2 1.1 2.2 2.5 0 1.5-1 3.8-1.5 5.9-.4 1.7.9 3.1 2.6 3.1 3.2 0 5.3-4.1 5.3-8.9A8.3 8.3 0 0 0 12 3zm0 0"/></svg>' +
       "        </a>" +
       "      </div>" +
+      '      <div class="site-footer__emails-heading">' +
+      '        <svg viewBox="0 0 32 24" aria-hidden="true"><rect x="2.5" y="3.5" width="27" height="17" rx="2" fill="none" stroke="currentColor" stroke-width="1.35"/><path d="m4 6 12 8 12-8" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+      '        <span>Nostalgia Emails</span>' +
+      "      </div>" +
+      FOOTER_ORNAMENT +
       '      <ul class="site-footer__lines site-footer__emails">' +
       '        <li class="site-footer__line">' +
       '          <svg class="site-footer__line-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M4 7l8 6 8-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
@@ -214,6 +219,13 @@
       "      <span>SSL Secure</span>" +
       "    </span>" +
       "  </div>" +
+      "</div>" +
+      '<div class="site-footer__partners" aria-label="Partners and service providers">' +
+      '  <span class="site-footer__partners-title">Partners</span>' +
+      '  <a class="site-footer__partner site-footer__partner--acs" href="https://www.acscourier.net/" target="_blank" rel="noopener noreferrer" aria-label="ACS Courier"><img src="images/sunergates-logo/acs-logo.webp" alt="ACS Courier" loading="lazy" /></a>' +
+      '  <a class="site-footer__partner" href="https://www.pointer.gr/" target="_blank" rel="noopener noreferrer" aria-label="Pointer.gr"><img src="images/sunergates-logo/pointer-logo.webp" alt="Pointer.gr" loading="lazy" /></a>' +
+      '  <a class="site-footer__partner" href="https://www.papaki.com/" target="_blank" rel="noopener noreferrer" aria-label="Papaki"><img src="images/sunergates-logo/papaki-logo.webp" alt="Papaki" loading="lazy" /></a>' +
+      '  <a class="site-footer__partner" href="https://www.cpanel.net/" target="_blank" rel="noopener noreferrer" aria-label="cPanel"><img src="images/sunergates-logo/cpanel-logo.webp" alt="cPanel" loading="lazy" /></a>' +
       "</div>"
     );
   }
@@ -590,6 +602,72 @@
         align-items: center;
         gap: 0.5rem;
         justify-self: end;
+      }
+      .site-footer__partners {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+        width: 100%;
+        margin-top: 1.15rem;
+        padding-top: 0.9rem;
+        border-top: 1px solid var(--rule-hairline);
+      }
+      .site-footer__partners-title {
+        margin-right: 0.25rem;
+        color: var(--ink-muted);
+        font-family: var(--font-nav);
+        font-size: 0.58rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+      .site-footer__partner {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 6.25rem;
+        height: 2.15rem;
+        padding: 0.22rem 0.42rem;
+        overflow: hidden;
+        border: 1px solid var(--rule-hairline);
+        border-radius: 0.3rem;
+        background: #fff;
+        transition: opacity 180ms ease, transform 180ms ease;
+      }
+      .site-footer__partner:hover,
+      .site-footer__partner:focus-visible {
+        opacity: 0.82;
+        transform: translateY(-1px);
+      }
+      .site-footer__partner img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      .site-footer__emails-heading {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 1.15rem 0 0.2rem;
+        color: var(--footer-ink);
+        font-family: var(--font-display);
+        font-size: 0.9rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .site-footer__emails-heading svg {
+        width: 1rem;
+        height: 0.8rem;
+        flex: 0 0 auto;
+        color: var(--accent);
+      }
+      .site-footer__partner--acs img {
+        width: 86%;
+        height: 86%;
+        mix-blend-mode: multiply;
       }
       .site-footer__pay {
         display: inline-flex;

@@ -96,8 +96,8 @@ function normalizeRequest(request) {
     throw new PricingServiceError("INVALID_SHIPPING_METHOD", "Shipping method identifier is required");
   }
   const paymentMethod = String(request.paymentMethod || "").toLowerCase();
-  if (!['card', 'cod'].includes(paymentMethod)) {
-    throw new PricingServiceError("INVALID_PAYMENT_METHOD", "Payment method must be card or cod");
+  if (paymentMethod !== "card") {
+    throw new PricingServiceError("INVALID_PAYMENT_METHOD", "Only card payment is available");
   }
   const destinationCountry = String(request.destinationCountry || "").trim().toUpperCase();
   if (!/^[A-Z]{2}$/.test(destinationCountry)) {

@@ -31,7 +31,7 @@
       : ["Παραγγελία ολοκληρώθηκε", "Επεξεργασία", "Αποστολή", "Παράδοση"],
   };
 
-  var PAY_METHOD = { cod: EN ? "Cash on delivery" : "Αντικαταβολή", card: EN ? "Card" : "Κάρτα" };
+  var PAY_METHOD = { card: EN ? "Card" : "Κάρτα" };
   var PAY_STATUS = EN
     ? { pending: "Pending", paid: "Paid", failed: "Failed", refunded: "Refunded", partial_refund: "Partial refund", offline: "Offline", cod_pending: "Not collected", cod_collected: "Collected", cod_not_delivered: "Not delivered", cod_awaiting_remittance: "Awaiting remittance", cod: "Not collected" }
     : { pending: "Εκκρεμεί", paid: "Πληρώθηκε", failed: "Απέτυχε", refunded: "Επιστροφή χρημάτων", partial_refund: "Μερική επιστροφή", offline: "Offline", cod_pending: "Δεν εισπράχθηκε", cod_collected: "Εισπράχθηκε", cod_not_delivered: "Δεν παραδόθηκε", cod_awaiting_remittance: "Αναμονή απόδοσης", cod: "Δεν εισπράχθηκε" };
@@ -44,7 +44,7 @@
     return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
   function courierLabel(k) { var id = String(k || "").toLowerCase(); return COURIERS[id] || (k ? String(k) : ""); }
-  function payMethod(o) { return o.payment === "cod" ? PAY_METHOD.cod : PAY_METHOD.card; }
+  function payMethod() { return PAY_METHOD.card; }
   function money(v) { return "€" + Number(v).toFixed(2); }
 
   /* Which of the 4 steps is the current stage (0-based). */

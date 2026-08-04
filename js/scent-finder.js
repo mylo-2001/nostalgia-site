@@ -378,6 +378,7 @@
         '">' +
         t(textKey) +
         "</p>" +
+        profileHtml(answers) +
         giftExtra +
         '<div class="scent-finder__actions">' +
         '  <a class="btn-shop btn-shop--primary" href="' +
@@ -408,6 +409,7 @@
         '<p class="scent-finder__result-text" data-i18n="scent_result_text_category">' +
         t("scent_result_text_category") +
         "</p>" +
+        profileHtml(answers) +
         giftExtra +
         '<div class="scent-finder__actions">' +
         '  <a class="btn-shop btn-shop--primary" href="' +
@@ -440,6 +442,27 @@
         renderStep(0, {});
       });
     }
+  }
+
+  function profileHtml(answers) {
+    var labels = [];
+    Object.keys(QUESTION_KEYS).forEach(function (step) {
+      var value = answers[step];
+      if (!value) return;
+      var q = QUESTION_KEYS[step];
+      var key = q.a.filter(function (candidate) {
+        return ANSWER_VALUES[candidate] === value;
+      })[0];
+      if (key) labels.push('<span class="scent-finder__profile-chip">' + t(key) + "</span>");
+    });
+    if (!labels.length) return "";
+    return (
+      '<div class="scent-finder__profile">' +
+      '<p class="scent-finder__profile-label">' +
+      (document.documentElement.lang === "en" ? "Your scent profile" : "Το προφίλ σου") +
+      "</p>" +
+      '<div class="scent-finder__profile-chips">' + labels.join("") + "</div></div>"
+    );
   }
 
   function init() {

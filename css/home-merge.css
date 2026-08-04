@@ -215,6 +215,37 @@
   will-change: transform, opacity;
 }
 
+/* Safe fallback when the scroll animation cannot initialize or update. */
+.home-merge--static {
+  height: auto;
+  padding: clamp(3.5rem, 8vw, 7rem) 0;
+}
+
+.home-merge--static .home-merge__inner {
+  position: relative;
+  top: auto;
+  height: auto;
+  display: block;
+  overflow: visible;
+  padding: 0;
+}
+
+.home-merge--static .home-merge__statement,
+.home-merge--static .home-merge__media,
+.home-merge--static .home-merge__aside {
+  position: relative;
+  transform: none;
+  opacity: 1;
+  width: 100%;
+  max-width: none;
+  margin-left: 0;
+}
+
+.home-merge--static .home-merge__media,
+.home-merge--static .home-merge__aside {
+  margin-top: clamp(1.5rem, 4vw, 2.75rem);
+}
+
 .home-merge--scrub .home-merge__media {
   grid-area: 1 / 1;
   margin-top: 0;

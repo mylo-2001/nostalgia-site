@@ -8,11 +8,6 @@ const {
   reserveInventory,
   sha256,
 } = require("./inventory-service");
-const {
-  assessCodRisk,
-  persistBlockedRiskAttempt,
-  persistOrderRisk,
-} = require("./risk-service");
 const { enqueueNotification } = require("./notification-outbox-service");
 
 class OrderCreationError extends Error {
@@ -86,7 +81,7 @@ function normalizeCheckout(request, identity = {}) {
     fail("DESTINATION_ADDRESS_MISMATCH", "Shipping country does not match pricing destination");
   }
   const paymentMethod = String(request.paymentMethod || "").toLowerCase();
-  if (!['card', 'cod'].includes(paymentMethod)) fail("INVALID_PAYMENT_METHOD", "Payment method is invalid");
+  if (paymentMethod !== "card") fail("INVALID_PAYMENT_METHOD", "Only card payment is available");
 
   const userEmail = identity.type === "user" ? email(identity.email) : null;
   return {
@@ -218,34 +213,6 @@ async function createOrderTransaction(options, normalized, idempotency, now) {
     logger: options.logger,
   });
 
-  let riskAssessment = null;
-  if (normalized.paymentMethod === "cod") {
-    riskAssessment = await assessCodRisk({
-      client,
-      checkout: normalized,
-      quote,
-      context: options.riskContext || {},
-      now,
-    });
-    if (riskAssessment.decision === "card_required") {
-      const assessmentId = await persistBlockedRiskAttempt({
-        client,
-        checkoutHash: idempotency.requestHash,
-        assessment: riskAssessment,
-        requestId: options.requestId,
-      });
-      return {
-        orderId: null,
-        assessmentId,
-        outcome: "card_required",
-        riskLevel: riskAssessment.level,
-        currency: quote.currency,
-        grandTotal: quote.breakdown.grandTotal,
-        guestAccess: false,
-      };
-    }
-  }
-
   const orderId = crypto.randomUUID();
   const number = await nextOrderNumber(client);
   const isGuest = !normalized.userEmail;
@@ -253,10 +220,8 @@ async function createOrderTransaction(options, normalized, idempotency, now) {
     ? guestToken(options.guestTokenSecret, idempotency.keyHash, orderId)
     : null;
   const accessExpiry = isGuest ? new Date(now.getTime() + (30 * 86400000)) : null;
-  const orderStatus = normalized.paymentMethod === "cod"
-    ? (riskAssessment.decision === "manual_review" ? "requires_review" : "confirmed")
-    : "pending";
-  const paymentStatus = normalized.paymentMethod === "cod" ? "cod_pending" : "pending";
+  const orderStatus = "pending";
+  const paymentStatus = "pending";
   const legacyItems = quote.items.map((item) => ({
     id: item.variantId || item.productId,
     productId: item.productId,
@@ -304,8 +269,8 @@ async function createOrderTransaction(options, normalized, idempotency, now) {
   `, [
     orderId,
     number,
-    normalized.paymentMethod === "cod" ? "processing" : "new",
-    normalized.paymentMethod === "cod" ? "cod" : "stripe",
+    "new",
+    "stripe",
     paymentStatus,
     normalized.couponCode || "",
     quote.breakdown.discountTotal,
@@ -351,34 +316,6 @@ async function createOrderTransaction(options, normalized, idempotency, now) {
   await client.query(`
     UPDATE orders SET reservation_group_key = $2 WHERE id = $1
   `, [orderId, reservation.groupKey]);
-
-  if (riskAssessment) {
-    await persistOrderRisk({
-      client,
-      orderId,
-      assessment: riskAssessment,
-      requestId: options.requestId,
-    });
-    await client.query(`
-      INSERT INTO payments (
-        order_id, attempt, provider, payment_method, status, amount, currency, metadata
-      ) VALUES ($1, 1, 'cod', 'cod', 'cod_pending', $2, $3, $4)
-      RETURNING id
-    `, [orderId, quote.breakdown.grandTotal, quote.currency, {
-      riskLevel: riskAssessment.level,
-      riskDecision: riskAssessment.decision,
-    }]);
-    if (riskAssessment.decision === "auto_approved") {
-      await consumeInventoryReservationGroup({
-        client,
-        groupKey: reservation.groupKey,
-        operationKey: `cod-confirmed:${orderId}`,
-        actor: { type: "system", id: "cod-risk" },
-        source: "checkout.cod_risk",
-        requestId: options.requestId,
-      });
-    }
-  }
 
   await client.query(`
     INSERT INTO shipments (
@@ -465,8 +402,8 @@ async function createOrderTransaction(options, normalized, idempotency, now) {
     currency: quote.currency,
     grandTotal: quote.breakdown.grandTotal,
     reservationExpiresAt: reservation.expiresAt,
-    riskLevel: riskAssessment?.level || null,
-    riskDecision: riskAssessment?.decision || null,
+    riskLevel: null,
+    riskDecision: null,
     guestAccess: isGuest,
   };
 }

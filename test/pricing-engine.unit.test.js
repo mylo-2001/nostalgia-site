@@ -111,13 +111,13 @@ test("money parser rejects hidden precision instead of silently rounding", () =>
   );
 });
 
-test("pricing applies sale, coupon, free shipping, COD fee and VAT", () => {
+test("pricing applies sale, coupon, free shipping and VAT for card payment", () => {
   const result = calculatePrice({
     policy: policy(),
     lines: lines(),
     coupon: percentCoupon(),
     shippingMethod: shipping(),
-    paymentMethod: "cod",
+    paymentMethod: "card",
     destinationCountry: "GR",
     now: new Date("2026-01-15T12:00:00Z"),
   });
@@ -128,10 +128,10 @@ test("pricing applies sale, coupon, free shipping, COD fee and VAT", () => {
     discountTotal: "7.60",
     merchandiseTotal: "32.40",
     shippingTotal: "0.00",
-    codFee: "3.50",
-    vatTotal: "6.95",
+    codFee: "0.00",
+    vatTotal: "6.27",
     otherChargesTotal: "0.00",
-    grandTotal: "35.90",
+    grandTotal: "32.40",
   });
   assert.equal(result.items[0].discountAmount, "5.60");
   assert.equal(result.items[1].variantId, "v-2");
@@ -205,7 +205,7 @@ test("coupon validity, usage and customer limits are enforced", () => {
   );
 });
 
-test("stock, shipping country and COD restrictions are enforced", () => {
+test("stock, shipping country and payment restrictions are enforced", () => {
   const base = {
     policy: policy(),
     lines: lines(),
@@ -224,12 +224,8 @@ test("stock, shipping country and COD restrictions are enforced", () => {
     (error) => error.code === "SHIPPING_COUNTRY_UNSUPPORTED"
   );
   assert.throws(
-    () => calculatePrice({
-      ...base,
-      paymentMethod: "cod",
-      shippingMethod: shipping({ codAllowed: false }),
-    }),
-    (error) => error.code === "COD_NOT_ALLOWED"
+    () => calculatePrice({ ...base, paymentMethod: "cod", shippingMethod: shipping() }),
+    (error) => error.code === "INVALID_PAYMENT_METHOD"
   );
   const missingSku = lines();
   missingSku[0] = { ...missingSku[0], sku: null };

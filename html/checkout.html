@@ -291,17 +291,10 @@
               <div class="checkout-options checkout-options--payment" role="radiogroup" aria-labelledby="checkout-pay-label">
                 <span class="visually-hidden" id="checkout-pay-label" data-i18n="checkout_payment_title">Επίλεξε τον τρόπο πληρωμής</span>
                 <label class="checkout-option checkout-option--payment">
-                  <input type="radio" name="pay_method" value="stripe" checked />
+                  <input type="radio" name="pay_method" value="card" checked />
                   <span class="checkout-option__box">
                     <span class="checkout-option__title" data-i18n="checkout_pay_stripe">Κάρτα (Stripe)</span>
                     <span class="checkout-option__desc" data-i18n="checkout_pay_stripe_desc">Ασφαλής online πληρωμή με πιστωτική ή χρεωστική κάρτα.</span>
-                  </span>
-                </label>
-                <label class="checkout-option checkout-option--payment">
-                  <input type="radio" name="pay_method" value="cod" />
-                  <span class="checkout-option__box">
-                    <span class="checkout-option__title" data-i18n="checkout_pay_cod">Αντικαταβολή</span>
-                    <span class="checkout-option__desc" data-i18n="checkout_pay_cod_desc">Πληρωμή στον courier κατά την παράδοση.</span>
                   </span>
                 </label>
               </div>
@@ -316,6 +309,17 @@
 
           <aside class="checkout-sidebar" id="checkout-sidebar" aria-labelledby="checkout-summary-heading">
             <div class="checkout-sidebar__box">
+              <div class="checkout-coupon" id="checkout-coupon">
+                <form class="checkout-coupon__form" id="checkout-coupon-form" novalidate>
+                  <label class="checkout-coupon__label" for="checkout-coupon-input" data-i18n="cart_coupon_label">ΚΩΔΙΚΟΣ ΚΟΥΠΟΝΙΟΥ</label>
+                  <div class="checkout-coupon__row">
+                    <input id="checkout-coupon-input" class="checkout-coupon__input" type="text" name="coupon" autocomplete="off" spellcheck="false" data-i18n-placeholder="cart_coupon_placeholder" placeholder="Εισάγετε τον κωδικό" />
+                    <button type="submit" class="checkout-coupon__apply" data-i18n="cart_coupon_apply">Εφαρμογή</button>
+                  </div>
+                  <ul class="checkout-coupon__list" id="checkout-coupon-list"></ul>
+                  <p class="checkout-coupon__feedback" id="checkout-coupon-feedback" hidden role="status"></p>
+                </form>
+              </div>
               <h2 class="checkout-sidebar__title" id="checkout-summary-heading" data-i18n="checkout_order_summary">Σύνοψη παραγγελίας</h2>
               <div id="checkout-summary"></div>
               <div id="checkout-server-quote" class="checkout-server-quote" hidden></div>
@@ -329,7 +333,7 @@
                 <div class="checkout-trust__item">
                   <svg class="checkout-trust__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 3l7 3v6c0 4.2-2.8 7.6-7 9-4.2-1.4-7-4.8-7-9V6l7-3z"/></svg>
                   <p class="checkout-trust__title" data-i18n="checkout_trust_secure">Ασφαλείς πληρωμές</p>
-                  <p class="checkout-trust__text" data-i18n="checkout_trust_secure_text">Stripe & αντικαταβολή με προσοχή στα στοιχεία σας.</p>
+                  <p class="checkout-trust__text" data-i18n="checkout_trust_secure_text">Ασφαλής πληρωμή μόνο με κάρτα.</p>
                 </div>
                 <div class="checkout-trust__item">
                   <svg class="checkout-trust__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 10l8-5 8 5v8a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-8z"/></svg>

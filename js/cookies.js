@@ -1,6 +1,55 @@
 (function () {
   var STORAGE_KEY = "nostalgia-cookie-consent";
+  var VISITOR_KEY = "nostalgia-visitor-id";
   var CONSENT_DAYS = 365;
+  /* Bump whenever the banner wording or the categories change, so the stored
+     records stay honest about what each visitor was actually shown. */
+  var POLICY_VERSION = "v1";
+
+  /* A random id this browser gives itself. Not derived from anything about the
+     person and never tied to an account — it exists only so a consent record
+     can be matched to the browser that produced it if the choice is ever
+     disputed. */
+  function visitorId() {
+    try {
+      var existing = localStorage.getItem(VISITOR_KEY);
+      if (existing) return existing;
+      var id;
+      if (window.crypto && window.crypto.randomUUID) {
+        id = window.crypto.randomUUID();
+      } else {
+        id = "v-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 12);
+      }
+      localStorage.setItem(VISITOR_KEY, id);
+      return id;
+    } catch (e) {
+      return "";
+    }
+  }
+
+  /* Mirrors the choice to the server so we can demonstrate consent later
+     (GDPR art. 7(1)) — localStorage alone is the visitor's copy, not ours.
+     Fire-and-forget with keepalive: a banner click is often followed
+     immediately by a navigation, and the record must survive it. Failure here
+     must never block the visitor's choice from taking effect locally. */
+  function recordConsent(data, source) {
+    var id = visitorId();
+    if (!id) return;
+    try {
+      fetch("/api/cookie-consent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          visitorId: id,
+          analytics: !!data.analytics,
+          marketing: !!data.marketing,
+          policyVersion: POLICY_VERSION,
+          source: source || "banner",
+        }),
+        keepalive: true,
+      }).catch(function () {});
+    } catch (e) {}
+  }
 
   /* Simple line-style cookie icon (currentColor) — no emoji. */
   var COOKIE_ICON =
@@ -46,6 +95,10 @@
     } catch (e) {}
     var revoked = !!(previous &&
       ((previous.analytics && !data.analytics) || (previous.marketing && !data.marketing)));
+    /* "settings" when they are changing an earlier answer, "revoked" when that
+        change withdraws something — the distinction is what makes the log
+        readable as a history rather than a pile of rows. */
+    recordConsent(data, revoked ? "revoked" : previous ? "settings" : "banner");
     document.dispatchEvent(new CustomEvent("nostalgia-cookie-consent-set", {
       detail: { analytics: !!data.analytics, marketing: !!data.marketing, revoked: revoked },
     }));

@@ -741,6 +741,31 @@ body.has-quick-view-open {
   color: var(--accent);
 }
 
+.home-seasonal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.85rem 1.1rem;
+  margin-top: 0.35rem;
+}
+
+.home-seasonal__secondary {
+  color: var(--ink-muted);
+  font-family: var(--font-nav);
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-bottom: 1px solid var(--accent-muted);
+  padding-bottom: 0.2rem;
+  transition: color var(--transition), border-color var(--transition);
+}
+
+.home-seasonal__secondary:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 /* ——— Split layout variant (text panel | image) ——— */
 .home-seasonal--split {
   min-height: 0;
@@ -803,6 +828,10 @@ body.has-quick-view-open {
   margin-top: 0.35rem;
   border-color: var(--accent-muted);
   color: var(--accent);
+}
+
+.home-seasonal--split .home-seasonal__actions {
+  align-items: baseline;
 }
 
 .home-seasonal--split .home-seasonal__cta:hover {

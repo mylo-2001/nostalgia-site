@@ -51,7 +51,7 @@
       items: productLines(context.lines),
       couponCode: context.couponCode || null,
       shippingMethodId: context.shippingData.courier,
-      paymentMethod: context.payment === "cod" ? "cod" : "card",
+      paymentMethod: "card",
       destinationCountry: context.shippingData.countryCode,
       customerEmail: context.shippingData.email,
     };
@@ -63,7 +63,7 @@
       items: productLines(context.lines),
       couponCode: context.couponCode || null,
       shippingMethodId: data.courier,
-      paymentMethod: context.payment === "cod" ? "cod" : "card",
+      paymentMethod: "card",
       destinationCountry: data.countryCode,
       customer: {
         firstName: data.firstname,
@@ -133,7 +133,7 @@
         lines: context.lines.map(function (line) {
           return { qty: line.qty, image: line.product.image, title: line.product.title };
         }),
-        payment: context.payment,
+        payment: "card",
         orderNumber: order.orderNumber,
         orderId: order.orderId,
         guestAccessToken: order.guestAccessToken || null,
@@ -144,7 +144,6 @@
         lastname: context.shippingData.lastname,
       };
       storageSet(PENDING_KEY, JSON.stringify(pending));
-      if (context.payment === "cod") return { order: order, pending: pending };
       return createCardSession(pending).then(function (session) {
         return { order: order, pending: pending, checkoutUrl: session.checkoutUrl };
       });
@@ -188,10 +187,11 @@
     if (!box || !result || !result.quote) return;
     var b = result.quote.breakdown;
     var label = context.lang === "en"
-      ? ["Subtotal", "Discount", "Shipping", "Cash on delivery", "VAT", "Total"]
-      : ["Υποσύνολο", "Έκπτωση", "Μεταφορικά", "Αντικαταβολή", "ΦΠΑ", "Σύνολο"];
+      ? ["Subtotal", "Discount", "Shipping", "VAT", "Total"]
+      : ["Υποσύνολο", "Έκπτωση", "Μεταφορικά", "ΦΠΑ", "Σύνολο"];
+    if (label.length === 6) label.splice(3, 1);
     var values = [b.subtotal, Number(b.discountTotal) > 0 ? "-" + b.discountTotal : "0.00",
-      b.shippingTotal, b.codFee, b.vatTotal, b.grandTotal];
+      b.shippingTotal, b.vatTotal, b.grandTotal];
     box.innerHTML = values.map(function (value, index) {
       return '<div class="checkout-summary__row' + (index === 5
         ? ' checkout-summary__row--total' : '') + '"><span>' + label[index] +

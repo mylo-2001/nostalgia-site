@@ -119,9 +119,9 @@ function socialIconImg(base, name, label) {
 
 function socialLinksHtml(base) {
   const links = [
-    ["https://www.instagram.com/", "instagram", "Instagram"],
-    ["https://www.facebook.com/", "facebook", "Facebook"],
-    ["https://www.tiktok.com/", "tiktok", "TikTok"],
+    ["https://www.instagram.com/nostalgia_candle_collection/", "instagram", "Instagram"],
+    ["https://www.facebook.com/profile.php?id=61593252410347", "facebook", "Facebook"],
+    ["https://www.tiktok.com/@nostalgia_candle0", "tiktok", "TikTok"],
   ];
   return links
     .map(([url, icon, label]) => '<a href="' + esc(url) + '" style="display:inline-block;margin:0 8px">' + socialIconImg(base, icon, label) + "</a>")

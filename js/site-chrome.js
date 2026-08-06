@@ -176,7 +176,12 @@
       '        <a class="site-footer__social-link" href="https://www.tiktok.com/" target="_blank" rel="noopener noreferrer" aria-label="TikTok">' +
       '          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M14.8 4c.5 1.4 1.5 2.5 2.9 3.1.8.3 1.6.5 2.3.5v2.8c-1 0-2-.2-2.9-.6v5.6c0 2.7-2.2 4.9-4.9 4.9a4.9 4.9 0 0 1 0-9.8c.3 0 .6 0 .9.1v2.9a2 2 0 0 0-.9-.2 2.1 2.1 0 1 0 2.1 2.1V4h2.5z"/></svg>' +
       "        </a>" +
-      '        <a class="site-footer__social-link" href="https://www.pinterest.com/" target="_blank" rel="noopener noreferrer" aria-label="Pinterest">' +
+      /* The only social link pointing at a real profile so far — Facebook,
+         Instagram and TikTok below still go to their bare homepages and need
+         the actual handles before they are worth showing. Use www, not the
+         gr. subdomain: that is only Pinterest's localised mirror and sends
+         everyone outside Greece through a needless redirect. */
+      '        <a class="site-footer__social-link" href="https://www.pinterest.com/NostalgiaCollection/" target="_blank" rel="noopener noreferrer" aria-label="Pinterest">' +
       '          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3a9 9 0 0 0-3.3 17.4l1.2-4.4c-.3-.7-.6-1.7-.6-2.8 0-2.3 1.3-4 3.1-4 1.5 0 2.2 1.1 2.2 2.5 0 1.5-1 3.8-1.5 5.9-.4 1.7.9 3.1 2.6 3.1 3.2 0 5.3-4.1 5.3-8.9A8.3 8.3 0 0 0 12 3zm0 0"/></svg>' +
       "        </a>" +
       "      </div>" +

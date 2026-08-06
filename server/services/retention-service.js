@@ -32,6 +32,8 @@ const DEFAULTS = {
   adminEventsMonths: 6,
   /* Per-recipient delivery log for announcements/campaigns. */
   campaignRecipientsMonths: 12,
+  newsletterUnsubscribedMonths: 24,
+  cookieConsentMonths: 60,
   /* Orders: identity is stripped, the order stays. Six years clears the Greek
      five-year retention requirement with a margin, counted from the order
      date rather than the fiscal year end. */
@@ -49,6 +51,8 @@ function config() {
     auditMonths: months("RETENTION_AUDIT_MONTHS", DEFAULTS.auditMonths),
     adminEventsMonths: months("RETENTION_ADMIN_EVENTS_MONTHS", DEFAULTS.adminEventsMonths),
     campaignRecipientsMonths: months("RETENTION_CAMPAIGN_MONTHS", DEFAULTS.campaignRecipientsMonths),
+    newsletterUnsubscribedMonths: months("RETENTION_NEWSLETTER_UNSUBSCRIBED_MONTHS", DEFAULTS.newsletterUnsubscribedMonths),
+    cookieConsentMonths: months("RETENTION_COOKIE_CONSENT_MONTHS", DEFAULTS.cookieConsentMonths),
     orderAnonymiseYears: months("RETENTION_ORDER_ANONYMISE_YEARS", DEFAULTS.orderAnonymiseYears),
     /* Off unless switched on deliberately. */
     enabled: String(process.env.RETENTION_ENABLED || "").toLowerCase() === "true",
@@ -107,6 +111,11 @@ const ANONYMISED_CUSTOMER = {
   company: "",
   afm: "",
   doy: "",
+  activity: "",
+  companyAddress: "",
+  countryCode: "",
+  docType: "receipt",
+  locationType: "",
   anonymisedAt: null, // filled in per row below
 };
 
@@ -126,10 +135,11 @@ async function anonymiseOldOrders(client, years, apply) {
     await client.query(
       `UPDATE orders
           SET customer = $2::jsonb,
-              user_email = NULL
+              user_email = NULL,
+              gift = $3::jsonb
         WHERE created_at < now() - $1::interval
           AND COALESCE(customer->>'email', '') <> ''`,
-      [interval, JSON.stringify(blob)]
+      [interval, JSON.stringify(blob), JSON.stringify({ isGift: false })]
     );
   }
   return { table: "orders", matched, anonymised: apply ? matched : 0 };
@@ -157,6 +167,27 @@ async function runRetention({ pool, apply = false } = {}) {
       cfg.adminEventsMonths + " months", effectiveApply));
     steps.push(await deleteOlderThan(client, "marketing_campaign_recipients", "created_at",
       cfg.campaignRecipientsMonths + " months", effectiveApply));
+    steps.push(await deleteOlderThan(client, "cookie_consents", "created_at",
+      cfg.cookieConsentMonths + " months", effectiveApply));
+    if (await tableExists(client, "newsletter")) {
+      const interval = cfg.newsletterUnsubscribedMonths + " months";
+      const count = await client.query(
+        `SELECT COUNT(*)::int AS n FROM newsletter
+          WHERE (status='unsubscribed' AND unsubscribed_at < now() - $1::interval)
+             OR (status='pending' AND confirmation_expires_at < now() - interval '7 days')`,
+        [interval]
+      );
+      if (effectiveApply && count.rows[0].n > 0) {
+        await client.query(
+          `DELETE FROM newsletter
+            WHERE (status='unsubscribed' AND unsubscribed_at < now() - $1::interval)
+               OR (status='pending' AND confirmation_expires_at < now() - interval '7 days')`,
+          [interval]
+        );
+      }
+      steps.push({ table: "newsletter", matched: count.rows[0].n,
+        deleted: effectiveApply ? count.rows[0].n : 0 });
+    }
     steps.push(await anonymiseOldOrders(client, cfg.orderAnonymiseYears, effectiveApply));
   } finally {
     client.release();

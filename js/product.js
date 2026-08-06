@@ -999,7 +999,7 @@
      verification (that always re-checks the account's own delivered orders). */
   function currentSession() {
     try {
-      var raw = localStorage.getItem("nostalgia-session");
+      var raw = sessionStorage.getItem("nostalgia-session");
       return raw ? JSON.parse(raw) : null;
     } catch (e) {
       return null;

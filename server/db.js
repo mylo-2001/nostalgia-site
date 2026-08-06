@@ -13,6 +13,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 const { Pool, Client } = require("pg");
 const catalog = require("./catalog");
 
@@ -464,7 +465,6 @@ function rowToUser(r) {
     email: r.email,
     firstname: r.firstname,
     lastname: r.lastname,
-    birthDate: r.birth_date,
     newsletterOptin: r.newsletter_optin,
     address: r.address || null,
     passHash: r.pass_hash,
@@ -531,7 +531,6 @@ async function updateUser(email, fields) {
   const cols = {
     firstname: "firstname",
     lastname: "lastname",
-    birthDate: "birth_date",
     newsletterOptin: "newsletter_optin",
     address: "address",
   };
@@ -599,21 +598,6 @@ async function deleteAuthCode(email) {
    previously unsubscribed and opts in again — must show up as fresh consent
    (status back to 'subscribed', consented_at bumped to now), not be silently
    ignored. Keeps any already-known name if this submission didn't supply one. */
-async function addSubscriber(s) {
-  await q(
-    `INSERT INTO newsletter (email, firstname, lastname, source, status, consented_at, unsubscribed_at)
-     VALUES ($1,$2,$3,$4,'subscribed',now(),NULL)
-     ON CONFLICT (email) DO UPDATE SET
-       firstname = CASE WHEN EXCLUDED.firstname <> '' THEN EXCLUDED.firstname ELSE newsletter.firstname END,
-       lastname  = CASE WHEN EXCLUDED.lastname  <> '' THEN EXCLUDED.lastname  ELSE newsletter.lastname  END,
-       source = EXCLUDED.source,
-       status = 'subscribed',
-       consented_at = now(),
-       unsubscribed_at = NULL`,
-    [s.email, s.firstname, s.lastname, s.source]
-  );
-}
-
 function rowToSubscriber(x) {
   return {
     email: x.email,
@@ -623,7 +607,9 @@ function rowToSubscriber(x) {
     status: x.status,
     consentedAt: x.consented_at,
     unsubscribedAt: x.unsubscribed_at,
+    confirmedAt: x.confirmed_at,
     consentPolicyVersion: x.consent_policy_version,
+    consentNotice: x.consent_notice,
     createdAt: x.created_at,
   };
 }
@@ -694,9 +680,6 @@ async function listMarketingRecipients() {
   const r = await q(
     `SELECT email, firstname FROM newsletter
       WHERE status = 'subscribed' AND email IS NOT NULL AND btrim(email) <> ''
-     UNION
-     SELECT email, firstname FROM users
-      WHERE active = TRUE AND newsletter_optin = TRUE AND email IS NOT NULL AND btrim(email) <> ''
       ORDER BY email`
   );
   return r.rows.map((x) => ({ email: x.email, firstname: x.firstname || "" }));
@@ -707,22 +690,13 @@ async function listCampaignRecipients(audience) {
   if (a.type === "specific_email") {
     const email = String(a.email || "").trim().toLowerCase();
     if (!email) return [];
-    const r = await q("SELECT email, firstname FROM users WHERE lower(email) = $1 AND active = TRUE", [email]);
-    return r.rows.length ? r.rows.map((x) => ({ email: x.email, firstname: x.firstname || "" })) : [{ email, firstname: "" }];
-  }
-  if (a.type === "newsletter") return listMarketingRecipients();
-  if (a.type === "accounts_optin") {
-    const r = await q("SELECT email, firstname FROM users WHERE active = TRUE AND newsletter_optin = TRUE AND email IS NOT NULL AND btrim(email) <> '' ORDER BY created_at DESC");
+    const r = await q(`SELECT email, firstname FROM newsletter
+      WHERE lower(email) = $1 AND status = 'subscribed'`, [email]);
     return r.rows.map((x) => ({ email: x.email, firstname: x.firstname || "" }));
   }
-  if (a.type === "no_orders") {
-    const r = await q(`SELECT u.email, u.firstname FROM users u WHERE u.active = TRUE AND u.newsletter_optin = TRUE AND NOT EXISTS (SELECT 1 FROM orders o WHERE lower(btrim(coalesce(o.user_email, o.customer->>'email', ''))) = lower(u.email)) ORDER BY u.created_at DESC`);
-    return r.rows.map((x) => ({ email: x.email, firstname: x.firstname || "" }));
-  }
-  if (a.type === "past_customers") {
-    const r = await q(`SELECT DISTINCT ON (lower(btrim(coalesce(o.user_email, o.customer->>'email', '')))) coalesce(o.user_email, o.customer->>'email') AS email, coalesce(o.customer->>'firstname', '') AS firstname FROM orders o WHERE coalesce(o.user_email, o.customer->>'email') IS NOT NULL ORDER BY lower(btrim(coalesce(o.user_email, o.customer->>'email', ''))), o.created_at DESC`);
-    return r.rows.map((x) => ({ email: x.email, firstname: x.firstname || "" }));
-  }
+  /* Purchase history and an account flag are not standalone marketing
+     permission. Every bulk segment is restricted to verified newsletter
+     subscribers. */
   return listMarketingRecipients();
 }
 
@@ -851,9 +825,12 @@ async function listSubscribersPage(opts) {
    the opt-in/opt-out trail stays intact. */
 async function unsubscribeSubscriber(email) {
   const r = await q(
-    "UPDATE newsletter SET status = 'unsubscribed', unsubscribed_at = now() WHERE email = $1 AND status = 'subscribed'",
+    `UPDATE newsletter SET status='unsubscribed', unsubscribed_at=now(),
+       confirmation_token_hash=NULL, confirmation_expires_at=NULL
+     WHERE lower(email)=lower($1) AND status IN ('pending','subscribed')`,
     [email]
   );
+  await q("UPDATE users SET newsletter_optin=FALSE WHERE lower(email)=lower($1)", [email]);
   return r.rowCount > 0;
 }
 
@@ -2349,12 +2326,42 @@ async function listAuditLog(opts) {
 /* Everything we hold that is tied to this email — for the "export my data"
    right (GDPR art. 15/20). */
 async function exportUserData(email) {
-  const [user, orders, subs, msgs, revs] = await Promise.all([
+  const [user, orders, subs, msgs, revs, campaigns, welcomeCoupons, auditEvents,
+    domainAuditEvents, riskAssessments, notifications] = await Promise.all([
     getUser(email),
     ordersByEmail(email),
-    q("SELECT email, firstname, lastname, source, created_at FROM newsletter WHERE email = $1", [email]),
+    q(`SELECT email, firstname, lastname, source, status, consented_at,
+              confirmed_at, unsubscribed_at, consent_policy_version, created_at
+         FROM newsletter WHERE email = $1`, [email]),
     q("SELECT id, subject, message, lang, created_at FROM messages WHERE email = $1 ORDER BY created_at DESC", [email]),
     q("SELECT id, product_id, name, rating, title, text, status, created_at FROM reviews WHERE user_email = $1 ORDER BY created_at DESC", [email]),
+    q(`SELECT campaign_id, status, attempts, sent_at, created_at
+         FROM marketing_campaign_recipients WHERE lower(email) = lower($1)
+        ORDER BY created_at DESC`, [email]).catch(() => ({ rows: [] })),
+    q(`SELECT kind, redeemed_at, created_at FROM welcome_coupon_redemptions
+        WHERE lower(email) = lower($1) ORDER BY created_at DESC`, [email]).catch(() => ({ rows: [] })),
+    q(`SELECT type, created_at FROM audit_log
+        WHERE lower(coalesce(actor, '')) = lower($1) ORDER BY created_at DESC`, [email]).catch(() => ({ rows: [] })),
+    q(`SELECT action, entity_type, entity_id, source, created_at FROM audit_logs
+        WHERE lower(coalesce(actor_id, '')) = lower($1) ORDER BY created_at DESC`, [email]).catch(() => ({ rows: [] })),
+    q(`SELECT r.order_id, r.risk_score, r.risk_level, r.reasons,
+              r.rules_triggered, r.decision, r.reviewed_at, r.created_at
+         FROM risk_assessments r
+         JOIN orders o ON o.id = r.order_id
+        WHERE lower(coalesce(o.user_email, o.customer->>'email', '')) = lower($1)
+        ORDER BY r.created_at DESC`, [email]).catch(() => ({ rows: [] })),
+    q(`SELECT n.event_type, n.aggregate_type, n.aggregate_id, n.status,
+              n.attempts, n.sent_at, n.created_at
+         FROM notification_outbox n
+        WHERE n.aggregate_id IN (
+                SELECT id FROM orders
+                 WHERE lower(coalesce(user_email, customer->>'email', '')) = lower($1)
+              )
+           OR n.payload->>'orderId' IN (
+                SELECT id FROM orders
+                 WHERE lower(coalesce(user_email, customer->>'email', '')) = lower($1)
+              )
+        ORDER BY n.created_at DESC`, [email]).catch(() => ({ rows: [] })),
   ]);
   return {
     exportedAt: new Date().toISOString(),
@@ -2363,7 +2370,90 @@ async function exportUserData(email) {
     newsletter: subs.rows,
     messages: msgs.rows,
     reviews: revs.rows,
+    marketingCampaignHistory: campaigns.rows,
+    welcomeCouponHistory: welcomeCoupons.rows,
+    accountAuditHistory: auditEvents.rows,
+    domainAuditHistory: domainAuditEvents.rows,
+    riskAssessmentHistory: riskAssessments.rows,
+    notificationHistory: notifications.rows,
   };
+}
+
+async function requestSubscriberConfirmation(s) {
+  const r = await q(
+    `INSERT INTO newsletter
+       (email, firstname, lastname, source, status, consented_at,
+        unsubscribed_at, consent_policy_version, confirmation_token_hash,
+        confirmation_expires_at, confirmed_at, consent_notice)
+     VALUES ($1,$2,$3,$4,'pending',now(),NULL,$5,$6,$7,NULL,$8)
+     ON CONFLICT (email) DO UPDATE SET
+       firstname = CASE WHEN EXCLUDED.firstname <> '' THEN EXCLUDED.firstname ELSE newsletter.firstname END,
+       lastname  = CASE WHEN EXCLUDED.lastname  <> '' THEN EXCLUDED.lastname  ELSE newsletter.lastname  END,
+       source = EXCLUDED.source,
+       status = CASE WHEN newsletter.status = 'subscribed' THEN 'subscribed' ELSE 'pending' END,
+       consented_at = CASE WHEN newsletter.status = 'subscribed' THEN newsletter.consented_at ELSE now() END,
+       unsubscribed_at = NULL,
+       consent_policy_version = EXCLUDED.consent_policy_version,
+       confirmation_token_hash = CASE WHEN newsletter.status = 'subscribed' THEN NULL ELSE EXCLUDED.confirmation_token_hash END,
+       confirmation_expires_at = CASE WHEN newsletter.status = 'subscribed' THEN NULL ELSE EXCLUDED.confirmation_expires_at END,
+       confirmed_at = CASE WHEN newsletter.status = 'subscribed' THEN newsletter.confirmed_at ELSE NULL END,
+       consent_notice = EXCLUDED.consent_notice
+     RETURNING status`,
+    [s.email, s.firstname || "", s.lastname || "", s.source || "site",
+      s.policyVersion, s.tokenHash, s.expiresAt, s.consentNotice || ""]
+  );
+  return r.rows[0];
+}
+
+async function confirmSubscriber(tokenHash) {
+  const r = await q(
+    `UPDATE newsletter SET status='subscribed', confirmed_at=now(),
+       consented_at=now(), confirmation_token_hash=NULL,
+       confirmation_expires_at=NULL, unsubscribed_at=NULL
+     WHERE confirmation_token_hash=$1
+       AND confirmation_expires_at > now()
+     RETURNING email, firstname, lastname`,
+    [tokenHash]
+  );
+  if (!r.rowCount) return null;
+  await q("UPDATE users SET newsletter_optin=TRUE WHERE lower(email)=lower($1)", [r.rows[0].email]);
+  return r.rows[0];
+}
+
+function customerAfterErasure(customer) {
+  const c = customer && typeof customer === "object" ? customer : {};
+  const invoice = c.docType === "invoice";
+  return {
+    firstname: "—",
+    lastname: "",
+    email: "",
+    phone: "",
+    mobile: "",
+    street: "",
+    streetNumber: "",
+    city: "",
+    postal: "",
+    prefecture: "",
+    floor: "",
+    locationType: "",
+    notes: "",
+    countryCode: c.countryCode || "",
+    country: c.country || "",
+    docType: invoice ? "invoice" : "receipt",
+    /* Invoice identity is retained only as part of the statutory accounting
+       record. Shipping/contact identity is not needed for that purpose. */
+    company: invoice ? String(c.company || "") : "",
+    afm: invoice ? String(c.afm || "") : "",
+    doy: invoice ? String(c.doy || "") : "",
+    activity: invoice ? String(c.activity || "") : "",
+    companyAddress: invoice ? String(c.companyAddress || "") : "",
+    anonymisedAt: new Date().toISOString(),
+  };
+}
+
+function erasedSubjectKey(email) {
+  const secret = process.env.CONSENT_HASH_SECRET || process.env.SESSION_SECRET || "nostalgia-erasure";
+  return crypto.createHmac("sha256", secret).update(String(email).trim().toLowerCase()).digest("hex");
 }
 
 /* Erase the account and personal data. Order rows are RETAINED for legal /
@@ -2373,10 +2463,42 @@ async function deleteUserAccount(email) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    await client.query("UPDATE orders SET user_email = NULL WHERE user_email = $1", [email]);
+    const ownedOrders = await client.query(
+      `SELECT id, customer FROM orders
+        WHERE lower(coalesce(user_email, '')) = lower($1)
+           OR lower(coalesce(customer->>'email', '')) = lower($1)
+        FOR UPDATE`,
+      [email]
+    );
+    for (const order of ownedOrders.rows) {
+      await client.query(
+        `UPDATE orders
+            SET user_email = NULL, customer = $2::jsonb, gift = $3::jsonb
+          WHERE id = $1`,
+        [order.id, JSON.stringify(customerAfterErasure(order.customer)), JSON.stringify({ isGift: false })]
+      );
+    }
     await client.query("DELETE FROM reviews WHERE user_email = $1", [email]);
     await client.query("DELETE FROM messages WHERE email = $1", [email]);
     await client.query("DELETE FROM newsletter WHERE email = $1", [email]);
+    await client.query("DELETE FROM marketing_campaign_recipients WHERE lower(email) = lower($1)", [email]);
+    const erasedKey = erasedSubjectKey(email);
+    await client.query(
+      `UPDATE welcome_coupon_redemptions
+          SET email = $2
+        WHERE lower(email) = lower($1)`,
+      [email, "erased-" + erasedKey + "@invalid.local"]
+    );
+    await client.query(
+      `UPDATE audit_log SET actor=$2
+        WHERE lower(coalesce(actor,''))=lower($1)`,
+      [email, "erased:" + erasedKey]
+    );
+    await client.query(
+      `UPDATE audit_logs SET actor_id=$2
+        WHERE lower(coalesce(actor_id,''))=lower($1)`,
+      [email, "erased:" + erasedKey]
+    );
     await client.query("DELETE FROM auth_codes WHERE email = $1", [email]);
     const del = await client.query("DELETE FROM users WHERE email = $1", [email]);
     await client.query("COMMIT");
@@ -2422,7 +2544,8 @@ module.exports = {
   getAuthCode,
   bumpAuthCodeAttempts,
   deleteAuthCode,
-  addSubscriber,
+  requestSubscriberConfirmation,
+  confirmSubscriber,
   listSubscribers,
   recordCookieConsent,
   listCookieConsents,
@@ -2521,4 +2644,6 @@ module.exports = {
   reserveStock,
   releaseStock,
   expireStalePendingOrders,
+  /* Pure helper exposed for regression tests; it performs no I/O. */
+  _test: { customerAfterErasure },
 };

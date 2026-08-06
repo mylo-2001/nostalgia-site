@@ -66,6 +66,20 @@ MARKETING-SETUP.md
 WORLDLINE-SETUP.md
 ACS-SETUP.md
 
+# Contact-form attachments uploaded by customers. server.js keeps these out of
+# the public *static* tree, which is not the same as keeping them out of *git* —
+# a single `git add -A` would publish other people's files to a public repo.
+.private/
+
+# Supplier DPAs and compliance paperwork. Signed copies carry the ΑΦΜ, the
+# registered address and account identifiers, so every document here stays out
+# of this public repo. Only the README travels with the code — it explains what
+# belongs in the folder without containing any of it. Ignoring the contents
+# rather than the directory is deliberate: `compliance/` on its own would stop
+# git descending into the folder and the negation below would never apply.
+compliance/*
+!compliance/README.md
+
 # The rest of deploy/ (nginx conf, systemd unit, crontab, cron scripts) stays
 # tracked on purpose: it is infrastructure-as-code the server needs on clone,
 # and it holds no secrets — every script reads them from .env at runtime.

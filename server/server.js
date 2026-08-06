@@ -63,7 +63,11 @@ const ROOT = path.join(__dirname, "..");
 /* All storefront *.html live under html/ (assets like css/js/images stay at ROOT).
    URLs are unchanged — only the files moved — so nothing in the pages breaks. */
 const HTML_DIR = path.join(ROOT, "html");
-const UPLOADS_DIR = path.join(ROOT, "product photo", "uploads");
+/* Must stay under images/ — that is where the rest of the product photos moved,
+   and the URL returned by saveProductImage() is images/product%20photo/uploads/…
+   which express.static(ROOT) resolves from disk. Pointing this anywhere else
+   writes the file outside the served tree and every upload 404s. */
+const UPLOADS_DIR = path.join(ROOT, "images", "product photo", "uploads");
 const CONTACT_ATTACHMENTS_DIR = path.join(ROOT, ".private", "contact-attachments");
 
 const app = express();
@@ -141,6 +145,18 @@ function gaMeasurementId() {
     process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ||
     ""
   ).trim();
+}
+
+/* Marketing-category tracker ids. Same single-source-of-truth rule as GA: the
+   id lives in .env, never in the client bundle, so a tracker can be switched
+   off by clearing one variable instead of editing and redeploying JS. An empty
+   value keeps the tool off entirely — see js/tracking.js. */
+function klaviyoCompanyId() {
+  return (process.env.KLAVIYO_COMPANY_ID || "").trim();
+}
+
+function metaPixelId() {
+  return (process.env.META_PIXEL_ID || "").trim();
 }
 
 function publicSiteUrl(req) {
@@ -279,7 +295,6 @@ function publicUser(u) {
     email: u.email,
     firstname: u.firstname,
     lastname: u.lastname,
-    birthDate: u.birthDate || "",
     newsletterOptin: !!u.newsletterOptin,
     address: u.address || null,
     active: u.active !== false,
@@ -316,10 +331,17 @@ function siteOrigin(req) {
   return proto + "://" + req.get("host");
 }
 
+/* Landing pages worth crawling. Deliberately excluded: cart, checkout, account,
+   wishlist and track (per-visitor state, nothing stable to index), plus 404,
+   diag and dev-problems. Category pages are NOT listed here — they are appended
+   from the catalog at request time so a new category cannot be forgotten. */
 const SITEMAP_PAGES = [
   { slug: "", priority: "1.0" },
   { slug: "collection", priority: "0.9" },
+  { slug: "new-arrivals", priority: "0.8" },
+  { slug: "sale", priority: "0.8" },
   { slug: "seasonal", priority: "0.8" },
+  { slug: "reviews", priority: "0.7" },
   { slug: "scent-finder", priority: "0.7" },
   { slug: "gift-experience", priority: "0.7" },
   { slug: "about", priority: "0.7" },
@@ -330,6 +352,7 @@ const SITEMAP_PAGES = [
   { slug: "payments", priority: "0.7" },
   { slug: "privacy", priority: "0.7" },
   { slug: "terms", priority: "0.7" },
+  { slug: "review-policy", priority: "0.4" },
 ];
 
 /* ---------- stripe ---------- */
@@ -338,6 +361,9 @@ let stripeClient = null;
 let stripeKeyCached = undefined;
 
 async function getStripe() {
+  /* Legacy adapter only. It must never become active merely because an old
+     key still exists while the storefront is being migrated to Worldline. */
+  if (String(process.env.PAYMENT_PROVIDER || "").toLowerCase() !== "stripe") return null;
   const setting = (await db.getSetting("stripe")) || {};
   const key = process.env.STRIPE_SECRET_KEY || setting.secretKey || "";
   if (key !== stripeKeyCached) {
@@ -762,6 +788,7 @@ async function seoProducts() {
       image: p.image,
       price: resolved.price,
       stock: ov.stock != null ? ov.stock : null,
+      catId: p.catId || null,
     });
   });
   const customs = await db.listCustomProducts(true);
@@ -778,6 +805,7 @@ async function seoProducts() {
       image: c.image,
       price: resolved.price,
       stock: ov.stock != null ? ov.stock : null,
+      catId: c.catId || null,
     });
   });
   return list;
@@ -860,6 +888,39 @@ function sendWelcomeCoupon(email, kind, opts) {
     .catch((e) => console.error("[welcome-coupon] " + kind + ":", e.message));
 }
 
+const NEWSLETTER_POLICY_VERSION = "2026-08-06";
+const NEWSLETTER_CONSENT_NOTICE =
+  "Newsletter with product news and offers; consent may be withdrawn at any time.";
+
+async function requestNewsletterOptIn(input) {
+  const token = crypto.randomBytes(32).toString("base64url");
+  const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const result = await db.requestSubscriberConfirmation({
+    email: input.email,
+    firstname: input.firstname || "",
+    lastname: input.lastname || "",
+    source: input.source || "site",
+    policyVersion: NEWSLETTER_POLICY_VERSION,
+    consentNotice: NEWSLETTER_CONSENT_NOTICE,
+    tokenHash,
+    expiresAt,
+  });
+  let confirmationDeliveryFailed = false;
+  if (result.status !== "subscribed") {
+    try {
+      await mailer.sendNewsletterConfirmation(input.email, token, {
+        firstname: input.firstname,
+        lang: input.lang,
+      });
+    } catch (error) {
+      confirmationDeliveryFailed = true;
+      console.error("[newsletter-confirmation]", error.message);
+    }
+  }
+  return { ...result, confirmationDeliveryFailed };
+}
+
 /* ---------- order lifecycle notifications (fire-and-forget) ----------
  * One email per real transition — never on a PATCH that leaves the field
  * unchanged, and never twice for the same transition (e.g. handed→transit
@@ -902,12 +963,17 @@ async function saveProductImage(id, dataUrl, slot) {
 
   const key = slot != null ? id + "-" + slot : id;
 
+  /* Cloudinary is best-effort. A revoked/rotated API key, a quota limit or a
+     network blip must never cost the shop the photo the admin just uploaded, so
+     any failure falls through to the same local folder used when CLOUDINARY_*
+     is unset. Returning null here (the old behaviour) silently discarded it. */
   if (cdn.configured()) {
     try {
-      return await cdn.uploadProductImage(key, dataUrl);
+      const uploaded = await cdn.uploadProductImage(key, dataUrl);
+      if (uploaded) return uploaded;
+      console.error("[cloudinary] no URL returned for " + key + " — storing locally");
     } catch (e) {
-      console.error("[cloudinary] upload failed:", e.message);
-      return null;
+      console.error("[cloudinary] upload failed for " + key + " — storing locally:", e.message);
     }
   }
 
@@ -1078,6 +1144,8 @@ app.get("/api/public-config", (req, res) => {
   res.json({
     ok: true,
     gaMeasurementId: gaMeasurementId(),
+    klaviyoCompanyId: klaviyoCompanyId(),
+    metaPixelId: metaPixelId(),
     stripePublishableKey: pk,
     checkoutV2Enabled: process.env.CHECKOUT_V2_ENABLED === "true",
     turnstileSiteKey: security.turnstileSiteKey(),
@@ -1224,26 +1292,28 @@ app.post("/api/auth/register", ah(async (req, res) => {
     email,
     firstname: str(b.firstname, 80),
     lastname: str(b.lastname, 80),
-    birthDate: str(b.birthDate, 20),
-    newsletterOptin: !!b.newsletterOptin,
+    birthDate: "",
+    /* Becomes true only after the email owner completes double opt-in. */
+    newsletterOptin: false,
     passHash: await auth.hashPassword(password),
   };
   await db.createUser(user);
-  if (user.newsletterOptin) {
-    await db.addSubscriber({
+  let newsletterConfirmationFailed = false;
+  if (b.newsletterOptin) {
+    const optInResult = await requestNewsletterOptIn({
       email,
       firstname: user.firstname,
       lastname: user.lastname,
       source: "register",
+      lang: b.lang,
     });
-    /* Opted in here, so they have not had the newsletter gift yet. */
-    sendWelcomeCoupon(email, "newsletter", { firstname: user.firstname, lang: b.lang });
+    newsletterConfirmationFailed = optInResult.confirmationDeliveryFailed;
   }
   /* Account bonus: the extra 5% that stacks with the newsletter 10%. */
   sendWelcomeCoupon(email, "account", { firstname: user.firstname, lang: b.lang });
   auth.startUserSession(res, email);
   audit(req, "user.register", email);
-  res.json({ ok: true, user: publicUser(user) });
+  res.json({ ok: true, user: publicUser(user), newsletterConfirmationFailed });
 }));
 
 app.post("/api/auth/login", ah(async (req, res) => {
@@ -1296,7 +1366,7 @@ app.get("/api/auth/me", ah(async (req, res) => {
   res.json({ ok: true, user: user ? publicUser(user) : null });
 }));
 
-/* Update the signed-in user's own profile (name + birthday). Email is the
+/* Update the signed-in user's own profile (name only). Email is the
    account identity and is intentionally read-only here. */
 app.patch("/api/auth/me", ah(async (req, res) => {
   const session = auth.getUserSession(req);
@@ -1314,9 +1384,6 @@ app.patch("/api/auth/me", ah(async (req, res) => {
     const ln = str(b.lastname, 80);
     if (!ln) return bad(res, 400, "missing_fields");
     fields.lastname = ln;
-  }
-  if (b.birthDate != null) {
-    fields.birthDate = str(b.birthDate, 20);
   }
   if (Object.keys(fields).length) await db.updateUser(session.sub, fields);
   const updated = await db.getUser(session.sub);
@@ -1434,7 +1501,7 @@ app.post("/api/auth/delete-account", ah(async (req, res) => {
   }
   await db.deleteUserAccount(session.sub);
   auth.endUserSession(res);
-  audit(req, "user.account.delete", session.sub);
+  audit(req, "user.account.delete", "erased-account");
   res.json({ ok: true });
 }));
 
@@ -1470,19 +1537,24 @@ app.post("/api/auth/newsletter", ah(async (req, res) => {
   const session = auth.getUserSession(req);
   if (!session) return bad(res, 401, "unauthorized");
   const optin = !!(req.body && req.body.optin);
-  await db.updateUser(session.sub, { newsletterOptin: optin });
   const user = await db.getUser(session.sub);
   if (optin) {
-    await db.addSubscriber({
+    await db.updateUser(session.sub, { newsletterOptin: false });
+    const result = await requestNewsletterOptIn({
       email: user.email,
       firstname: user.firstname,
       lastname: user.lastname,
       source: "account",
+      lang: req.body && req.body.lang,
     });
+    if (result.confirmationDeliveryFailed) {
+      return bad(res, 503, "confirmation_email_failed");
+    }
+    return res.json({ ok: true, newsletterOptin: result.status === "subscribed", confirmationPending: result.status !== "subscribed" });
   } else {
     await db.unsubscribeSubscriber(user.email);
   }
-  res.json({ ok: true, newsletterOptin: optin });
+  res.json({ ok: true, newsletterOptin: false, confirmationPending: false });
 }));
 
 /* ---------- newsletter ---------- */
@@ -1492,16 +1564,45 @@ app.post("/api/newsletter", ah(async (req, res) => {
   const email = normEmail(b.email);
   if (!isEmail(email)) return bad(res, 400, "invalid_email");
   const firstname = str(b.firstname, 80);
-  await db.addSubscriber({
+  const result = await requestNewsletterOptIn({
     email,
     firstname,
     lastname: str(b.lastname, 80),
     source: str(b.source, 40) || "site",
+    lang: b.lang,
   });
-  /* Welcome gift: the 10% first-order code. Fire-and-forget — a mail outage
-     must never fail the subscription itself. */
-  sendWelcomeCoupon(email, "newsletter", { firstname, lang: b.lang });
-  res.json({ ok: true });
+  if (result.confirmationDeliveryFailed) {
+    return bad(res, 503, "confirmation_email_failed");
+  }
+  res.json({ ok: true, confirmationPending: result.status !== "subscribed" });
+}));
+
+app.get("/api/newsletter/confirm", ah(async (req, res) => {
+  const token = String(req.query.token || "");
+  const en = req.query.lang === "en";
+  const tokenHash = /^[A-Za-z0-9_-]{40,100}$/.test(token)
+    ? crypto.createHash("sha256").update(token).digest("hex")
+    : "";
+  const subscriber = tokenHash ? await db.confirmSubscriber(tokenHash) : null;
+  if (subscriber) {
+    sendWelcomeCoupon(subscriber.email, "newsletter", {
+      firstname: subscriber.firstname,
+      lang: en ? "en" : "el",
+    });
+  }
+  const title = subscriber
+    ? en ? "Subscription confirmed" : "Η εγγραφή επιβεβαιώθηκε"
+    : en ? "Invalid or expired link" : "Μη έγκυρος ή ληγμένος σύνδεσμος";
+  const body = subscriber
+    ? en ? "Thank you. You can unsubscribe at any time from every newsletter."
+      : "Ευχαριστούμε. Μπορείς να διαγραφείς ανά πάσα στιγμή από κάθε newsletter."
+    : en ? "Submit the newsletter form again to receive a new confirmation link."
+      : "Συμπλήρωσε ξανά τη φόρμα newsletter για νέο σύνδεσμο επιβεβαίωσης.";
+  res.set("Content-Type", "text/html; charset=utf-8");
+  res.send("<!doctype html><html lang=\"" + (en ? "en" : "el") + "\"><meta charset=\"utf-8\">" +
+    "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>" + title +
+    "</title><body style=\"font-family:Georgia,serif;max-width:620px;margin:12vh auto;padding:24px;text-align:center\">" +
+    "<h1>" + title + "</h1><p>" + body + "</p><p><a href=\"/\">Nostalgia Collection</a></p></body></html>");
 }));
 
 /* One-click unsubscribe link from marketing emails — no login, verified via
@@ -1524,8 +1625,10 @@ app.post("/api/cookie-consent", ah(async (req, res) => {
     marketing: !!b.marketing,
     policyVersion: str(b.policyVersion, 20) || "v1",
     source: str(b.source, 20),
-    ipHash: security.hashIpForConsent(clientIp(req)),
-    userAgent: str(req.headers["user-agent"], 300),
+    /* The random browser id, choice, time and policy version are sufficient
+       evidence. Do not turn the consent log into an IP/UA tracking store. */
+    ipHash: null,
+    userAgent: null,
   });
   res.json({ ok: true, id: saved.id, at: saved.created_at });
 }));
@@ -2017,12 +2120,14 @@ app.post("/api/orders", ah(async (req, res) => {
   });
   const total = round2(Math.max(0, subtotal - discount + feesTotal));
   const allPriced = items.every((it) => it.price != null);
+  if (!allPriced) return bad(res, 503, "pricing_unavailable");
+  const stripe = await getStripe();
+  if (!stripe) return bad(res, 503, "card_provider_not_configured");
 
   /* atomic stock check & reserve */
   const outOfStock = await db.reserveStock(items);
   if (outOfStock) return bad(res, 409, "out_of_stock:" + outOfStock);
 
-  const stripe = payment === "stripe" ? await getStripe() : null;
   const stripeFlow = !!(stripe && allPriced && total > 0);
 
   const session = auth.getUserSession(req);
@@ -4291,7 +4396,32 @@ app.get("/sitemap.xml", ah(async (req, res) => {
       "  </url>"
     );
   });
-  /* one entry per product so Google indexes every candle individually */
+  /* Category landing pages. renderCollectionSeo() gives each one its own
+     title/description/canonical, so leaving them out of the sitemap wasted
+     work already being done. Empty categories are skipped for the same reason
+     that route marks them "noindex" — listing a page we ask Google not to
+     index is a contradictory signal. */
+  const categoryUrls = Object.keys(catalog.CATEGORIES)
+    .filter((catId) => {
+      const cat = catalog.CATEGORIES[catId];
+      return cat && cat.count > 0 && catalog.CATEGORY_SLUGS[catId];
+    })
+    .map((catId) => {
+      const loc = base + "/collection/" + catalog.CATEGORY_SLUGS[catId];
+      return (
+        "  <url>\n" +
+        "    <loc>" + escapeHtml(loc) + "</loc>\n" +
+        "    <lastmod>" + today + "</lastmod>\n" +
+        "    <changefreq>weekly</changefreq>\n" +
+        "    <priority>0.85</priority>\n" +
+        "  </url>"
+      );
+    });
+
+  /* one entry per product so Google indexes every candle individually.
+     Out-of-stock products stay listed on purpose: Google's guidance is to keep
+     them indexed carrying schema.org/OutOfStock (see availabilityOf) rather
+     than to remove or redirect them. */
   const products = await seoProducts();
   const productUrls = products.map(function (p) {
     const loc = base + "/product/" + encodeURIComponent(p.id);
@@ -4311,8 +4441,174 @@ app.get("/sitemap.xml", ah(async (req, res) => {
     '<?xml version="1.0" encoding="UTF-8"?>\n' +
       '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" ' +
       'xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n' +
-      pageUrls.concat(productUrls).join("\n") +
+      pageUrls.concat(categoryUrls, productUrls).join("\n") +
       "\n</urlset>"
+  );
+}));
+
+/* ---------- product feeds (Google Merchant Center, Skroutz, BestPrice) ----------
+ *
+ * One resolver, two serialisations. The comparison engines that matter in Greece
+ * want different XML shapes, but the same underlying rows, so the pricing,
+ * stock and description logic lives here once.
+ *
+ * A product with no resolvable price is skipped rather than exported at 0 —
+ * every one of these platforms treats a zero price as an error, and a rejected
+ * item is easier to miss than an absent one.
+ */
+function feedItems(base, products) {
+  return products
+    .filter((p) => p.price != null && Number(p.price) > 0)
+    .map((p) => ({
+      id: p.id,
+      title: p.title || "Nostalgia Collection",
+      /* Falls back to the generic per-category sentence until real per-product
+         copy is entered in admin. Feeds tolerate that far better than search
+         does — but the moment descriptions land, this improves with no code
+         change. */
+      description: seoDescription(p),
+      link: base + "/product/" + encodeURIComponent(p.id),
+      image: absImage(base, p.image),
+      price: Number(p.price).toFixed(2),
+      category: p.category || "Αρωματικά κεριά",
+      categoryPath:
+        p.catId && catalog.CATEGORY_SLUGS[p.catId]
+          ? base + "/collection/" + catalog.CATEGORY_SLUGS[p.catId]
+          : base + "/collection",
+      /* null stock means made-to-order rather than depleted — same reading as
+         availabilityOf() uses for schema.org. */
+      inStock: p.stock == null || Number(p.stock) > 0,
+      /* Skroutz requires an integer quantity on every product. A null stock is
+         "not tracked", not "unlimited", so it is declared as a single
+         made-to-order piece: understating can never oversell, and these are
+         one-off handmade items anyway. */
+      quantity: p.stock == null ? 1 : Math.max(0, Math.min(10000000, Math.floor(Number(p.stock)))),
+      madeToOrder: p.stock == null,
+    }));
+}
+
+/* VAT declared in the feed. Greek standard rate; candles carry no reduced rate.
+   The V2 pricing engine holds per-line rates in the database, but that table is
+   not wired into the catalog path yet, so the feed states the rate explicitly
+   rather than inventing one per product. It must match what the invoice
+   actually charges — revisit together, not separately. */
+const FEED_VAT_RATE = Number(process.env.FEED_VAT_RATE || 24).toFixed(2);
+
+/* Skroutz validates availability against a fixed vocabulary and rejects the
+   feed on anything else. Their published English docs are not self-consistent
+   about the exact wording ("In Stock" vs "Delivery 1 to 3 days"), so the
+   strings live here: if the merchant panel reports an invalid value, this is
+   the only place to change. */
+const SKROUTZ_AVAILABILITY = {
+  inStock: "In Stock",
+  madeToOrder: "Available up to 12 days",
+  outOfStock: "Available up to 12 days",
+};
+
+/* Feeds are meant to be downloaded by Skroutz/BestPrice/Merchant Center, never
+   to appear as a search result. X-Robots-Tag is the right instrument for that:
+   a robots.txt Disallow would also stop those platforms fetching the file,
+   which is the one thing it must never do. noindex governs indexing only,
+   so the fetchers are unaffected. */
+function feedHeaders(res) {
+  res.type("application/xml");
+  res.setHeader("X-Robots-Tag", "noindex");
+}
+
+/* Skroutz's examples wrap free text in CDATA, which keeps Greek copy, ampersands
+   and stray markup intact. The split guards the one sequence CDATA cannot hold. */
+function cdata(s) {
+  return "<![CDATA[" + String(s == null ? "" : s).split("]]>").join("]]]]><![CDATA[>") + "]]>";
+}
+
+app.get("/feed/google.xml", ah(async (req, res) => {
+  const base = publicSiteUrl(req);
+  const items = feedItems(base, await seoProducts());
+  const body = items
+    .map(
+      (i) =>
+        "  <item>\n" +
+        "    <g:id>" + escapeHtml(i.id) + "</g:id>\n" +
+        "    <g:title>" + escapeHtml(i.title) + "</g:title>\n" +
+        "    <g:description>" + escapeHtml(i.description) + "</g:description>\n" +
+        "    <g:link>" + escapeHtml(i.link) + "</g:link>\n" +
+        "    <g:image_link>" + escapeHtml(i.image) + "</g:image_link>\n" +
+        "    <g:availability>" + (i.inStock ? "in_stock" : "out_of_stock") + "</g:availability>\n" +
+        "    <g:price>" + i.price + " EUR</g:price>\n" +
+        "    <g:brand>Nostalgia Collection</g:brand>\n" +
+        "    <g:condition>new</g:condition>\n" +
+        /* Handmade one-offs have no barcode. Declaring that explicitly is what
+           stops Merchant Center rejecting the item for a missing GTIN/MPN. */
+        "    <g:identifier_exists>no</g:identifier_exists>\n" +
+        /* g:product_type is our own taxonomy and always safe. google_product_category
+           is deliberately omitted: the catalog mixes candles, diffusers and
+           perfume, and a single wrong taxonomy id causes disapprovals, whereas
+           leaving it out lets Google classify each item itself. */
+        "    <g:product_type>" + escapeHtml(i.category) + "</g:product_type>\n" +
+        "  </item>"
+    )
+    .join("\n");
+  feedHeaders(res);
+  res.send(
+    '<?xml version="1.0" encoding="UTF-8"?>\n' +
+      '<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">\n' +
+      "<channel>\n" +
+      "  <title>Nostalgia Collection</title>\n" +
+      "  <link>" + escapeHtml(base) + "</link>\n" +
+      "  <description>Χειροποίητα αρωματικά κεριά — Nostalgia Collection</description>\n" +
+      (body ? body + "\n" : "") +
+      "</channel>\n</rss>"
+  );
+}));
+
+/* Skroutz's shape, which BestPrice also accepts. Every field Skroutz marks
+   mandatory is emitted — id, name, link, image, category, price_with_vat, vat,
+   availability, manufacturer, mpn, ean, description, quantity — because a feed
+   missing any one of them is rejected outright rather than partially imported.
+   The deprecated <instock> flag is deliberately not sent; <quantity> replaced it.
+
+   Out-of-stock items stay in the feed with quantity 0 instead of being dropped,
+   so a product that comes back does not lose its accumulated listing history. */
+app.get("/feed/skroutz.xml", ah(async (req, res) => {
+  const base = publicSiteUrl(req);
+  const items = feedItems(base, await seoProducts());
+  const body = items
+    .map((i) => {
+      const availability = !i.inStock
+        ? SKROUTZ_AVAILABILITY.outOfStock
+        : i.madeToOrder
+        ? SKROUTZ_AVAILABILITY.madeToOrder
+        : SKROUTZ_AVAILABILITY.inStock;
+      return (
+        "    <product>\n" +
+        "      <id>" + escapeHtml(i.id) + "</id>\n" +
+        "      <name>" + cdata(i.title) + "</name>\n" +
+        "      <link>" + cdata(i.link) + "</link>\n" +
+        "      <image>" + cdata(i.image) + "</image>\n" +
+        "      <category>" + cdata(i.category) + "</category>\n" +
+        "      <price_with_vat>" + i.price + "</price_with_vat>\n" +
+        "      <vat>" + FEED_VAT_RATE + "</vat>\n" +
+        "      <manufacturer>" + cdata("Nostalgia Collection") + "</manufacturer>\n" +
+        /* Handmade one-offs carry no barcode. Skroutz still wants both fields
+           present, so the internal SKU stands in for the manufacturer part
+           number and the barcode is sent empty rather than invented. */
+        "      <mpn>" + escapeHtml(i.id) + "</mpn>\n" +
+        "      <ean></ean>\n" +
+        "      <availability>" + escapeHtml(availability) + "</availability>\n" +
+        "      <quantity>" + i.quantity + "</quantity>\n" +
+        "      <description>" + cdata(i.description) + "</description>\n" +
+        "    </product>"
+      );
+    })
+    .join("\n");
+  feedHeaders(res);
+  res.send(
+    '<?xml version="1.0" encoding="UTF-8"?>\n' +
+      "<mywebstore>\n" +
+      "  <created_at>" + new Date().toISOString() + "</created_at>\n" +
+      "  <products>\n" +
+      (body ? body + "\n" : "") +
+      "  </products>\n</mywebstore>"
   );
 }));
 
@@ -4351,6 +4647,10 @@ app.get("/robots.txt", (req, res) => {
     "# Admin and API are not for indexing\n" +
     "Disallow: /admin\n" +
     "Disallow: /api/\n\n" +
+    "# Internal search results: thin, unbounded and duplicated from /collection.\n" +
+    "# Categories live on real paths (/collection/<slug>) and stay crawlable.\n" +
+    "Disallow: /*?search=\n" +
+    "Disallow: /*&search=\n\n" +
     "# AI crawlers — a curated summary lives at /llms.txt\n" +
     aiBots.map((b) => "User-agent: " + b + "\nAllow: /\n").join("\n") +
     "\nSitemap: " + base + "/sitemap.xml\n"
@@ -4576,14 +4876,59 @@ function renderProductSeo(base, p) {
       worstRating: 1,
     };
   }
+  /* Individual reviews alongside aggregateRating. Google reads both, and the
+     rich result is stronger when the text is there — but only approved reviews
+     reach this point (db.approvedReviews filters on status), so nothing
+     unmoderated is ever published as markup. Capped because the whole JSON-LD
+     block ships in the document head. */
+  if (Array.isArray(p.reviews) && p.reviews.length) {
+    jsonLd.review = p.reviews.slice(0, 20).map((r) => {
+      const item = {
+        "@type": "Review",
+        reviewRating: {
+          "@type": "Rating",
+          ratingValue: r.rating,
+          bestRating: 5,
+          worstRating: 1,
+        },
+        author: { "@type": "Person", name: r.name || "Πελάτης" },
+      };
+      if (r.title) item.name = r.title;
+      if (r.text) item.reviewBody = r.text;
+      if (r.createdAt) {
+        const d = new Date(r.createdAt);
+        if (!isNaN(d)) item.datePublished = d.toISOString().slice(0, 10);
+      }
+      return item;
+    });
+  }
+
+  /* Home → Συλλογή → <category> → product. The category step was missing, which
+     both flattened the trail Google shows and dropped the one internal link
+     from a product back up to its category page. */
+  const crumbSlug = p.catId ? catalog.CATEGORY_SLUGS[p.catId] : null;
+  const crumbs = [
+    { "@type": "ListItem", position: 1, name: "Nostalgia Collection", item: base + "/" },
+    { "@type": "ListItem", position: 2, name: "Συλλογή", item: base + "/collection" },
+  ];
+  if (crumbSlug && p.category) {
+    crumbs.push({
+      "@type": "ListItem",
+      position: 3,
+      name: p.category,
+      item: base + "/collection/" + crumbSlug,
+    });
+  }
+  crumbs.push({
+    "@type": "ListItem",
+    position: crumbs.length + 1,
+    name: p.title || "Προϊόν",
+    item: url,
+  });
   const breadcrumbLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Nostalgia Collection", item: base + "/" },
-      { "@type": "ListItem", position: 2, name: "Συλλογή", item: base + "/collection" },
-      { "@type": "ListItem", position: 3, name: p.title || "Προϊόν", item: url },
-    ],
+    itemListElement: crumbs,
   };
 
   let head =
@@ -4628,10 +4973,11 @@ app.get("/product/:id", ah(async (req, res) => {
   const id = String(req.params.id || "");
   let product = null;
   try {
-    const [overrides, details, reviewStats] = await Promise.all([
+    const [overrides, details, reviewStats, reviews] = await Promise.all([
       db.getOverrides(),
       db.getProductDetails(id),
       db.productReviewStats(id, { read: true }),
+      db.approvedReviews(id, { read: true }),
     ]);
     const resolved = await resolveProduct(id, overrides);
     if (resolved) {
@@ -4645,11 +4991,13 @@ app.get("/product/:id", ah(async (req, res) => {
         image: resolved.image,
         price: resolved.price != null ? resolved.price : null,
         stock: overrides[id] && overrides[id].stock != null ? overrides[id].stock : null,
+        catId: resolved.catId || null,
         category:
           (catalog.CATEGORIES[resolved.catId] || {}).name ||
           (staticProduct(id) ? staticProduct(id).category : "") ||
           "",
         reviewStats: reviewStats,
+        reviews: reviews,
       };
     }
   } catch (e) {

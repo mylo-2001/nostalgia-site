@@ -1590,6 +1590,35 @@ function sendSaleBroadcast(recipients, product) {
   );
 }
 
+function sendNewsletterConfirmation(to, token, opts) {
+  const o = opts || {};
+  const en = o.lang === "en";
+  const url = siteBase() + "/api/newsletter/confirm?token=" + encodeURIComponent(token) +
+    "&lang=" + (en ? "en" : "el");
+  const html = lightEmailShell({
+    lang: en ? "en" : "el",
+    title: en ? "Confirm your subscription" : "Επιβεβαίωσε την εγγραφή σου",
+    subtitle: en
+      ? "One final step before we send you news and offers."
+      : "Ένα τελευταίο βήμα πριν σου στέλνουμε νέα και προσφορές.",
+    ctaUrl: url,
+    ctaText: en ? "Confirm subscription" : "Επιβεβαίωση εγγραφής",
+    contentHtml: '<p style="text-align:center;font-size:14px;color:' + INK +
+      ';line-height:1.7;margin:0">' + (en
+        ? "If you did not request this subscription, simply ignore this email. The link expires in 24 hours."
+        : "Αν δεν ζήτησες εσύ την εγγραφή, αγνόησε αυτό το email. Ο σύνδεσμος λήγει σε 24 ώρες.") +
+      "</p>",
+  });
+  return deliverMail({
+    to,
+    subject: en ? "Confirm your Nostalgia newsletter subscription" : "Επιβεβαίωσε την εγγραφή σου στο newsletter της Nostalgia",
+    html,
+    from: marketingFrom(),
+    replyTo: supportReplyTo(),
+    purpose: "marketing",
+  });
+}
+
 /* Welcome offer — sends one of the two fixed first-order codes.
    kind: "newsletter" (10%) or "account" (5%). Both are single-use per
    customer and valid on the first order only; the server enforces that. */
@@ -1929,6 +1958,7 @@ module.exports = {
   buildHtml,
   orderEmailShell,
   sendWelcomeCoupon,
+  sendNewsletterConfirmation,
   sendPasswordCode,
   sendTransactionalEmail,
   sendContactNotification,

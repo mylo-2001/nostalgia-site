@@ -2,9 +2,9 @@
   /**
    * Nostalgia API client.
    * If the backend (server/server.js) is running, the site uses it for
-   * accounts, orders, newsletter, contact and live stock. If not, every
-   * feature silently falls back to the old localStorage/mailto behaviour,
-   * so the static site keeps working on its own.
+   * accounts, orders, newsletter, contact and live stock. Non-account
+   * features can decide whether a static-preview fallback is appropriate;
+   * authentication always remains server-side.
    */
 
   var SESSION_KEY = "nostalgia-session";
@@ -32,9 +32,7 @@
       // A failed first check could mean "no backend at all" (static
       // preview) or just one dropped request against a real, running
       // backend. Retry once before deciding — this is the only signal
-      // registerUser/loginUser use to allow the weak localStorage-only
-      // fallback login, so a single network blip must never be enough
-      // to switch a live site into that mode.
+      // A single network blip should not mark the service unavailable.
       return new Promise(function (resolve) {
         setTimeout(function () {
           healthCheck().then(function (ok2) {
@@ -75,7 +73,7 @@
         if (!data.ok) return null;
         try {
           if (data.user) {
-            localStorage.setItem(
+            sessionStorage.setItem(
               SESSION_KEY,
               JSON.stringify({
                 email: data.user.email,
@@ -84,7 +82,7 @@
               })
             );
           } else {
-            localStorage.removeItem(SESSION_KEY);
+            sessionStorage.removeItem(SESSION_KEY);
           }
         } catch (e) {}
         document.dispatchEvent(

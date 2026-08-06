@@ -1407,6 +1407,23 @@ body.locale-drawer-open {
   justify-self: center;
 }
 
+/* Trader identity (business-info.js). Spans the whole bar and sits last, so it
+   reads as a legal footnote and leaves the three-column layout the bar's other
+   children rely on untouched. */
+.site-footer__business {
+  grid-column: 1 / -1;
+  order: 1;
+  margin: 0.15rem 0 0;
+  font-family: var(--font-nav);
+  /* Matches the legal links beside it (0.62rem ≈ 10px). Smaller than that and
+     mandatory trader details stop being genuinely readable. */
+  font-size: 0.62rem;
+  letter-spacing: 0.05em;
+  line-height: 1.65;
+  color: var(--text-muted);
+  text-align: center;
+}
+
 .site-footer__legal a {
   font-family: var(--font-nav);
   font-size: 0.62rem;

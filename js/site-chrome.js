@@ -209,7 +209,7 @@
       "  </nav>" +
       '  <p class="site-footer__copyright" data-i18n="footer_copyright">' + t("footer_copyright") + "</p>" +
       '  <div class="site-footer__payments" aria-label="Accepted payments">' +
-      '    <span class="site-footer__pay site-footer__pay--stripe">stripe</span>' +
+      '    <span class="site-footer__pay site-footer__pay--stripe">Worldline — soon</span>' +
       '    <span class="site-footer__pay site-footer__pay--visa">VISA</span>' +
       '    <span class="site-footer__pay site-footer__pay--mc" aria-label="Mastercard">' +
       '      <svg viewBox="0 0 36 24" aria-hidden="true"><circle cx="15" cy="12" r="7" fill="#eb001b"/><circle cx="21" cy="12" r="7" fill="#f79e1b"/><path fill="#ff5f00" d="M18 6.5a7 7 0 0 0 0 11 7 7 0 0 0 0-11z"/></svg>' +
@@ -304,6 +304,11 @@
     var footer = document.querySelector(".site-footer");
     if (!footer) return;
     footer.innerHTML = footerTemplate();
+    /* This rewrite discards whatever else had been added to the footer, which
+       silently removed the trader-identity line business-info.js injects at
+       DOMContentLoaded. Re-render it here rather than have that module poll or
+       watch the DOM forever. */
+    if (window.NostalgiaBusiness) window.NostalgiaBusiness.render();
   }
 
   function ensureFooterStyles() {
@@ -1335,13 +1340,27 @@
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       if (!form.reportValidity()) return;
+      var submit = form.querySelector("button[type=submit]");
+      if (submit) submit.disabled = true;
       if (window.NostalgiaAccount && typeof window.NostalgiaAccount.saveNewsletter === "function") {
-        window.NostalgiaAccount.saveNewsletter({ email: form.email.value });
+        window.NostalgiaAccount.saveNewsletter({ email: form.email.value }).then(function (res) {
+          if (!res || !res.ok) {
+            if (submit) submit.disabled = false;
+            return;
+          }
+          var field = form.querySelector(".site-newsletter__field");
+          if (field) field.hidden = true;
+          var ok = document.getElementById("site-newsletter-success");
+          if (ok) {
+            ok.textContent = document.documentElement.lang === "en"
+              ? "Check your email to confirm your subscription."
+              : "Έλεγξε το email σου για να επιβεβαιώσεις την εγγραφή.";
+            ok.hidden = false;
+          }
+        });
+        return;
       }
-      var field = form.querySelector(".site-newsletter__field");
-      if (field) field.hidden = true;
-      var ok = document.getElementById("site-newsletter-success");
-      if (ok) ok.hidden = false;
+      if (submit) submit.disabled = false;
     });
   }
 

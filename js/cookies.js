@@ -4,7 +4,7 @@
   var CONSENT_DAYS = 365;
   /* Bump whenever the banner wording or the categories change, so the stored
      records stay honest about what each visitor was actually shown. */
-  var POLICY_VERSION = "v1";
+  var POLICY_VERSION = "2026-08-06";
 
   /* A random id this browser gives itself. Not derived from anything about the
      person and never tied to an account — it exists only so a consent record
@@ -167,7 +167,6 @@
       '  <div class="cookie-banner__brand">' +
       '    <img class="cookie-banner__logo" src="images/logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />' +
       "  </div>" +
-      '  <button type="button" class="cookie-banner__skip" data-cookie-continue-without data-i18n="cookie_continue_without">Συνέχεια χωρίς αποδοχή</button>' +
       '  <h2 class="cookie-banner__title" id="cookie-banner-title">' + COOKIE_ICON +
       '<span data-i18n="cookie_banner_title">Καλώς ήρθατε στη Nostalgia Collection</span></h2>' +
       '  <p class="cookie-banner__text">' +
@@ -175,8 +174,9 @@
       '    <a href="/privacy#cookies" data-i18n="cookie_privacy_policy">Πολιτική Απορρήτου</a>.' +
       "  </p>" +
       '  <div class="cookie-banner__actions">' +
+      '    <button type="button" class="cookie-banner__btn cookie-banner__btn--secondary" data-cookie-continue-without data-i18n="cookie_reject_all">Απόρριψη όλων</button>' +
       '    <button type="button" class="cookie-banner__btn cookie-banner__btn--secondary" data-cookie-manage data-i18n="cookie_manage">Διαχείριση cookies</button>' +
-      '    <button type="button" class="cookie-banner__btn cookie-banner__btn--primary" data-cookie-accept data-i18n="cookie_accept_all">Αποδοχή όλων</button>' +
+      '    <button type="button" class="cookie-banner__btn cookie-banner__btn--secondary" data-cookie-accept data-i18n="cookie_accept_all">Αποδοχή όλων</button>' +
       "  </div>" +
       "</div>";
 
@@ -216,7 +216,7 @@
       '          <span class="cookie-settings__chevron" aria-hidden="true">+</span>' +
       '          <span class="cookie-settings__item-name" data-i18n="cookie_analytics_title">Cookies ανάλυσης</span>' +
       "        </summary>" +
-      '        <p class="cookie-settings__item-desc" data-i18n="cookie_analytics_desc">Μας επιτρέπουν να κατανοούμε, με ανώνυμο τρόπο, πώς χρησιμοποιείται ο ιστότοπος, ώστε να βελτιώνουμε συνεχώς την εμπειρία σας. Η ενεργοποίησή τους είναι προαιρετική.</p>' +
+      '        <p class="cookie-settings__item-desc" data-i18n="cookie_analytics_desc">Μας επιτρέπουν να κατανοούμε, με ψευδωνυμοποιημένη μέτρηση, πώς χρησιμοποιείται ο ιστότοπος, ώστε να βελτιώνουμε συνεχώς την εμπειρία σας. Η ενεργοποίησή τους είναι προαιρετική.</p>' +
       "      </details>" +
       '      <label class="cookie-settings__toggle">' +
       '        <input type="checkbox" id="cookie-analytics-toggle" />' +

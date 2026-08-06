@@ -14,13 +14,45 @@
  * └─────────────────────────────────────────────────────────────┘
  */
 (function () {
+  /* All three come from the server (.env) — leave them "" here. A hardcoded id
+     would ship in the bundle and could then only be changed by editing and
+     redeploying this file, which is exactly what made Klaviyo impossible to
+     switch off without a code change. */
   var CONFIG = {
-    ga4: "",        // GA4 Measurement ID — normally left "" (comes from server / .env GA_MEASUREMENT_ID)
-    metaPixel: "",  // Meta / Facebook Pixel — ID, e.g. "1234567890123456"
-    klaviyo: "X2fn2S", // Klaviyo — Public API key (company id)
+    ga4: "",        // ← .env GA_MEASUREMENT_ID
+    metaPixel: "",  // ← .env META_PIXEL_ID
+    klaviyo: "",    // ← .env KLAVIYO_COMPANY_ID
   };
 
   var loaded = { ga: false, meta: false, klaviyo: false };
+
+  function expireCookie(name) {
+    var expires = "=; Max-Age=0; path=/; SameSite=Lax";
+    document.cookie = name + expires;
+    var parts = window.location.hostname.split(".");
+    if (parts.length > 1) document.cookie = name + expires + "; domain=." + parts.slice(-2).join(".");
+  }
+
+  function clearOptionalTrackingStorage(category) {
+    String(document.cookie || "").split(";").forEach(function (part) {
+      var name = part.split("=")[0].trim();
+      var analytics = /^(_ga|_gid|_gat)/.test(name);
+      var marketing = /^(_fbp|_fbc|__kla)/.test(name);
+      if ((category === "analytics" && analytics) || (category === "marketing" && marketing)) {
+        expireCookie(name);
+      }
+    });
+    try {
+      for (var i = localStorage.length - 1; i >= 0; i--) {
+        var key = localStorage.key(i) || "";
+        var analyticsKey = /^_ga/i.test(key);
+        var marketingKey = /^(klaviyo|__kla|_fbp)/i.test(key);
+        if ((category === "analytics" && analyticsKey) || (category === "marketing" && marketingKey)) {
+          localStorage.removeItem(key);
+        }
+      }
+    } catch (e) {}
+  }
 
   function consent() {
     try {
@@ -83,6 +115,7 @@
     } else {
       if (CONFIG.ga4) window["ga-disable-" + CONFIG.ga4] = true;
       if (window.gtag) window.gtag("consent", "update", { analytics_storage: "denied" });
+      clearOptionalTrackingStorage("analytics");
     }
     if (c.marketing) {
       if (window.fbq) window.fbq("consent", "grant");
@@ -91,17 +124,20 @@
     } else if (window.fbq) {
       window.fbq("consent", "revoke");
     }
+    if (!c.marketing) clearOptionalTrackingStorage("marketing");
   }
 
-  /* Pull the GA4 Measurement ID from the server (.env GA_MEASUREMENT_ID) unless
-     one was hardcoded above. Consent still gates whether GA actually loads. */
+  /* Pull every tracker id from the server (.env) unless one was hardcoded
+     above. Consent still gates whether anything actually loads — this only
+     decides which tools exist at all. */
   function init() {
     fetch("/api/public-config", { credentials: "same-origin" })
       .then(function (r) { return r.json(); })
       .then(function (data) {
-        if (data && data.ok && !CONFIG.ga4 && data.gaMeasurementId) {
-          CONFIG.ga4 = data.gaMeasurementId;
-        }
+        if (!data || !data.ok) return;
+        if (!CONFIG.ga4 && data.gaMeasurementId) CONFIG.ga4 = data.gaMeasurementId;
+        if (!CONFIG.klaviyo && data.klaviyoCompanyId) CONFIG.klaviyo = data.klaviyoCompanyId;
+        if (!CONFIG.metaPixel && data.metaPixelId) CONFIG.metaPixel = data.metaPixelId;
       })
       .catch(function () {})
       .then(apply);

@@ -70,7 +70,7 @@
   }
 
   function loggedIn() {
-    try { return !!localStorage.getItem("nostalgia-session"); } catch (e) { return false; }
+    try { return !!sessionStorage.getItem("nostalgia-session"); } catch (e) { return false; }
   }
 
   function skipPage() {

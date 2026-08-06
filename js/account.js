@@ -1,5 +1,9 @@
 (function () {
-  var USERS_KEY = "nostalgia-users";
+  /* Legacy static-preview builds stored entire accounts (including a weak
+     password digest) in localStorage. Accounts are server-only now. Remove
+     any residue as soon as this bundle runs; an API outage must never create
+     a second, browser-local identity store. */
+  var LEGACY_USERS_KEY = "nostalgia-users";
   var SESSION_KEY = "nostalgia-session";
   var NEWSLETTER_KEY = "nostalgia-newsletter";
   var NEWSLETTER_DISMISS_KEY = "nostalgia-newsletter-dismissed";
@@ -100,24 +104,11 @@
     document.head.appendChild(link);
   }
 
-  function readUsers() {
-    try {
-      var raw = localStorage.getItem(USERS_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch (e) {
-      return [];
-    }
-  }
-
-  function writeUsers(users) {
-    try {
-      localStorage.setItem(USERS_KEY, JSON.stringify(users));
-    } catch (e) {}
-  }
+  try { localStorage.removeItem(LEGACY_USERS_KEY); } catch (e) {}
 
   function getSession() {
     try {
-      var raw = localStorage.getItem(SESSION_KEY);
+      var raw = sessionStorage.getItem(SESSION_KEY);
       return raw ? JSON.parse(raw) : null;
     } catch (e) {
       return null;
@@ -126,7 +117,7 @@
 
   function setSession(user) {
     try {
-      localStorage.setItem(
+      sessionStorage.setItem(
         SESSION_KEY,
         JSON.stringify({
           email: user.email,
@@ -140,45 +131,18 @@
 
   function clearSession() {
     try {
-      localStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem(SESSION_KEY);
     } catch (e) {}
     updateHeaderAccount();
   }
 
-  function hashPassword(password) {
-    var str = String(password);
-    var hash = 0;
-    for (var i = 0; i < str.length; i++) {
-      hash = (hash << 5) - hash + str.charCodeAt(i);
-      hash |= 0;
-    }
-    return "h" + Math.abs(hash).toString(16);
-  }
-
-  function registerUserLocal(data) {
-    var users = readUsers();
-    var email = data.email.toLowerCase().trim();
-    if (users.some(function (u) {
-      return u.email === email;
-    })) {
-      return { ok: false, error: "exists" };
-    }
-    users.push({
-      email: email,
-      firstname: data.firstname.trim(),
-      lastname: data.lastname.trim(),
-      birthDate: data.birthDate || "",
-      newsletterOptin: !!data.newsletterOptin,
-      passwordHash: hashPassword(data.password),
-    });
-    writeUsers(users);
-    setSession({ email: email, firstname: data.firstname.trim(), lastname: data.lastname.trim() });
-    return { ok: true };
-  }
-
-  /* Uses the backend when it is running, localStorage otherwise. */
+  /* Accounts exist only on the backend. Wait for the initial health probe so
+     a slow response cannot be mistaken for permission to create a local
+     account. */
   function registerUser(data) {
-    if (window.NostalgiaAPI && window.NostalgiaAPI.isAvailable()) {
+    if (!window.NostalgiaAPI) return Promise.resolve({ ok: false, error: "service_unavailable" });
+    return window.NostalgiaAPI.ready().then(function (available) {
+      if (!available) return { ok: false, error: "service_unavailable" };
       return window.NostalgiaAPI.post("/api/auth/register", data).then(function (res) {
         if (res.ok && res.user) {
           setSession(res.user);
@@ -186,25 +150,13 @@
         }
         return { ok: false, error: res.error || "failed" };
       });
-    }
-    return Promise.resolve(registerUserLocal(data));
-  }
-
-  function loginUserLocal(email, password) {
-    var users = readUsers();
-    var normalized = email.toLowerCase().trim();
-    var user = users.filter(function (u) {
-      return u.email === normalized;
-    })[0];
-    if (!user || user.passwordHash !== hashPassword(password)) {
-      return { ok: false };
-    }
-    setSession(user);
-    return { ok: true };
+    });
   }
 
   function loginUser(email, password, remember, captcha) {
-    if (window.NostalgiaAPI && window.NostalgiaAPI.isAvailable()) {
+    if (!window.NostalgiaAPI) return Promise.resolve({ ok: false, error: "service_unavailable" });
+    return window.NostalgiaAPI.ready().then(function (available) {
+      if (!available) return { ok: false, error: "service_unavailable" };
       return window.NostalgiaAPI.post("/api/auth/login", {
         email: email,
         password: password,
@@ -217,8 +169,7 @@
         }
         return { ok: false, error: res.error || "failed" };
       });
-    }
-    return Promise.resolve(loginUserLocal(email, password));
+    });
   }
 
   function isNewsletterSubscribed() {
@@ -230,24 +181,26 @@
   }
 
   function saveNewsletter(data) {
-    try {
-      localStorage.setItem(
-        NEWSLETTER_KEY,
-        JSON.stringify({
-          email: data.email.toLowerCase().trim(),
-          firstname: data.firstname ? data.firstname.trim() : "",
-          lastname: data.lastname ? data.lastname.trim() : "",
-          at: Date.now(),
-        })
-      );
-    } catch (e) {}
-    if (window.NostalgiaAPI && window.NostalgiaAPI.isAvailable()) {
-      window.NostalgiaAPI.post("/api/newsletter", {
+    if (!window.NostalgiaAPI) return Promise.resolve({ ok: false, error: "service_unavailable" });
+    return window.NostalgiaAPI.ready().then(function (available) {
+      if (!available) return { ok: false, error: "service_unavailable" };
+      return window.NostalgiaAPI.post("/api/newsletter", {
         email: data.email,
         firstname: data.firstname || "",
         lastname: data.lastname || "",
+        lang: document.documentElement.lang === "en" ? "en" : "el",
       });
-    }
+    }).then(function (res) {
+      if (res && res.ok) {
+        try {
+          localStorage.setItem(NEWSLETTER_KEY, JSON.stringify({
+            status: res.confirmationPending ? "pending" : "confirmed",
+            at: Date.now(),
+          }));
+        } catch (e) {}
+      }
+      return res;
+    });
   }
 
   function buildForgotHTML() {
@@ -338,8 +291,7 @@
       '      <label class="account-field"><span data-i18n="checkout_firstname_label">Όνομα</span><input type="text" name="firstname" required autocomplete="given-name" /></label>' +
       '      <label class="account-field"><span data-i18n="checkout_lastname_label">Επώνυμο</span><input type="text" name="lastname" required autocomplete="family-name" /></label>' +
       '      <label class="account-check"><input type="checkbox" name="newsletterOptin" /><span data-i18n="account_newsletter_optin">Sign up for newsletter</span></label>' +
-      '      <label class="account-field"><span data-i18n="account_birth_label">Date of birth</span><input type="date" name="birthDate" autocomplete="bday" /></label>' +
-      '      <p class="account-form__hint" data-i18n="account_birth_hint">Τα γενέθλιά σας μάς βοηθούν να σας στείλουμε κάτι ξεχωριστό.</p>' +
+      '      <p class="account-form__hint"><a href="/privacy#newsletter" data-i18n="newsletter_consent_notice">Με την εγγραφή ζητάς να λαμβάνεις νέα και προσφορές με email. Θα σου στείλουμε σύνδεσμο επιβεβαίωσης και μπορείς να ανακαλέσεις τη συγκατάθεσή σου ανά πάσα στιγμή.</a></p>' +
       '      <p class="account-form__section" data-i18n="account_signin_info">Sign-in information</p>' +
       '      <label class="account-field"><span data-i18n="checkout_email_label">Email</span><input type="email" name="email" required autocomplete="email" /></label>' +
       '      <label class="account-field account-field--password"><span data-i18n="account_password_label">Κωδικός</span>' +
@@ -571,7 +523,6 @@
       dashField("text", "firstname", "account_first_label", "given-name") +
       dashField("text", "lastname", "account_last_label", "family-name") +
       dashField("email", "email", "account_email_label", "email", true, true) +
-      dashField("date", "birthDate", "account_birth_label", "bday") +
       "    </div>" +
       '    <p class="account-form__hint" data-i18n="account_email_hint">' + t("account_email_hint") + "</p>" +
       '    <p class="account-edit__msg" data-msg hidden></p>' +
@@ -846,22 +797,6 @@
     f.elements[name].value = value || "";
   }
 
-  function showBirthday(birthDate) {
-    var el = document.querySelector("[data-account-bday]");
-    if (!el) return;
-    var d = birthDate ? new Date(birthDate) : null;
-    if (!d || isNaN(d.getTime())) {
-      el.hidden = true;
-      return;
-    }
-    var formatted = d.toLocaleDateString(isEnglish() ? "en-GB" : "el-GR", {
-      day: "numeric",
-      month: "long",
-    });
-    el.textContent = "🎂 " + t("account_bday_prefix") + " · " + formatted;
-    el.hidden = false;
-  }
-
   function showFormMsg(form, key, ok) {
     var msg = form.querySelector("[data-msg]");
     if (!msg) return;
@@ -888,11 +823,9 @@
     window.NostalgiaAPI.get("/api/auth/me").then(function (res) {
       if (!res || !res.ok || !res.user) return;
       var u = res.user;
-      showBirthday(u.birthDate);
       setFormVal("account-profile-form", "firstname", u.firstname);
       setFormVal("account-profile-form", "lastname", u.lastname);
       setFormVal("account-profile-form", "email", u.email);
-      setFormVal("account-profile-form", "birthDate", u.birthDate);
       cachedAddress = u.address || null;
       loadAddressIntoForm(cachedAddress || {});
       renderAddressSummary();
@@ -982,13 +915,11 @@
         .patch("/api/auth/me", {
           firstname: form.elements.firstname.value.trim(),
           lastname: form.elements.lastname.value.trim(),
-          birthDate: form.elements.birthDate.value,
         })
         .then(function (res) {
           if (btn) btn.disabled = false;
           if (res && res.ok && res.user) {
             showFormMsg(form, "account_saved", true);
-            showBirthday(res.user.birthDate);
             var nameEl = document.querySelector(".account-dashboard__name");
             if (nameEl) {
               nameEl.textContent =
@@ -1016,10 +947,19 @@
       if (btn) btn.disabled = true;
       var nl = form.elements.newsletterOptin;
       window.NostalgiaAPI
-        .post("/api/auth/newsletter", { optin: !!(nl && nl.checked) })
+        .post("/api/auth/newsletter", {
+          optin: !!(nl && nl.checked),
+          lang: document.documentElement.lang === "en" ? "en" : "el",
+        })
         .then(function (res) {
           if (btn) btn.disabled = false;
-          showFormMsg(form, res && res.ok ? "account_saved" : "account_save_error", !!(res && res.ok));
+          showFormMsg(
+            form,
+            res && res.ok
+              ? (res.confirmationPending ? "account_newsletter_pending" : "account_saved")
+              : "account_save_error",
+            !!(res && res.ok)
+          );
         })
         .catch(function () {
           if (btn) btn.disabled = false;
@@ -1574,7 +1514,9 @@
               ? (isEnglish() ? "Please complete the verification." : "Ολοκληρώστε την επαλήθευση.")
               : result.error === "account_disabled"
                 ? (isEnglish() ? "This account has been disabled. Please contact us." : "Ο λογαριασμός έχει απενεργοποιηθεί. Επικοινωνήστε μαζί μας.")
-                : t("account_login_error");
+                : result.error === "service_unavailable"
+                  ? (isEnglish() ? "The account service is temporarily unavailable. Please try again shortly." : "Η υπηρεσία λογαριασμού δεν είναι προσωρινά διαθέσιμη. Δοκιμάστε ξανά σε λίγο.")
+                  : t("account_login_error");
         }
         return;
       }
@@ -1597,7 +1539,6 @@
       email: registerForm.email.value,
       firstname: registerForm.firstname.value,
       lastname: registerForm.lastname.value,
-      birthDate: registerForm.birthDate ? registerForm.birthDate.value : "",
       newsletterOptin: !!(registerForm.newsletterOptin && registerForm.newsletterOptin.checked),
       password: registerForm.password.value,
       captchaToken: captchaToken(registerCaptcha),
@@ -1608,9 +1549,11 @@
           registerError.hidden = false;
           registerError.textContent = result.error === "captcha_failed"
             ? (isEnglish() ? "Please complete the verification." : "Ολοκληρώστε την επαλήθευση.")
-            : isPwStrengthError(result.error)
-            ? pwStrengthMsg(result.error)
-            : t("account_exists_error");
+            : result.error === "service_unavailable"
+              ? (isEnglish() ? "The account service is temporarily unavailable. Please try again shortly." : "Η υπηρεσία λογαριασμού δεν είναι προσωρινά διαθέσιμη. Δοκιμάστε ξανά σε λίγο.")
+              : isPwStrengthError(result.error)
+                ? pwStrengthMsg(result.error)
+                : t("account_exists_error");
         }
         return;
       }
@@ -1752,6 +1695,7 @@
       '      <label class="newsletter-field"><input type="email" name="email" required placeholder="Email" data-i18n-placeholder="newsletter_email_ph" /></label>' +
       '      <label class="newsletter-field"><input type="text" name="firstname" required placeholder="Όνομα" data-i18n-placeholder="newsletter_firstname_ph" autocomplete="given-name" /></label>' +
       '      <label class="newsletter-field"><input type="text" name="lastname" required placeholder="Επώνυμο" data-i18n-placeholder="newsletter_lastname_ph" autocomplete="family-name" /></label>' +
+      '      <p class="newsletter-popup__consent" data-i18n="newsletter_consent_notice">Με την εγγραφή ζητάς να λαμβάνεις νέα και προσφορές με email. Θα σου στείλουμε σύνδεσμο επιβεβαίωσης και μπορείς να ανακαλέσεις τη συγκατάθεσή σου ανά πάσα στιγμή.</p>' +
       '      <button type="submit" class="newsletter-form__submit" data-i18n="newsletter_submit">Εγγραφή</button>' +
       '      <p class="newsletter-form__success" id="newsletter-success" hidden data-i18n="newsletter_success">Ευχαριστούμε για την εγγραφή σου!</p>' +
       "    </form>" +
@@ -1823,18 +1767,28 @@
       form.addEventListener("submit", function (e) {
         e.preventDefault();
         if (!form.reportValidity()) return;
+        var submit = form.querySelector("button[type=submit]");
+        if (submit) submit.disabled = true;
         saveNewsletter({
           email: form.email.value,
           firstname: form.firstname.value,
           lastname: form.lastname.value,
+        }).then(function (res) {
+          if (!res || !res.ok) {
+            if (submit) submit.disabled = false;
+            return;
+          }
+          form.querySelectorAll("input").forEach(function (input) { input.disabled = true; });
+          if (submit) submit.hidden = true;
+          var success = document.getElementById("newsletter-success");
+          if (success) {
+            success.textContent = document.documentElement.lang === "en"
+              ? "Check your email to confirm your subscription."
+              : "Έλεγξε το email σου για να επιβεβαιώσεις την εγγραφή.";
+            success.hidden = false;
+          }
+          window.setTimeout(closeNewsletter, 3200);
         });
-        form.querySelectorAll("input").forEach(function (input) {
-          input.disabled = true;
-        });
-        form.querySelector("button[type=submit]").hidden = true;
-        var success = document.getElementById("newsletter-success");
-        if (success) success.hidden = false;
-        window.setTimeout(closeNewsletter, 2200);
       });
     }
 

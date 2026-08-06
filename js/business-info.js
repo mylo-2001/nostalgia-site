@@ -34,10 +34,11 @@
     chamber: "Βιοτεχνικό Επιμελητήριο Θεσσαλονίκης",
     chamberEn: "Thessaloniki Chamber of Small Industries",
 
-    /* Registration was filed 15/06/2026; the number has not been issued yet.
-       Fill this in and it appears in the footer automatically — nothing else
-       needs touching. */
-    gemi: "",
+    gemi: "195495706000",
+    /* European Unique Identifier, kept for the record. Not rendered: Greek
+       shops are asked for the ΓΕΜΗ number, and the EUID only restates it with
+       a country prefix. */
+    euid: "ELGEMI.195495706000",
 
     privacyEmail: "privacy@nostalgiacandle.gr",
     supportEmail: "support@nostalgiacandle.gr",

@@ -248,28 +248,65 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  display: flex;
   gap: clamp(0.85rem, 1.8vw, 1.4rem);
 }
 
+.home-bestsellers__carousel {
+  --carousel-gap: clamp(0.85rem, 1.8vw, 1.4rem);
+  margin-top: 0.35rem;
+}
+
+.home-bestsellers__carousel .home-bestsellers__grid {
+  gap: var(--carousel-gap);
+}
+
+.home-bestsellers__carousel .bestseller-card {
+  flex: 0 0 calc((100% - 4 * var(--carousel-gap)) / 5);
+  min-width: 0;
+  max-width: none;
+}
+
 @media (max-width: 1080px) {
-  .home-bestsellers__grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .home-bestsellers__carousel .bestseller-card {
+    flex: 0 0 calc((100% - 2 * var(--carousel-gap)) / 3);
   }
 }
 
 @media (max-width: 780px) {
-  .home-bestsellers__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .home-bestsellers__carousel .bestseller-card {
+    flex: 0 0 calc((100% - var(--carousel-gap)) / 2);
   }
 }
 
-@media (max-width: 520px) {
-  .home-bestsellers__grid {
+@media (max-width: 640px) {
+  .home-bestsellers__carousel {
     grid-template-columns: 1fr;
-    max-width: 22rem;
-    margin-inline: auto;
+  }
+
+  .home-bestsellers__carousel .home-collections__carousel-nav {
+    display: none;
+  }
+
+  .home-bestsellers__carousel .bestseller-card {
+    flex: 0 0 68%;
+  }
+
+  .home-bestsellers__carousel .bestseller-card__visual {
+    aspect-ratio: 1 / 1;
+  }
+
+  .home-bestsellers__carousel .bestseller-card__badge > span:last-child {
+    max-width: 11ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (min-width: 641px) {
+  .home-bestsellers__carousel .home-collections__carousel-dots {
+    display: none;
   }
 }
 
@@ -577,5 +614,23 @@
 @media (prefers-reduced-motion: reduce) {
   .bestseller-card {
     animation: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .bestseller-card__wish {
+    width: 2.75rem;
+    height: 2.75rem;
+    min-width: 44px;
+    min-height: 44px;
+    top: 0.4rem;
+    right: 0.4rem;
+  }
+
+  .bestseller-card__add {
+    min-height: 2.75rem;
+    padding: 0.8rem 0.85rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
   }
 }

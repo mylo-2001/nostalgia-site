@@ -1563,13 +1563,28 @@ body.locale-drawer-open {
 @media (max-width: 720px) {
   .site-footer__socials {
     flex-wrap: wrap;
+    justify-content: flex-start;
     gap: 0.5rem 0.6rem;
   }
 
   .site-footer__bar {
     grid-template-columns: 1fr;
-    justify-items: center;
-    text-align: center;
+    justify-items: stretch;
+    text-align: left;
+  }
+
+  .site-footer__copyright {
+    justify-self: start;
+    text-align: left;
+  }
+
+  .site-footer__payments {
+    display: flex;
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    justify-self: stretch;
+    gap: 0.4rem;
   }
 }
 
@@ -2601,4 +2616,465 @@ main {
   .welcome-offer__panel {
     transition: none;
   }
+}
+
+/* ==========================================================================
+   Press feedback
+   ==========================================================================
+   The site had 290 `:hover` rules and not one `:active`. It responded to a
+   mouse passing over, never to a finger pressing down — so on a phone,
+   "Προσθήκη στο καλάθι" felt inert until the toast appeared, which invites a
+   second tap.
+
+   The `html` prefix is deliberate. `.btn-shop--primary:hover` already sets
+   `translateY(-1px)` at the same specificity, and CSS load order differs
+   between pages, so without the extra element selector the winner would vary
+   by page. `translateY(0)` is restated for the same reason: during a press
+   both :hover and :active apply, and the lift must be cancelled explicitly. */
+html .btn:active,
+html .btn-shop:active,
+html .cta__btn:active,
+html .site-footer__social-link:active,
+html .cart-toast__link:active,
+html .cart-drawer__item-remove:active,
+html .wishlist-card__add:active {
+  transform: translateY(0) scale(0.97);
+  transition: transform 160ms var(--polish-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+/* Kept, not removed, under reduced motion: this is feedback, not decoration —
+   a user who suppresses animation still needs to know the tap registered. It
+   is simply made smaller. */
+@media (prefers-reduced-motion: reduce) {
+  html .btn:active,
+  html .btn-shop:active,
+  html .cta__btn:active,
+  html .site-footer__social-link:active,
+  html .cart-toast__link:active,
+  html .cart-drawer__item-remove:active,
+  html .wishlist-card__add:active {
+    transform: translateY(0) scale(0.99);
+    transition: transform 100ms linear;
+  }
+}
+
+/* ==========================================================================
+   Hover on touch
+   ==========================================================================
+   A phone cannot hover. Tapping still latches `:hover`, so every card lift and
+   button rise stayed stuck after the finger left — the shop had 83 rules that
+   move `transform` on hover and not one `@media (hover: hover)` guard.
+
+   Neutralising here rather than rewriting all 83 in place: those rules are
+   spread over 16 files whose load order differs per page, so editing them
+   individually risks changing which one wins. The `html` prefix raises
+   specificity above the originals, making this block order-independent.
+
+   Generated from the stylesheets; `.site-intro__enter:hover` is deliberately
+   excluded — the intro overlay is left alone. */
+@media (hover: none) {
+  html .about-tab:hover,
+  html .account-dash-card:hover,
+  html .account-dash-card:hover .account-dash-card__chev,
+  html .bestseller-card:hover,
+  html .bestseller-card:hover .bestseller-card__visual img,
+  html .bestseller-card__wish:hover,
+  html .btn-shop--primary:hover,
+  html .cart-link--corner:hover,
+  html .cart-link:hover,
+  html .collection-card--category:hover,
+  html .collection-card:hover .collection-card__visual,
+  html .collection-card:hover .collection-card__visual img,
+  html .collection-product:hover .collection-product__quick,
+  html .collection-product:hover .collection-product__visual img,
+  html .collection-product__visual:hover img,
+  html .collection-story__media:hover img,
+  html .gift-card:hover,
+  html .hero-home__cta:hover,
+  html .home-about__card--portrait.is-visible:hover .home-about__portrait,
+  html .home-about__card--portrait.is-visible:hover .home-about__portrait img,
+  html .home-about__card:hover,
+  html .home-about__cta:hover,
+  html .home-collections__carousel--editorial .home-collections__cat--editorial:hover .home-collections__cat-media img,
+  html .home-collections__cat--editorial:hover .home-collections__cat-cta,
+  html .home-collections__cat--editorial:hover .home-collections__cat-media img,
+  html .home-collections__cat-media:hover img,
+  html .home-collections__cat:hover,
+  html .home-collections__cat:hover .home-collections__cat-media img,
+  html .home-collections__feature-cta:hover,
+  html .home-collections__feature.is-visible .home-collections__feature-cta:hover,
+  html .home-collections__new-card:hover,
+  html .home-collections__new-card:hover .home-collections__new-media img,
+  html .home-collections__stories-links a:hover,
+  html .home-collections__stories-links a:hover::after,
+  html .home-collections__stories-links a:hover::before,
+  html .home-discover__btn:hover,
+  html .home-discover__cat:hover,
+  html .home-duo__card:hover .home-duo__media img,
+  html .home-ethos__link:hover .home-ethos__link-arrow,
+  html .home-experience__card:hover,
+  html .home-gallery__item:hover img,
+  html .home-gallery__item:hover video,
+  html .home-manifesto__cta:hover,
+  html .home-moment__aside--left .home-moment__cat:hover,
+  html .home-moment__cat:hover,
+  html .home-moment__frame:hover .home-moment__img,
+  html .home-pinned__cta:hover,
+  html .home-retail__cta:hover,
+  html .home-reviews__card:hover,
+  html .home-shop__tile:hover,
+  html .home-shop__tile:hover .home-shop__media img,
+  html .home-shop__tile:hover .home-shop__tile-cta,
+  html .home-shop__tile:hover .home-shop__tile-cta::after,
+  html .home-trust__cta:hover,
+  html .journal-card:hover,
+  html .journal-card:hover .journal-card__media img,
+  html .journal-cta__btn:hover,
+  html .journal-feature:hover .journal-feature__media img,
+  html .lang-toggle:hover::after,
+  html .nav-mega__cat a:hover,
+  html .nav-mega__cta:hover,
+  html .occasion-card:hover,
+  html .occasion-card:hover .occasion-card__media img,
+  html .photo-zoom:hover img,
+  html .product-gallery__thumb:hover,
+  html .product-swatch:hover,
+  html .scent-finder__opt:hover:not(:disabled),
+  html .season-card:hover,
+  html .season-card:hover .season-card__media img,
+  html .side-nav-trigger:hover .side-nav-trigger__label::after,
+  html .site-footer__social:hover,
+  html .site-header__corner .cart-link--corner:hover,
+  html .site-header__corner .cart-link:hover,
+  html .site-header__corner .header-account-btn:hover,
+  html .site-nav a:hover::after,
+  html .site-nav__mega-trigger:hover::after,
+  html .site-search-drawer__product:hover,
+  html .site-search-trigger:hover,
+  html .theme-toggle:hover,
+  html .theme-toggle:hover .theme-toggle__icon,
+  html .theme-toggle[data-icon="moon"]:hover .theme-toggle__icon--moon,
+  html .theme-toggle[data-icon="sun"]:hover .theme-toggle__icon--sun,
+  html .wishlist-card:hover .wishlist-card__media img {
+    transform: none;
+  }
+}
+
+
+/* ==========================================================================
+   Mobile UX floor (touch + legibility)
+   Measured at 390×844: tiny labels, sub-44px controls, clipped cookie actions.
+   ========================================================================== */
+@media (max-width: 640px) {
+  .site-announcement {
+    padding: 0.55rem 2.75rem;
+  }
+
+  .site-announcement__text {
+    font-size: max(0.75rem, 12px);
+    letter-spacing: 0.08em;
+    line-height: 1.35;
+  }
+
+  .site-announcement__close {
+    width: 2.75rem;
+    height: 2.75rem;
+    min-width: 44px;
+    min-height: 44px;
+    right: 0.15rem;
+    font-size: 1.2rem;
+  }
+
+  .site-breadcrumb,
+  .site-breadcrumb a,
+  .site-breadcrumb__current,
+  .site-breadcrumb__sep {
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+  }
+
+  .site-breadcrumb a,
+  .site-breadcrumb__current {
+    padding: 0.35rem 0.15rem;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Common uppercase micro-labels across the storefront */
+  .home-experience__eyebrow,
+  .home-retail__eyebrow,
+  .home-seasonal__eyebrow,
+  .home-moment__eyebrow,
+  .home-reviews__eyebrow,
+  .home-trust__eyebrow,
+  .home-film__eyebrow,
+  .home-gallery__note-cta,
+  .home-moment__cta,
+  .home-moment__sig,
+  .home-retail__cta,
+  .home-seasonal__cta,
+  .home-seasonal__secondary,
+  .home-trust__cta,
+  .home-collections__new-label,
+  .home-collections__new-badge,
+  .home-moment__cat-note,
+  .side-nav__subgroup-label,
+  .side-nav__cta,
+  .side-nav__sub-feature-cta,
+  .site-footer__partners-title,
+  .product-info__avail,
+  .cart-link__badge {
+    font-size: max(0.75rem, 12px) !important;
+    letter-spacing: 0.08em;
+  }
+
+  .home-retail__cta,
+  .home-seasonal__cta,
+  .home-seasonal__secondary,
+  .home-trust__cta,
+  .home-moment__cta,
+  .home-gallery__note-cta,
+  .side-nav__cta,
+  .side-nav__sub-feature-cta {
+    min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding-block: 0.7rem;
+  }
+
+  .back-to-top {
+    width: 2.75rem;
+    height: 2.75rem;
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* ==========================================================================
+   Cart / wishlist reminder band  (js/cart-reminder.js)
+   ==========================================================================
+   Deliberately a band and not a modal. The welcome offer interrupts because it
+   is making an offer; this only reminds, so it sits at the foot of the page,
+   never covers content and never traps focus.
+
+   The easing is written with the literal curve as fallback because
+   --polish-ease lives in polish.css, which only 5 of 27 pages load. */
+.site-remind {
+  position: fixed;
+  z-index: 220;
+  left: 50%;
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  width: min(100% - 1.5rem, 34rem);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 2.4rem 0.85rem 1rem;
+  border: 1px solid var(--rule-hairline);
+  border-radius: 3px;
+  background: var(--surface-paper);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16);
+  opacity: 0;
+  transform: translate(-50%, 0.9rem);
+  pointer-events: none;
+  transition:
+    opacity 0.38s var(--polish-ease, cubic-bezier(0.22, 1, 0.36, 1)),
+    transform 0.38s var(--polish-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.site-remind.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  pointer-events: auto;
+}
+
+.site-remind__icon {
+  display: grid;
+  place-items: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  color: var(--accent, currentColor);
+  opacity: 0.85;
+}
+
+.site-remind__icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.site-remind__title {
+  margin: 0;
+  font-family: var(--font-nav);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.site-remind__text {
+  margin: 0.2rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.site-remind__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  white-space: nowrap;
+}
+
+.site-remind__link {
+  font-family: var(--font-nav);
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--text-muted);
+}
+
+.site-remind__cta {
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  font-family: var(--font-nav);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--shop-cta-text);
+  background: var(--shop-cta);
+  transition: transform 160ms var(--polish-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+html .site-remind__cta:active,
+html .site-remind__link:active {
+  transform: scale(0.97);
+}
+
+.site-remind__close {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.4rem;
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* The toast is transient and more urgent, so it keeps the upper position and
+   steps over the band while both are on screen. */
+.site-remind.is-visible ~ .cart-toast.is-visible {
+  bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (max-width: 560px) {
+  .site-remind {
+    /* Stacked: at this width the actions cannot share a row with the copy
+       without truncating either the title or the button label. */
+    grid-template-columns: auto 1fr;
+    row-gap: 0.7rem;
+    padding-right: 2.6rem;
+  }
+
+  .site-remind__actions {
+    grid-column: 1 / -1;
+    justify-content: stretch;
+  }
+
+  /* Same 44px floor the rest of the mobile controls follow — measured at
+     390×844 these came out 34px and 32px, which is under the tap minimum. */
+  .site-remind__cta {
+    flex: 1;
+    text-align: center;
+    min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .site-remind__link {
+    min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+    padding-inline: 0.25rem;
+  }
+
+  .site-remind__close {
+    width: 2.75rem;
+    height: 2.75rem;
+    min-width: 44px;
+    min-height: 44px;
+    top: 0.1rem;
+    right: 0.1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-remind {
+    transform: translate(-50%, 0);
+    transition: opacity 0.2s linear;
+  }
+
+  .site-remind.is-visible {
+    transform: translate(-50%, 0);
+  }
+}
+
+/* Stock notices (wishlist / cart pages) — real tracked stock only. */
+.stock-notice {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--rule-hairline);
+  background: color-mix(in srgb, var(--surface-paper) 92%, var(--accent) 8%);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+.stock-notice--out {
+  border-color: color-mix(in srgb, #8b3a2a 35%, var(--rule-hairline));
+  background: color-mix(in srgb, var(--surface-paper) 90%, #8b3a2a 10%);
+}
+
+.stock-notice--low {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--rule-hairline));
+}
+
+.stock-pill {
+  display: inline-block;
+  margin: 0.15rem 0 0.35rem;
+  font-family: var(--font-nav);
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.stock-pill--out {
+  color: #8b3a2a;
+}
+
+.stock-pill--low {
+  color: color-mix(in srgb, var(--accent) 85%, #5a4010);
+}
+
+.wishlist-card--out .wishlist-card__media img,
+.cart-line--out .cart-line__media img {
+  opacity: 0.55;
+}
+
+.cart-page--editorial .stock-pill {
+  display: block;
+  margin: -0.25rem 0 0.55rem;
 }

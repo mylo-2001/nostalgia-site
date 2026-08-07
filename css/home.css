@@ -3420,10 +3420,43 @@
   transition-delay: 0.7s;
 }
 
+/* Duo uses the shared editorial carousel chrome, but always shows 2 cards
+   on desktop and 1 on mobile — not the 4-up category breakpoints. */
+.home-duo__carousel .home-duo__grid {
+  display: flex;
+  grid-template-columns: none;
+  gap: var(--carousel-gap, 1.15rem);
+}
+
+.home-duo__carousel .home-duo__card {
+  min-width: 0;
+}
+
+.home-duo__carousel.home-collections__carousel--editorial .home-collections__carousel-slide {
+  flex: 0 0 calc((100% - var(--carousel-gap, 1.15rem)) / 2);
+}
+
 @media (max-width: 640px) {
-  .home-duo__grid {
+  .home-duo__carousel {
     grid-template-columns: 1fr;
-    gap: 1.8rem;
+  }
+
+  .home-duo__carousel .home-collections__carousel-nav {
+    display: none;
+  }
+
+  .home-duo__carousel.home-collections__carousel--editorial .home-collections__carousel-slide {
+    flex: 0 0 68%;
+  }
+
+  .home-duo__carousel .home-duo__media {
+    aspect-ratio: 1 / 1;
+  }
+}
+
+@media (min-width: 641px) {
+  .home-duo__carousel .home-collections__carousel-dots {
+    display: none;
   }
 }
 
@@ -3790,8 +3823,9 @@
 }
 
 @media (max-width: 640px) {
+  /* Peek next card — same compact mobile language as related products. */
   .home-collections__carousel--editorial .home-collections__carousel-slide {
-    flex: 0 0 100%;
+    flex: 0 0 68%;
   }
 
   .home-collections__carousel--editorial {
@@ -3859,6 +3893,12 @@
   border: none;
   background: color-mix(in srgb, var(--surface-muted) 88%, #fff);
   overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  .home-collections__carousel--editorial .home-collections__cat--editorial .home-collections__cat-media {
+    aspect-ratio: 1 / 1;
+  }
 }
 
 [data-theme="dark"] .home-collections__cat--editorial .home-collections__cat-media {
@@ -5519,4 +5559,82 @@ html.intro-lock body {
     transform: none;
   }
   html:not(.force-site-motion) .site-intro__chev { animation: none; }
+}
+
+@media (max-width: 640px) {
+  .hero-slider__dot {
+    width: 44px;
+    height: 44px;
+  }
+
+  .hero-slider__dot::before {
+    width: 9px;
+    height: 9px;
+  }
+
+  .home-collections__carousel-dot {
+    width: 44px;
+    height: 44px;
+    border: 0;
+    background: transparent;
+    position: relative;
+    transform: none;
+  }
+
+  .home-collections__carousel-dot::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 999px;
+    border: 1px solid rgba(127, 92, 44, 0.55);
+    background: transparent;
+    transform: translate(-50%, -50%);
+  }
+
+  .home-collections__carousel-dot.is-active {
+    background: transparent;
+    transform: none;
+  }
+
+  .home-collections__carousel-dot.is-active::before {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  [data-theme="dark"] .home-collections__carousel-dot::before {
+    border-color: rgba(197, 160, 96, 0.65);
+  }
+
+  .home-collections__new-badge,
+  .home-moment__cat-note {
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+  }
+
+  .home-retail__cta {
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    min-height: 2.75rem;
+    width: 100%;
+    max-width: 20rem;
+  }
+
+  /* Tighten a few tall home sections without gutting the editorial feel */
+  .home-experience {
+    padding-top: 3.25rem;
+    padding-bottom: 2.25rem;
+  }
+
+  .home-about {
+    padding-top: 2.25rem;
+    padding-bottom: 2.25rem;
+  }
+
+  .home-manifesto {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
 }

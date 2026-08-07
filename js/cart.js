@@ -537,12 +537,70 @@
     });
     root.querySelectorAll("[data-cart-remove]").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        removeItem(btn.getAttribute("data-product-id"));
-        if (window.NostalgiaCartPage && window.NostalgiaCartPage.render) {
-          window.NostalgiaCartPage.render();
-        }
+        var id = btn.getAttribute("data-product-id");
+        var row = btn.closest(".cart-line, .cart-drawer__item");
+        collapseRow(row, function () {
+          removeItem(id);
+          if (window.NostalgiaCartPage && window.NostalgiaCartPage.render) {
+            window.NostalgiaCartPage.render();
+          }
+        });
       });
     });
+  }
+
+  /* Removing a line rebuilds the whole list with innerHTML, so the row cannot
+     animate itself out afterwards — by then it no longer exists. It has to
+     finish leaving first, and only then trigger the rebuild.
+
+     The transition is set inline rather than in the stylesheet on purpose: the
+     row only ever animates while being removed, and a permanent transition on
+     .cart-line would also fire on quantity edits and re-renders.
+
+     Height/margin/padding are frozen to their measured values before being
+     driven to zero, because `height: auto` is not interpolable. */
+  function collapseRow(row, done) {
+    var reduced =
+      window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!row || reduced) {
+      done();
+      return;
+    }
+
+    var cs = window.getComputedStyle(row);
+    row.style.overflow = "hidden";
+    row.style.height = row.getBoundingClientRect().height + "px";
+    row.style.marginTop = cs.marginTop;
+    row.style.marginBottom = cs.marginBottom;
+    row.style.paddingTop = cs.paddingTop;
+    row.style.paddingBottom = cs.paddingBottom;
+    row.style.transition =
+      "opacity 200ms var(--polish-ease, cubic-bezier(0.22, 1, 0.36, 1)), transform 200ms var(--polish-ease, cubic-bezier(0.22, 1, 0.36, 1))," +
+      "height 180ms var(--polish-ease, cubic-bezier(0.22, 1, 0.36, 1)) 60ms, margin 180ms var(--polish-ease, cubic-bezier(0.22, 1, 0.36, 1)) 60ms," +
+      "padding 180ms var(--polish-ease, cubic-bezier(0.22, 1, 0.36, 1)) 60ms";
+    void row.offsetHeight;
+
+    row.style.opacity = "0";
+    row.style.transform = "translateX(-0.5rem)";
+    row.style.height = "0px";
+    row.style.marginTop = "0px";
+    row.style.marginBottom = "0px";
+    row.style.paddingTop = "0px";
+    row.style.paddingBottom = "0px";
+
+    /* transitionend can be missed — an interrupted transition or a row already
+       at zero height never fires it — and a cart line that refuses to
+       disappear is worse than one that skips its animation. */
+    var settled = false;
+    var settle = function () {
+      if (settled) return;
+      settled = true;
+      done();
+    };
+    row.addEventListener("transitionend", function (e) {
+      if (e.propertyName === "height") settle();
+    });
+    window.setTimeout(settle, 420);
   }
 
   function init() {
@@ -577,12 +635,26 @@
       addItem(productId, qty);
       showCartToast(productId);
     },
+    /* Exposed so the wishlist can reuse the same toast rather than grow a
+       second, slightly-different one. */
+    notify: function (productId, opts) {
+      showCartToast(productId, opts);
+    },
   };
 
   var toastEl;
   var toastTimer;
 
-  function showCartToast(productId) {
+  /* Shared by the cart and the wishlist. The element, the timing and the CSS
+     stay in one place so "added" always looks the same wherever it happens —
+     the wishlist previously confirmed nothing at all, which left the heart
+     looking broken on the first tap. */
+  function showCartToast(productId, opts) {
+    opts = opts || {};
+    var titleKey = opts.titleKey || "cart_toast_added";
+    var linkHref = opts.linkHref || "/cart";
+    var linkKey = opts.linkKey || "cart_view";
+
     if (!window.NostalgiaProducts) return;
     var product = window.NostalgiaProducts.getById(productId);
     if (!product) return;
@@ -598,15 +670,15 @@
       product.image +
       '" alt="" width="44" height="44" decoding="async" />' +
       '<div class="cart-toast__body">' +
-      '  <p class="cart-toast__title" data-i18n="cart_toast_added">' +
-      t("cart_toast_added") +
+      '  <p class="cart-toast__title" data-i18n="' + titleKey + '">' +
+      t(titleKey) +
       "</p>" +
       '  <p class="cart-toast__name">' +
       product.title +
       "</p>" +
       "</div>" +
-      '<a class="cart-toast__link" href="/cart" data-i18n="cart_view">' +
-      t("cart_view") +
+      '<a class="cart-toast__link" href="' + linkHref + '" data-i18n="' + linkKey + '">' +
+      t(linkKey) +
       "</a>";
     toastEl.classList.remove("is-visible");
     void toastEl.offsetWidth;

@@ -1,27 +1,53 @@
+/*
+ * Shared home carousels — collections categories, bestsellers, Diffusers/Perfume.
+ * Same swipe + dots behaviour; each root sets its own per-view breakpoints.
+ */
 (function () {
-  function initCollectionsCarousel() {
-    var root = document.getElementById("home-collections-carousel");
-    if (!root) return;
+  "use strict";
 
-    var viewport = root.querySelector(".home-collections__carousel-viewport");
-    var track = root.querySelector(".home-collections__carousel-track");
-    var slides = Array.prototype.slice.call(
-      root.querySelectorAll(".home-collections__carousel-slide")
-    );
+  var instances = {};
+
+  function perViewCollections(w) {
+    if (w <= 640) return 1;
+    if (w <= 900) return 2;
+    if (w <= 1200) return 3;
+    return 4;
+  }
+
+  function perViewBestsellers(w) {
+    if (w <= 640) return 1;
+    if (w <= 780) return 2;
+    if (w <= 1080) return 3;
+    return 5;
+  }
+
+  function perViewDuo(w) {
+    return w <= 640 ? 1 : 2;
+  }
+
+  function initCarousel(config) {
+    var root = document.getElementById(config.id);
+    if (!root) return null;
+
+    var viewport = root.querySelector("[data-carousel-viewport], .home-collections__carousel-viewport, .home-carousel__viewport");
+    var track = root.querySelector("[data-carousel-track], .home-collections__carousel-track, .home-carousel__track");
     var prevBtn = root.querySelector("[data-carousel-prev]");
     var nextBtn = root.querySelector("[data-carousel-next]");
-    var dotsWrap = root.querySelector(".home-collections__carousel-dots");
-    if (!viewport || !track || !slides.length || !prevBtn || !nextBtn || !dotsWrap) return;
+    var dotsWrap = root.querySelector("[data-carousel-dots], .home-collections__carousel-dots, .home-carousel__dots");
+    if (!viewport || !track || !prevBtn || !nextBtn || !dotsWrap) return null;
 
     var index = 0;
     var dots = [];
+    var slides = [];
+
+    function refreshSlides() {
+      slides = Array.prototype.slice.call(track.children).filter(function (el) {
+        return el.nodeType === 1 && !el.hidden;
+      });
+    }
 
     function perView() {
-      var w = window.innerWidth;
-      if (w <= 640) return 1;
-      if (w <= 900) return 2;
-      if (w <= 1200) return 3;
-      return 4;
+      return config.perView(window.innerWidth);
     }
 
     function maxIndex() {
@@ -29,10 +55,15 @@
     }
 
     function slideStep() {
+      if (!slides.length) return 0;
       var slideWidth = slides[0].getBoundingClientRect().width;
       var gap = 0;
       try {
-        gap = parseFloat(window.getComputedStyle(track).columnGap || window.getComputedStyle(track).gap || "0");
+        gap = parseFloat(
+          window.getComputedStyle(track).columnGap ||
+            window.getComputedStyle(track).gap ||
+            "0"
+        );
       } catch (e) {}
       return slideWidth + gap;
     }
@@ -44,9 +75,8 @@
     }
 
     function positionNav() {
-      // Align the arrows to the vertical centre of the card image (Trudon-style)
-      // instead of the centre of the whole card (image + title + CTA).
-      var media = slides[0] && slides[0].querySelector(".home-collections__cat-media");
+      if (!config.mediaSelector || !slides.length) return;
+      var media = slides[0].querySelector(config.mediaSelector);
       if (!media) return;
       var cardRect = slides[0].getBoundingClientRect();
       var mediaRect = media.getBoundingClientRect();
@@ -57,8 +87,12 @@
     }
 
     function updateControls() {
+      var max = maxIndex();
       prevBtn.disabled = index <= 0;
-      nextBtn.disabled = index >= maxIndex();
+      nextBtn.disabled = index >= max;
+      prevBtn.hidden = max <= 0;
+      nextBtn.hidden = max <= 0;
+      dotsWrap.hidden = max <= 0;
       dots.forEach(function (dot, i) {
         dot.classList.toggle("is-active", i === index);
         dot.setAttribute("aria-selected", i === index ? "true" : "false");
@@ -78,7 +112,8 @@
         (function (dotIndex) {
           var dot = document.createElement("button");
           dot.type = "button";
-          dot.className = "home-collections__carousel-dot";
+          dot.className = config.dotClass || "home-collections__carousel-dot";
+          if (config.dotClassExtra) dot.className += " " + config.dotClassExtra;
           dot.setAttribute("role", "tab");
           dot.setAttribute("aria-label", "Slide " + (dotIndex + 1));
           dot.addEventListener("click", function () {
@@ -90,6 +125,13 @@
       }
       if (index > maxIndex()) index = maxIndex();
       updateControls();
+    }
+
+    function refresh() {
+      refreshSlides();
+      rebuildDots();
+      setTrackPosition();
+      positionNav();
     }
 
     prevBtn.addEventListener("click", function () {
@@ -186,30 +228,70 @@
     bindTouchSwipe();
 
     var resizeTimer = null;
-    window.addEventListener("resize", function () {
+    function onResize() {
       window.clearTimeout(resizeTimer);
-      resizeTimer = window.setTimeout(function () {
-        rebuildDots();
-        setTrackPosition();
-        positionNav();
-      }, 120);
-    });
+      resizeTimer = window.setTimeout(refresh, 120);
+    }
+    window.addEventListener("resize", onResize);
 
-    rebuildDots();
-    setTrackPosition();
-    positionNav();
+    refresh();
 
-    // Re-measure once the card images have loaded (their height feeds the offset).
-    var firstImg = slides[0] && slides[0].querySelector(".home-collections__cat-media img");
+    var firstImg = slides[0] && slides[0].querySelector("img");
     if (firstImg && !firstImg.complete) {
       firstImg.addEventListener("load", positionNav, { once: true });
     }
     window.addEventListener("load", positionNav, { once: true });
+
+    function destroy() {
+      window.removeEventListener("resize", onResize);
+      window.clearTimeout(resizeTimer);
+    }
+
+    return { refresh: refresh, goTo: goTo, destroy: destroy };
+  }
+
+  function boot() {
+    instances["home-collections-carousel"] = initCarousel({
+      id: "home-collections-carousel",
+      perView: perViewCollections,
+      mediaSelector: ".home-collections__cat-media",
+    });
+
+    instances["home-bestsellers-carousel"] = initCarousel({
+      id: "home-bestsellers-carousel",
+      perView: perViewBestsellers,
+      mediaSelector: ".bestseller-card__visual",
+      dotClass: "home-collections__carousel-dot",
+    });
+
+    instances["home-duo-carousel"] = initCarousel({
+      id: "home-duo-carousel",
+      perView: perViewDuo,
+      mediaSelector: ".home-duo__media",
+      dotClass: "home-collections__carousel-dot",
+    });
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initCollectionsCarousel);
+    document.addEventListener("DOMContentLoaded", boot);
   } else {
-    initCollectionsCarousel();
+    boot();
   }
+
+  window.NostalgiaHomeCarousels = {
+    refresh: function (id) {
+      if (instances[id] && typeof instances[id].refresh === "function") {
+        instances[id].refresh();
+      }
+    },
+    mount: function (id, config) {
+      if (!id || !config) return null;
+      if (instances[id] && typeof instances[id].destroy === "function") {
+        instances[id].destroy();
+      }
+      config.id = id;
+      instances[id] = initCarousel(config);
+      return instances[id];
+    },
+  };
 })();

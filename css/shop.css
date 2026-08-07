@@ -40,6 +40,55 @@
     transform 0.25s ease;
 }
 
+/* Header account icon — same pill language as cart (lives in shop.css so
+   pages that load account.js without account.css don't fall back to a
+   square browser button). */
+.header-account-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.45rem;
+  height: 2.45rem;
+  padding: 0;
+  border: 1px solid var(--rule-strong);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--nav-link);
+  cursor: pointer;
+  pointer-events: auto;
+  z-index: 1;
+  appearance: none;
+  -webkit-appearance: none;
+  transition:
+    color var(--transition),
+    border-color var(--transition),
+    background var(--transition),
+    transform 0.25s ease;
+}
+
+.header-account-btn svg {
+  width: 1.2rem;
+  height: 1.2rem;
+  display: block;
+}
+
+.header-account-btn:hover,
+.header-account-btn:focus-visible {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.header-account-btn.is-logged-in {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--rule-strong));
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
 .cart-link__icon {
   display: flex;
   align-items: center;
@@ -2830,9 +2879,124 @@ body.cart-modal-open {
 }
 
 .related-products__grid {
+  display: flex;
+  gap: var(--carousel-gap, 0.85rem);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.related-products__grid.is-dragging {
+  transition: none;
+}
+
+.related-products__carousel {
+  --carousel-gap: 0.85rem;
+  margin-top: 0.35rem;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.8rem;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.related-products__carousel .home-collections__carousel-viewport {
+  overflow: hidden;
+  touch-action: pan-y pinch-zoom;
+  min-width: 0;
+}
+
+.related-products__carousel .home-collections__carousel-viewport.is-swiping {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.related-products__carousel .home-collections__carousel-nav {
+  appearance: none;
+  border: 1px solid var(--rule-strong);
+  background: var(--surface-muted);
+  color: var(--accent);
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transform: translateY(var(--home-nav-shift, 0));
+}
+
+.related-products__carousel .home-collections__carousel-nav:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.related-products__carousel .home-collections__carousel-dots {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  gap: 0.45rem;
+  margin-top: 0.15rem;
+}
+
+.related-products__carousel .home-collections__carousel-dot {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  border: 1px solid rgba(127, 92, 44, 0.5);
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.related-products__carousel .home-collections__carousel-dot.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  transform: scale(1.15);
+}
+
+.related-products__carousel .related-card {
+  flex: 0 0 calc((100% - 3 * var(--carousel-gap)) / 4);
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .related-products__carousel .related-card {
+    flex: 0 0 calc((100% - var(--carousel-gap)) / 2);
+  }
+}
+
+@media (max-width: 640px) {
+  .related-products__carousel {
+    grid-template-columns: 1fr;
+  }
+
+  .related-products__carousel .home-collections__carousel-nav {
+    display: none;
+  }
+
+  /* Peek the next card so photos stay compact, not full-bleed. */
+  .related-products__carousel.home-collections__carousel--editorial .home-collections__carousel-slide,
+  .related-products__carousel .related-card {
+    flex: 0 0 68%;
+  }
+
+  .related-products__carousel .related-card img {
+    aspect-ratio: 1 / 1;
+    object-fit: contain;
+  }
+
+  .related-products__carousel .related-card h3 {
+    font-size: 0.68rem;
+  }
+}
+
+@media (min-width: 641px) {
+  .related-products__carousel .home-collections__carousel-dots {
+    display: none;
+  }
 }
 
 .related-card a {
@@ -4565,7 +4729,8 @@ body.cart-modal-open {
   }
 
   .related-products__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    /* Mobile uses the related carousel (1-up); keep rule harmless. */
+    grid-template-columns: none;
   }
 
   .cart-modal {
@@ -5001,4 +5166,50 @@ body.cart-modal-open {
   letter-spacing: 0.01em;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
   pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .qty-stepper {
+    min-width: 8.5rem;
+    height: 2.85rem;
+  }
+
+  .qty-stepper__btn {
+    width: 2.75rem;
+    height: 2.75rem;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .qty-stepper__input {
+    width: 2.6rem;
+    min-height: 2.4rem;
+    font-size: 1rem;
+  }
+
+  .product-info__avail {
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+  }
+
+  .product-reviews__star-btn {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0.45rem;
+    font-size: 1.65rem;
+  }
+
+  .product-reviews__cancel {
+    min-height: 2.75rem;
+    padding: 0.55rem 0.35rem;
+    margin-left: 0;
+    font-size: 0.82rem;
+  }
+
+  .product-gallery__nav {
+    width: 2.75rem !important;
+    height: 2.75rem !important;
+    min-width: 44px;
+    min-height: 44px;
+  }
 }

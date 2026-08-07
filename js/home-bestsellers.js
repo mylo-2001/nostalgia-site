@@ -138,7 +138,7 @@
     btn.addEventListener("click", function (e) {
       e.preventDefault();
       e.stopPropagation();
-      if (window.NostalgiaWishlist) window.NostalgiaWishlist.toggle(p.id);
+      if (window.NostalgiaWishlist) window.NostalgiaWishlist.toggle(p.id, btn);
     });
     return btn;
   }
@@ -258,6 +258,9 @@
     });
     sectionEl.hidden = false;
     armMarkDraw();
+    if (window.NostalgiaHomeCarousels && typeof window.NostalgiaHomeCarousels.refresh === "function") {
+      window.NostalgiaHomeCarousels.refresh("home-bestsellers-carousel");
+    }
   }
 
   /* Draw the N monogram once when the strip enters the viewport. */

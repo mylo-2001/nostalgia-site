@@ -316,13 +316,13 @@
   function ensureFooterStyles() {
     var legacy = document.getElementById("site-chrome-footer-style");
     if (legacy) legacy.remove();
-    ["site-chrome-footer-style-v15", "site-chrome-footer-style-v16", "site-chrome-footer-style-v17", "site-chrome-footer-style-v18"].forEach(function (id) {
+    ["site-chrome-footer-style-v15", "site-chrome-footer-style-v16", "site-chrome-footer-style-v17", "site-chrome-footer-style-v18", "site-chrome-footer-style-v19"].forEach(function (id) {
       var old = document.getElementById(id);
       if (old) old.remove();
     });
-    if (document.getElementById("site-chrome-footer-style-v19")) return;
+    if (document.getElementById("site-chrome-footer-style-v20")) return;
     var style = document.createElement("style");
-    style.id = "site-chrome-footer-style-v19";
+    style.id = "site-chrome-footer-style-v20";
     style.textContent = `
       .site-footer {
         padding-top: 3rem;
@@ -488,6 +488,7 @@
         display: flex;
         flex-wrap: wrap;
         align-items: center;
+        justify-content: flex-start;
         gap: 0.72rem;
         margin: 0 0 1.3rem;
       }
@@ -734,17 +735,32 @@
       @media (max-width: 720px) {
         .site-footer__bar {
           grid-template-columns: 1fr;
-          justify-items: center;
-          text-align: center;
+          justify-items: stretch;
+          text-align: left;
           gap: 1rem;
         }
-        .site-footer__legal--bottom,
-        .site-footer__payments {
-          justify-self: center;
+        .site-footer__legal--bottom {
+          justify-self: start;
+          justify-content: flex-start;
+        }
+        .site-footer__copyright {
+          text-align: left;
+          justify-self: start;
         }
         .site-footer__payments {
+          display: flex;
+          width: 100%;
+          max-width: 100%;
           flex-wrap: wrap;
-          justify-content: center;
+          justify-content: flex-start;
+          justify-self: stretch;
+          gap: 0.4rem;
+        }
+        .site-footer__socials {
+          justify-content: flex-start;
+        }
+        .site-footer__partners {
+          justify-content: flex-start;
         }
       }
       @media (max-width: 480px) {

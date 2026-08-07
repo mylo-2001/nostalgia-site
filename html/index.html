@@ -21,8 +21,8 @@
   <link rel="stylesheet" href="css/base.css?v=header-top-1" />
   <link rel="stylesheet" href="css/side-nav.css?v=menu-visual3" />
   <link rel="stylesheet" href="css/smooth-scroll.css?v=1" />
-  <link rel="stylesheet" href="css/home.css?v=intro-resume2" />
-  <link rel="stylesheet" href="css/home-bestsellers.css?v=16" />
+  <link rel="stylesheet" href="css/home.css?v=carousel3" />
+  <link rel="stylesheet" href="css/home-bestsellers.css?v=carousel3" />
   <link rel="stylesheet" href="css/home-gallery.css?v=5" />
   <link rel="stylesheet" href="css/home-ethos.css?v=5" />
   <link rel="stylesheet" href="css/home-merge.css?v=7" />
@@ -616,8 +616,22 @@
               </div>
             </div>
             <section class="home-duo" aria-label="Perfume & Diffusers">
-              <div class="home-duo__grid">
-                <article class="home-duo__card home-reveal">
+              <div
+                class="home-collections__carousel home-collections__carousel--editorial home-duo__carousel"
+                id="home-duo-carousel"
+              >
+                <button
+                  type="button"
+                  class="home-collections__carousel-nav home-collections__carousel-nav--prev"
+                  data-carousel-prev
+                  aria-controls="home-duo-track"
+                  data-i18n-aria="home_carousel_prev"
+                >
+                  <span aria-hidden="true">&#8249;</span>
+                </button>
+                <div class="home-collections__carousel-viewport">
+                  <div class="home-duo__grid home-collections__carousel-track" id="home-duo-track">
+                <article class="home-duo__card home-reveal home-collections__carousel-slide">
                   <a class="home-duo__media-link" href="/collection/diffusers" tabindex="-1" aria-hidden="true">
                     <figure class="home-duo__media">
                       <picture>
@@ -643,7 +657,7 @@
                     <a class="home-duo__cta" href="/collection/diffusers" data-i18n="home_cat_discover">Ανακάλυψε</a>
                   </div>
                 </article>
-                <article class="home-duo__card home-reveal home-reveal--d1">
+                <article class="home-duo__card home-reveal home-reveal--d1 home-collections__carousel-slide">
                   <a class="home-duo__media-link" href="/collection/perfume" tabindex="-1" aria-hidden="true">
                     <figure class="home-duo__media">
                       <picture>
@@ -669,6 +683,18 @@
                     <a class="home-duo__cta" href="/collection/perfume" data-i18n="home_cat_discover">Ανακάλυψε</a>
                   </div>
                 </article>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="home-collections__carousel-nav home-collections__carousel-nav--next"
+                  data-carousel-next
+                  aria-controls="home-duo-track"
+                  data-i18n-aria="home_carousel_next"
+                >
+                  <span aria-hidden="true">&#8250;</span>
+                </button>
+                <div class="home-collections__carousel-dots" role="tablist" aria-label="Diffusers and Perfume"></div>
               </div>
             </section>
             <section class="home-collections__new" aria-labelledby="home-collections-new-heading">
@@ -747,7 +773,33 @@
               Ανακαλύψτε τα αγαπημένα των πελατών μας.
             </p>
           </header>
-          <ul class="home-bestsellers__grid" id="home-bestsellers-grid" role="list"></ul>
+          <div
+            class="home-collections__carousel home-collections__carousel--editorial home-bestsellers__carousel"
+            id="home-bestsellers-carousel"
+          >
+            <button
+              type="button"
+              class="home-collections__carousel-nav home-collections__carousel-nav--prev"
+              data-carousel-prev
+              aria-controls="home-bestsellers-grid"
+              data-i18n-aria="home_carousel_prev"
+            >
+              <span aria-hidden="true">&#8249;</span>
+            </button>
+            <div class="home-collections__carousel-viewport">
+              <ul class="home-bestsellers__grid home-collections__carousel-track" id="home-bestsellers-grid" role="list"></ul>
+            </div>
+            <button
+              type="button"
+              class="home-collections__carousel-nav home-collections__carousel-nav--next"
+              data-carousel-next
+              aria-controls="home-bestsellers-grid"
+              data-i18n-aria="home_carousel_next"
+            >
+              <span aria-hidden="true">&#8250;</span>
+            </button>
+            <div class="home-collections__carousel-dots" role="tablist" aria-label="Bestsellers"></div>
+          </div>
           <p class="home-bestsellers__foot">
             <a class="home-bestsellers__all" href="/collection" data-i18n="home_bestsellers_all">Όλα τα προϊόντα →</a>
           </p>
@@ -1067,7 +1119,7 @@
   <script defer src="js/api.js?v=1"></script>
   <script defer src="js/europe-countries.js"></script>
   <script defer src="js/images.js?v=4"></script>
-  <script defer src="js/i18n-bundles/shared.js?v=newsletter-band1"></script>
+  <script defer src="js/i18n-bundles/shared.js?v=stock-notice1"></script>
   <script defer src="js/i18n-bundles/home.js?v=bs-badge2"></script>
   <script defer src="js/i18n-core.js?v=2"></script>
     <script defer src="js/business-info.js?v=1"></script>
@@ -1096,9 +1148,9 @@
   <script src="js/hero-slider.js?v=9" defer></script>
   <script src="js/hero-scroll.js?v=5" defer></script>
   <script src="js/home-film.js?v=2" defer></script>
-  <script src="js/home-collections-carousel.js?v=swipe" defer></script>
+  <script src="js/home-collections-carousel.js?v=carousel2" defer></script>
   <script src="js/wishlist.js?v=1" defer></script>
-  <script src="js/home-bestsellers.js?v=7" defer></script>
+  <script src="js/home-bestsellers.js?v=carousel2" defer></script>
   <script src="js/home-reviews.js" defer></script>
   <script src="js/header-scroll.js?v=5" defer></script>
   <script src="js/home-toast.js" defer></script>

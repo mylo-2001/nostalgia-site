@@ -862,6 +862,8 @@
       renderReviewsHTML(product) +
       renderRelatedHTML(product);
 
+    mountRelatedCarousel();
+
     var galleryFigure = document.getElementById("product-gallery-figure");
     if (galleryFigure) {
       renderGallery(galleryFigure, product);
@@ -901,7 +903,7 @@
     var wishlistBtn = document.getElementById("product-toggle-wishlist");
     if (wishlistBtn) {
       wishlistBtn.addEventListener("click", function () {
-        if (window.NostalgiaWishlist) window.NostalgiaWishlist.toggle(product.id);
+        if (window.NostalgiaWishlist) window.NostalgiaWishlist.toggle(product.id, wishlistBtn);
         wishlistBtn.textContent = getWishlistLabel(product.id);
       });
     }
@@ -1380,7 +1382,7 @@
     var cards = related
       .map(function (item) {
         return (
-          '<article class="related-card">' +
+          '<article class="related-card home-collections__carousel-slide">' +
           '  <a href="/product/' +
           encodeURIComponent(item.id) +
           '">' +
@@ -1402,11 +1404,38 @@
       "  <h2>" +
       t("related_title") +
       "</h2>" +
-      '  <div class="related-products__grid">' +
+      '  <div class="home-collections__carousel home-collections__carousel--editorial related-products__carousel" id="product-related-carousel">' +
+      '    <button type="button" class="home-collections__carousel-nav home-collections__carousel-nav--prev" data-carousel-prev aria-controls="product-related-track" aria-label="' +
+      escapeHtml(t("home_carousel_prev") || "Previous") +
+      '"><span aria-hidden="true">‹</span></button>' +
+      '    <div class="home-collections__carousel-viewport">' +
+      '      <div class="related-products__grid home-collections__carousel-track" id="product-related-track">' +
       cards +
-      "</div>" +
+      "      </div>" +
+      "    </div>" +
+      '    <button type="button" class="home-collections__carousel-nav home-collections__carousel-nav--next" data-carousel-next aria-controls="product-related-track" aria-label="' +
+      escapeHtml(t("home_carousel_next") || "Next") +
+      '"><span aria-hidden="true">›</span></button>' +
+      '    <div class="home-collections__carousel-dots" role="tablist"></div>' +
+      "  </div>" +
       "</section>"
     );
+  }
+
+  function mountRelatedCarousel() {
+    if (!window.NostalgiaHomeCarousels || typeof window.NostalgiaHomeCarousels.mount !== "function") {
+      return;
+    }
+    if (!document.getElementById("product-related-carousel")) return;
+    window.NostalgiaHomeCarousels.mount("product-related-carousel", {
+      perView: function (w) {
+        if (w <= 640) return 1;
+        if (w <= 900) return 2;
+        return 4;
+      },
+      mediaSelector: ".related-card img",
+      dotClass: "home-collections__carousel-dot",
+    });
   }
 
   function clearStuckUi() {

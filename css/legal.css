@@ -570,22 +570,73 @@ body.cookie-settings-open {
 }
 
 @media (max-width: 640px) {
-  .cookie-banner__actions {
-    grid-template-columns: 1fr;
+  .cookie-banner {
+    padding: 0.5rem;
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
   }
 
   .cookie-banner__panel {
-    padding-inline: 1.25rem;
+    width: 100%;
+    max-height: min(88svh, 40rem);
+    padding: 1.1rem 1.15rem 1rem;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
-  .cookie-settings__actions {
-    flex-direction: column;
-    align-items: stretch;
+  .cookie-banner__brand {
+    margin-bottom: 0.35rem;
+  }
+
+  .cookie-banner__brand img,
+  .cookie-banner__logo {
+    max-height: 2.1rem;
+    max-width: min(9rem, 48vw);
+  }
+
+  .cookie-banner__title {
+    margin-bottom: 0.55rem;
+    font-size: 1rem;
+  }
+
+  .cookie-banner__text {
+    margin-bottom: 0.85rem;
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+
+  .cookie-banner__actions {
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin-top: auto;
+    padding-top: 0.65rem;
+    background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--cookie-bg) 0%, transparent) 0%,
+      var(--cookie-bg) 28%,
+      var(--cookie-bg) 100%
+    );
+  }
+
+  /* Accept first on mobile so the primary choice is never below the fold. */
+  .cookie-banner__btn[data-cookie-accept] {
+    order: -1;
   }
 
   .cookie-banner__btn,
   .cookie-settings__allow-all {
     width: 100%;
+    min-height: 2.75rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    padding: 0.7rem 0.85rem;
+  }
+
+  .cookie-settings__actions {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 

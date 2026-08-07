@@ -176,7 +176,7 @@
       '  <div class="cookie-banner__actions">' +
       '    <button type="button" class="cookie-banner__btn cookie-banner__btn--secondary" data-cookie-continue-without data-i18n="cookie_reject_all">Απόρριψη όλων</button>' +
       '    <button type="button" class="cookie-banner__btn cookie-banner__btn--secondary" data-cookie-manage data-i18n="cookie_manage">Διαχείριση cookies</button>' +
-      '    <button type="button" class="cookie-banner__btn cookie-banner__btn--secondary" data-cookie-accept data-i18n="cookie_accept_all">Αποδοχή όλων</button>' +
+      '    <button type="button" class="cookie-banner__btn cookie-banner__btn--primary" data-cookie-accept data-i18n="cookie_accept_all">Αποδοχή όλων</button>' +
       "  </div>" +
       "</div>";
 

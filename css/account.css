@@ -723,51 +723,12 @@ body[data-page="account"] .account-panel--login .account-panel__title {
   letter-spacing: 0.16em;
 }
 
-/* Header account icon — Trudon-style, δίπλα στο καλάθι */
-.header-account-btn {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 2.65rem;
-  height: 2.65rem;
-  border: 1px solid rgba(197, 160, 96, 0.28);
-  border-radius: 50%;
-  background: rgba(197, 160, 96, 0.08);
-  color: var(--nav-ink);
-  cursor: pointer;
-  pointer-events: auto;
-  z-index: 1;
-  transition:
-    color var(--transition),
-    background var(--transition),
-    border-color var(--transition),
-    transform 0.25s ease;
-}
-
-.header-account-btn svg {
-  width: 1.35rem;
-  height: 1.35rem;
-}
-
-.header-account-btn:hover,
-.header-account-btn:focus-visible {
-  color: var(--accent);
-  background: rgba(197, 160, 96, 0.16);
-  border-color: rgba(197, 160, 96, 0.45);
-  outline: none;
-}
-
+/* Header account icon — base pill lives in shop.css; account.css only
+   keeps logged-in emphasis so pages without this file still look right. */
 .header-account-btn.is-logged-in {
   color: var(--accent);
-  background: rgba(197, 160, 96, 0.16);
-  border-color: rgba(197, 160, 96, 0.45);
-}
-
-[data-theme="light"] .header-account-btn {
-  background: rgba(127, 92, 44, 0.08);
-  border-color: rgba(127, 92, 44, 0.28);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--rule-strong));
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 /* Newsletter popup — Trudon-style, κάτω δεξιά */

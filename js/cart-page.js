@@ -1,5 +1,6 @@
 (function () {
   var COUPON_STORAGE = "nostalgia-coupon";
+  var LOW_STOCK = 5;
 
   function couponMetaKey() {
     return window.NostalgiaOrderFees && window.NostalgiaOrderFees.COUPON_META_KEY
@@ -22,6 +23,7 @@
   var couponFeedback;
   var couponRemoveBtn;
   var couponBound = false;
+  var noticeEl;
 
   function t(key) {
     if (window.NostalgiaI18n && typeof window.NostalgiaI18n.t === "function") {
@@ -38,11 +40,70 @@
       .replace(/"/g, "&quot;");
   }
 
+  /* Tracked stock only — unknown stock is not shown as scarcity. */
+  function stockState(p) {
+    if (!p || p.stock == null) return null;
+    var n = Number(p.stock);
+    if (n <= 0) return { kind: "out", text: t("stock_out") };
+    if (n > 0 && n <= LOW_STOCK) {
+      return { kind: "low", text: t("stock_low").replace("{n}", String(n)) };
+    }
+    return null;
+  }
+
+  function updateNotice(lines) {
+    if (!noticeEl) return;
+    var out = 0;
+    var low = 0;
+    lines.forEach(function (line) {
+      var s = stockState(line.product);
+      if (!s) return;
+      if (s.kind === "out") out += 1;
+      else if (s.kind === "low") low += 1;
+    });
+
+    if (!out && !low) {
+      noticeEl.hidden = true;
+      noticeEl.textContent = "";
+      noticeEl.className = "stock-notice";
+      return;
+    }
+
+    var msg;
+    var cls = "stock-notice";
+    if (out && low) {
+      msg = t("stock_notice_cart_both");
+      cls += " stock-notice--out";
+    } else if (out) {
+      msg = t("stock_notice_cart_out");
+      cls += " stock-notice--out";
+    } else {
+      msg = t("stock_notice_cart_low");
+      cls += " stock-notice--low";
+    }
+    noticeEl.className = cls;
+    noticeEl.textContent = msg;
+    noticeEl.hidden = false;
+  }
+
   function buildLineHtml(line) {
     var p = line.product;
     var url = window.NostalgiaProducts.getProductUrl(p.id);
+    var stock = stockState(p);
+    var out = stock && stock.kind === "out";
+    var maxQty =
+      p.stock != null && Number(p.stock) > 0 ? Math.min(99, Number(p.stock)) : 99;
+    var stockHtml = stock
+      ? '<span class="stock-pill stock-pill--' +
+        stock.kind +
+        '">' +
+        escapeHtml(stock.text) +
+        "</span>"
+      : "";
     return (
-      '<li class="cart-line">' +
+      '<li class="cart-line' +
+      (out ? " cart-line--out" : "") +
+      '">' +
       '<a class="cart-line__media" href="' +
       url +
       '"><img src="' +
@@ -57,6 +118,7 @@
       '<span class="cart-line__meta">' +
       escapeHtml(p.categoryName) +
       "</span>" +
+      stockHtml +
       '<div class="cart-line__controls">' +
       '<label class="cart-line__qty-label">' +
       escapeHtml(t("cart_qty_label")) +
@@ -69,12 +131,18 @@
       escapeHtml(p.id) +
       '" value="' +
       line.qty +
-      '" min="1" max="99" aria-label="' +
+      '" min="1" max="' +
+      maxQty +
+      '" aria-label="' +
       escapeHtml(t("cart_qty_label")) +
-      '" />' +
+      '"' +
+      (out ? " disabled" : "") +
+      " />" +
       '<button type="button" class="qty-stepper__btn" data-qty-plus data-product-id="' +
       escapeHtml(p.id) +
-      '" aria-label="+">+</button>' +
+      '" aria-label="+"' +
+      (out || line.qty >= maxQty ? " disabled" : "") +
+      ">+</button>" +
       "</div>" +
       '<button type="button" class="cart-line__remove" data-cart-remove data-product-id="' +
       escapeHtml(p.id) +
@@ -373,10 +441,12 @@
     if (!hasItems) {
       if (emptyEl) emptyEl.hidden = false;
       if (itemsEl) itemsEl.hidden = true;
+      updateNotice([]);
       return;
     }
 
     syncCouponUi();
+    updateNotice(lines);
 
     if (emptyEl) emptyEl.hidden = true;
     if (itemsEl) {
@@ -404,11 +474,14 @@
     couponInput = document.getElementById("cart-coupon-input");
     couponFeedback = document.getElementById("cart-coupon-feedback");
     couponRemoveBtn = document.getElementById("cart-coupon-remove");
+    noticeEl = document.getElementById("cart-stock-notice");
     bindCouponForm();
     render();
     window.addEventListener("nostalgia-cart-updated", render);
     window.addEventListener("nostalgia-locale-updated", render);
     window.addEventListener("nostalgia-coupon-updated", render);
+    document.addEventListener("nostalgia-stock-updated", render);
+    document.addEventListener("nostalgia-products-updated", render);
     window.NostalgiaOnLangApplied = (function (prev) {
       return function () {
         render();

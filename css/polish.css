@@ -411,7 +411,11 @@ body.has-quick-view-open {
   }
 }
 
-#product-toggle-wishlist.is-heart-pulse {
+/* Widened from #product-toggle-wishlist: the same beat now plays on the heart
+   buttons of product cards, which previously confirmed nothing when tapped.
+   wishlist.js pulses whichever button was pressed, so the id scope no longer
+   fits — and one keyframe for every heart is what keeps them consistent. */
+.is-heart-pulse {
   animation: polishHeartPulse 0.5s var(--polish-ease);
 }
 
@@ -472,6 +476,53 @@ body.has-quick-view-open {
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+/* The keyframe above only runs on open — a <details> closes by removing the
+   attribute, so the answer used to vanish instantly. Result: an accordion that
+   eased open and then snapped shut, which reads as a glitch rather than a
+   choice.
+
+   `interpolate-size` is what makes the closed height animatable at all;
+   `::details-content` is the element the browser creates for the body.
+   Browsers without either simply keep today's instant close, so this is
+   additive — nothing to detect, nothing to fall back to. */
+@supports selector(::details-content) {
+  :root {
+    interpolate-size: allow-keywords;
+  }
+
+  .faq-item::details-content {
+    overflow: hidden;
+    block-size: 0;
+    opacity: 0;
+    transition:
+      block-size 280ms var(--polish-ease),
+      content-visibility 280ms allow-discrete,
+      opacity 220ms var(--polish-ease);
+  }
+
+  .faq-item[open]::details-content {
+    block-size: auto;
+    opacity: 1;
+  }
+
+  /* The JS-free open animation is now handled by the transition above; leaving
+     the keyframe as well would run two entrances at once. */
+  .faq-item[open] .faq-item__body {
+    animation: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faq-item .faq-item__body {
+    animation: none;
+  }
+
+  .faq-item::details-content,
+  .faq-item[open]::details-content {
+    transition: none;
   }
 }
 
@@ -1114,7 +1165,7 @@ body.has-quick-view-open {
 
   #cart-badge.is-bounce,
   .btn-shop.is-glow-pulse,
-  #product-toggle-wishlist.is-heart-pulse {
+  .is-heart-pulse {
     animation: none;
   }
 

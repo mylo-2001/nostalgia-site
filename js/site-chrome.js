@@ -223,10 +223,13 @@
       "</div>" +
       '<div class="site-footer__partners" aria-label="Partners and service providers">' +
       '  <span class="site-footer__partners-title">Partners</span>' +
-      '  <a class="site-footer__partner site-footer__partner--acs" href="https://www.acscourier.net/" target="_blank" rel="noopener noreferrer" aria-label="ACS Courier"><img src="images/sunergates-logo/acs-logo.webp" alt="ACS Courier" loading="lazy" /></a>' +
-      '  <a class="site-footer__partner" href="https://www.pointer.gr/" target="_blank" rel="noopener noreferrer" aria-label="Pointer.gr"><img src="images/sunergates-logo/pointer-logo.webp" alt="Pointer.gr" loading="lazy" /></a>' +
-      '  <a class="site-footer__partner" href="https://www.papaki.com/" target="_blank" rel="noopener noreferrer" aria-label="Papaki"><img src="images/sunergates-logo/papaki-logo.webp" alt="Papaki" loading="lazy" /></a>' +
-      '  <a class="site-footer__partner" href="https://www.cpanel.net/" target="_blank" rel="noopener noreferrer" aria-label="cPanel"><img src="images/sunergates-logo/cpanel-logo.webp" alt="cPanel" loading="lazy" /></a>' +
+      '  <div class="site-footer__partners-row">' +
+      '  <a class="site-footer__partner site-footer__partner--acs" href="https://www.acscourier.net/" target="_blank" rel="noopener noreferrer" aria-label="ACS Courier"><img src="images/sunergates-logo/acs-logo.webp?v=2" alt="ACS Courier" loading="lazy" decoding="async" width="120" height="36" /></a>' +
+      '  <a class="site-footer__partner site-footer__partner--eurobank" href="https://www.eurobank.gr/" target="_blank" rel="noopener noreferrer" aria-label="Eurobank"><img src="images/sunergates-logo/eurobank-logo.webp" alt="Eurobank" loading="lazy" decoding="async" width="120" height="28" /></a>' +
+      '  <a class="site-footer__partner" href="https://www.pointer.gr/" target="_blank" rel="noopener noreferrer" aria-label="Pointer.gr"><img src="images/sunergates-logo/pointer-logo.webp" alt="Pointer.gr" loading="lazy" decoding="async" width="120" height="36" /></a>' +
+      '  <a class="site-footer__partner" href="https://www.papaki.com/" target="_blank" rel="noopener noreferrer" aria-label="Papaki"><img src="images/sunergates-logo/papaki-logo.webp" alt="Papaki" loading="lazy" decoding="async" width="120" height="36" /></a>' +
+      '  <a class="site-footer__partner site-footer__partner--cpanel" href="https://www.cpanel.net/" target="_blank" rel="noopener noreferrer" aria-label="cPanel"><img src="images/sunergates-logo/cpanel-logo.webp?v=2" alt="cPanel" loading="lazy" decoding="async" width="120" height="36" /></a>' +
+      '  </div>' +
       "</div>"
     );
   }
@@ -315,13 +318,13 @@
   function ensureFooterStyles() {
     var legacy = document.getElementById("site-chrome-footer-style");
     if (legacy) legacy.remove();
-    ["site-chrome-footer-style-v15", "site-chrome-footer-style-v16", "site-chrome-footer-style-v17", "site-chrome-footer-style-v18", "site-chrome-footer-style-v19"].forEach(function (id) {
+    ["site-chrome-footer-style-v15", "site-chrome-footer-style-v16", "site-chrome-footer-style-v17", "site-chrome-footer-style-v18", "site-chrome-footer-style-v19", "site-chrome-footer-style-v20", "site-chrome-footer-style-v21"].forEach(function (id) {
       var old = document.getElementById(id);
       if (old) old.remove();
     });
-    if (document.getElementById("site-chrome-footer-style-v20")) return;
+    if (document.getElementById("site-chrome-footer-style-v22")) return;
     var style = document.createElement("style");
-    style.id = "site-chrome-footer-style-v20";
+    style.id = "site-chrome-footer-style-v22";
     style.textContent = `
       .site-footer {
         padding-top: 3rem;
@@ -612,30 +615,36 @@
       }
       .site-footer__partners {
         display: flex;
+        flex-direction: column;
         align-items: center;
-        justify-content: center;
-        flex-wrap: wrap;
-        gap: 0.55rem;
+        gap: 0.65rem;
         width: 100%;
         margin-top: 1.15rem;
         padding-top: 0.9rem;
         border-top: 1px solid var(--rule-hairline);
       }
       .site-footer__partners-title {
-        margin-right: 0.25rem;
         color: var(--ink-muted);
         font-family: var(--font-nav);
         font-size: 0.58rem;
         letter-spacing: 0.14em;
         text-transform: uppercase;
       }
+      .site-footer__partners-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        width: 100%;
+      }
       .site-footer__partner {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 6.25rem;
-        height: 2.15rem;
-        padding: 0.22rem 0.42rem;
+        width: 6.1rem;
+        height: 2.05rem;
+        padding: 0.2rem 0.4rem;
         overflow: hidden;
         border: 1px solid var(--rule-hairline);
         border-radius: 0.3rem;
@@ -652,6 +661,22 @@
         width: 100%;
         height: 100%;
         object-fit: contain;
+      }
+      .site-footer__partner--eurobank img {
+        width: 92%;
+        height: 78%;
+      }
+      .site-footer__partner--acs img {
+        width: 94%;
+        height: 94%;
+        object-fit: contain;
+        object-position: center;
+      }
+      .site-footer__partner--cpanel img {
+        width: 88%;
+        height: 72%;
+        object-fit: contain;
+        object-position: center;
       }
       .site-footer__emails-heading {
         display: flex;
@@ -670,11 +695,6 @@
         height: 0.8rem;
         flex: 0 0 auto;
         color: var(--accent);
-      }
-      .site-footer__partner--acs img {
-        width: 86%;
-        height: 86%;
-        mix-blend-mode: multiply;
       }
       .site-footer__pay {
         display: inline-flex;
@@ -759,12 +779,49 @@
           justify-content: flex-start;
         }
         .site-footer__partners {
-          justify-content: flex-start;
+          align-items: stretch;
+        }
+        .site-footer__partners-title {
+          text-align: left;
+          align-self: flex-start;
+        }
+        .site-footer__partners-row {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 0.4rem;
+          justify-items: stretch;
+        }
+        .site-footer__partner {
+          width: 100%;
+          height: 2.15rem;
+          padding: 0.22rem 0.32rem;
+          border-radius: 0.28rem;
+        }
+        .site-footer__partner--acs img {
+          width: 100%;
+          height: 100%;
+          transform: scale(1.06);
+        }
+        .site-footer__partner--cpanel img {
+          width: 96%;
+          height: 82%;
         }
       }
       @media (max-width: 480px) {
         .site-footer__links {
           grid-template-columns: 1fr;
+        }
+        .site-footer__partners-row {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 0.35rem;
+        }
+        .site-footer__partner {
+          height: 2rem;
+          padding: 0.2rem 0.28rem;
+        }
+        .site-footer__partner--cpanel img {
+          width: 94%;
+          height: 78%;
         }
       }
       @media (prefers-reduced-motion: reduce) {

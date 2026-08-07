@@ -237,7 +237,7 @@
     }
     if (document.querySelector('script[data-site-chrome="1"]')) return;
     var script = document.createElement("script");
-    script.src = "js/site-chrome.js?v=social-links-1";
+    script.src = "js/site-chrome.js?v=partners-acs-cpanel-2";
     script.async = false;
     script.setAttribute("data-site-chrome", "1");
     script.onload = function () {

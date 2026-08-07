@@ -3376,9 +3376,13 @@
   transform: translate3d(0, 0, 0) scale(1);
 }
 
-/* second card eases in a touch later for a gentle stagger */
+/* second / third card ease in a touch later for a gentle stagger */
 .home-duo__card.home-reveal--d1 {
   transition-delay: 0.14s;
+}
+
+.home-duo__card.home-reveal--d2 {
+  transition-delay: 0.26s;
 }
 
 /* Orchestrate the copy: title → description → button, after the card settles */
@@ -3418,6 +3422,16 @@
 }
 .home-duo__card.home-reveal--d1.is-visible .home-duo__cta {
   transition-delay: 0.7s;
+}
+
+.home-duo__card.home-reveal--d2.is-visible .home-duo__title {
+  transition-delay: 0.56s;
+}
+.home-duo__card.home-reveal--d2.is-visible .home-duo__desc {
+  transition-delay: 0.68s;
+}
+.home-duo__card.home-reveal--d2.is-visible .home-duo__cta {
+  transition-delay: 0.8s;
 }
 
 /* Duo uses the shared editorial carousel chrome, but always shows 2 cards

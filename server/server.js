@@ -5174,7 +5174,16 @@ async function ensureAdmin() {
 
   if (existing && existing.passHash) return;
 
-  /* No env password and no admin yet → generate one and write it once. */
+  /* Production must set ADMIN_PASSWORD — never bootstrap a plaintext password
+     into logs or a credentials file on a live host. */
+  if (security.isProduction()) {
+    throw new Error(
+      "ADMIN_PASSWORD must be set in .env before the first production start"
+    );
+  }
+
+  /* Local/dev only: generate once, write to a gitignored file, never echo
+     the password to stdout (CodeQL clear-text logging / shared terminals). */
   const password = crypto.randomBytes(9).toString("base64url");
   const admin = {
     username: envUser || "admin",
@@ -5183,8 +5192,9 @@ async function ensureAdmin() {
   };
   await db.setSetting("admin", admin);
   fs.mkdirSync(db.DATA_DIR, { recursive: true });
+  const credPath = path.join(db.DATA_DIR, "admin-credentials.txt");
   fs.writeFileSync(
-    path.join(db.DATA_DIR, "admin-credentials.txt"),
+    credPath,
     "Nostalgia admin panel — http://localhost:" + PORT + ADMIN_UI_PATH + "\n" +
       "Username: " + admin.username + "\n" +
       "Password: " + password + "\n" +
@@ -5195,8 +5205,8 @@ async function ensureAdmin() {
   console.log("=".repeat(56));
   console.log("  Admin panel created: " + ADMIN_UI_PATH);
   console.log("  Username: " + admin.username);
-  console.log("  Password: " + password);
-  console.log("  (saved in server/data/admin-credentials.txt)");
+  console.log("  Password written to server/data/admin-credentials.txt");
+  console.log("  (gitignored — set ADMIN_PASSWORD in .env for production)");
   console.log("=".repeat(56));
 }
 

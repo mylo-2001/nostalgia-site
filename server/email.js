@@ -1775,6 +1775,10 @@ async function sendPasswordCode(to, code, lang) {
   });
 
   if (!emailConfigured()) {
+    if (security.isProduction()) {
+      console.error("[email] not configured — cannot deliver password code in production");
+      throw new Error("email_not_configured");
+    }
     console.log(
       "[email] not configured — password code for " + to + " is: " + code +
         " (set RESEND_API_KEY or SMTP_* in .env to deliver it)."

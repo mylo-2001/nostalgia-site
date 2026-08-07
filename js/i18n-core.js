@@ -85,24 +85,44 @@ window.NostalgiaI18nRegister = function (bundle) {
       el.setAttribute("placeholder", STRINGS[lang][phKey]);
     });
 
+    /* The old chain defaulted to meta_title_home, so every page without a
+       branch of its own — seasonal, sale, new-arrivals, reviews, track,
+       account, 404 — silently overwrote its correct static <title> with the
+       home page's. Nine pages were reporting themselves to Google as the home
+       page. A lookup with no default fixes that: an unrecognised page simply
+       keeps the title the document already declares. */
     var page = document.body && document.body.getAttribute("data-page");
-    var metaKey = "meta_title_home";
-    if (page === "about") metaKey = "meta_title_about";
-    else if (page === "collection") metaKey = "meta_title_collection";
-    else if (page === "contact") metaKey = "meta_title_contact";
-    else if (page === "cart") metaKey = "meta_title_cart";
-    else if (page === "wishlist") metaKey = "meta_title_wishlist";
-    else if (page === "product") metaKey = "meta_title_product";
-    else if (page === "checkout") metaKey = "meta_title_checkout";
-    else if (page === "privacy") metaKey = "meta_title_privacy";
-    else if (page === "faq") metaKey = "meta_title_faq";
-    else if (page === "shipping") metaKey = "meta_title_shipping";
-    else if (page === "payments") metaKey = "meta_title_payments";
-    else if (page === "terms") metaKey = "meta_title_terms";
-    else if (page === "journal") metaKey = "meta_title_journal";
-    else if (page === "scent-finder") metaKey = "meta_title_scent_finder";
-    else if (page === "gift") metaKey = "meta_title_gift";
-    document.title = STRINGS[lang][metaKey];
+    var TITLE_KEYS = {
+      home: "meta_title_home",
+      about: "meta_title_about",
+      collection: "meta_title_collection",
+      contact: "meta_title_contact",
+      cart: "meta_title_cart",
+      wishlist: "meta_title_wishlist",
+      product: "meta_title_product",
+      checkout: "meta_title_checkout",
+      privacy: "meta_title_privacy",
+      faq: "meta_title_faq",
+      shipping: "meta_title_shipping",
+      payments: "meta_title_payments",
+      terms: "meta_title_terms",
+      journal: "meta_title_journal",
+      "scent-finder": "meta_title_scent_finder",
+      gift: "meta_title_gift",
+      seasonal: "meta_title_seasonal",
+      reviews: "meta_title_reviews",
+    };
+    var metaKey = TITLE_KEYS[page];
+
+    /* /new-arrivals and /sale share data-page="showcase", so the path is the
+       only thing that tells them apart. */
+    if (page === "showcase") {
+      metaKey = /\/sale/.test(location.pathname)
+        ? "meta_title_sale"
+        : "meta_title_new_arrivals";
+    }
+
+    if (metaKey && STRINGS[lang][metaKey]) document.title = STRINGS[lang][metaKey];
 
     updateLocaleTrigger();
     syncCountryFields(lang);

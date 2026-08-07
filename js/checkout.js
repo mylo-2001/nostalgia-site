@@ -695,10 +695,6 @@
           message = getLang() === "en"
             ? "For this order, please choose card payment."
             : "Για αυτή την παραγγελία, επιλέξτε πληρωμή με κάρτα.";
-        } else if (code === "GIFT_CHECKOUT_V2_NOT_CONFIGURED") {
-          message = getLang() === "en"
-            ? "Gift packaging is temporarily unavailable in secure checkout."
-            : "Η συσκευασία δώρου δεν είναι προσωρινά διαθέσιμη στο ασφαλές checkout.";
         } else {
           message = getLang() === "en"
             ? "The order could not be created. No duplicate charge was made. Please try again."

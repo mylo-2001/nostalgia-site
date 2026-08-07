@@ -56,6 +56,22 @@ function address(value, fallbackCountry) {
   };
 }
 
+function normalizeGift(value) {
+  const source = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  if (!source.isGift) return { isGift: false };
+  const boxType = text(source.boxType, 40);
+  return {
+    isGift: true,
+    wrap: !!source.wrap,
+    message: !!(source.message || source.messageText),
+    messageText: text(source.messageText, 500),
+    box: !!(source.box || boxType),
+    boxType,
+    shipOther: !!source.shipOther,
+    recipient: text(source.recipient, 160),
+  };
+}
+
 function normalizeCheckout(request, identity = {}) {
   if (!request || typeof request !== "object" || Array.isArray(request)) {
     fail("INVALID_CHECKOUT_REQUEST", "Checkout request must be an object");
@@ -104,6 +120,7 @@ function normalizeCheckout(request, identity = {}) {
     },
     shippingAddress,
     billingAddress,
+    gift: normalizeGift(request.gift),
     lang: request.lang === "en" ? "en" : "el",
     userEmail,
   };
@@ -119,6 +136,7 @@ function canonicalCheckout(normalized) {
     customer: normalized.customer,
     shippingAddress: normalized.shippingAddress,
     billingAddress: normalized.billingAddress,
+    gift: normalized.gift,
     lang: normalized.lang,
     userEmail: normalized.userEmail,
   });
@@ -253,7 +271,7 @@ async function createOrderTransaction(options, normalized, idempotency, now) {
   await client.query(`
     INSERT INTO orders (
       id, number, status, payment, payment_status, shipping_status,
-      coupon, discount, total, lang, user_email, customer, items,
+      coupon, discount, total, lang, user_email, customer, gift, items,
       order_status_v2, payment_status_v2, shipping_status_v2,
       payment_method_v2, currency, subtotal, discount_total,
       shipping_total, cod_fee, vat_total, other_charges_total, grand_total,
@@ -262,9 +280,9 @@ async function createOrderTransaction(options, normalized, idempotency, now) {
       request_id, checkout_idempotency_id, checkout_request_hash,
       customer_email_normalized, pricing_snapshot
     ) VALUES (
-      $1, $2, $3, $4, $5, 'not_ready', $6, $7, $8, $9, $10, $11, $12,
-      $13, $14, 'not_ready', $15, $16, $17, $18, $19, $20, $21, $22, $23,
-      TRUE, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33
+      $1, $2, $3, $4, $5, 'not_ready', $6, $7, $8, $9, $10, $11, $12, $13,
+      $14, $15, 'not_ready', $16, $17, $18, $19, $20, $21, $22, $23, $24,
+      TRUE, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34
     )
   `, [
     orderId,
@@ -278,6 +296,7 @@ async function createOrderTransaction(options, normalized, idempotency, now) {
     normalized.lang,
     normalized.userEmail,
     legacyCustomer,
+    normalized.gift,
     JSON.stringify(legacyItems),
     orderStatus,
     paymentStatus,

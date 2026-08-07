@@ -189,7 +189,7 @@
     });
   }
 
-  var GIFT_BOX_FEES = { premium: 4, wood: 8 };
+  var GIFT_BOX_FEES = { premium: 0, wood: 0 };
 
   function giftBoxFee(boxType) {
     return GIFT_BOX_FEES[boxType] || 0;

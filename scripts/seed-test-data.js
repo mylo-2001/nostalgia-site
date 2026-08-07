@@ -5,7 +5,8 @@
  * orders. Inserts SAMPLE data only:
  *   - one pricing policy (EUR, half-up, catalog prices include tax)
  *   - two shipping methods (store pickup, home delivery)
- *   - sample VAT rates (GR 24%, CY 19%)  ← replace with accountant-approved values before production
+ *   - VAT rates: GR standard 24% (tax-inclusive catalog prices). CY 19% remains
+ *     sample-only for cross-border quote tests — confirm before enabling CY live.
  *   - sample prices + stock on a handful of catalog products
  *   - inventory rows (via the tested bootstrap service)
  *

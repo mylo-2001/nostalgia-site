@@ -23,6 +23,6 @@ Tests include `payment-retry.integration`, `checkout-accessibility.unit`,
 `cookie-consent.unit`, `v2-router.unit`, `fiscal-provider.unit` and
 `fiscal-document-service.integration`.
 
-Known limitation: paid gift packaging is not in the V2 pricing model. V2 deliberately
-blocks gift checkout instead of trusting the browser fee. Keep the feature flag off until
-gift add-ons and production shipping/tax/inventory rows are configured.
+Gift packaging is free (no add-on fee) and is persisted on the V2 order `gift` JSONB
+column. Keep the feature flag off until production shipping/tax/inventory rows are
+configured.

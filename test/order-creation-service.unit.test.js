@@ -38,6 +38,31 @@ test("checkout normalization keeps identifiers and validated address snapshots",
   assert.equal(normalized.customer.email, "ada@example.com");
   assert.equal(normalized.shippingAddress.countryCode, "GR");
   assert.deepEqual(normalized.billingAddress, normalized.shippingAddress);
+  assert.deepEqual(normalized.gift, { isGift: false });
+});
+
+test("checkout gift packaging is normalized without pricing fields", () => {
+  const withGift = {
+    ...request(),
+    gift: {
+      isGift: true,
+      boxType: "premium",
+      messageText: "Happy birthday",
+      shipOther: true,
+      recipient: "Maria",
+    },
+  };
+  const normalized = normalizeCheckout(withGift, { type: "guest" });
+  assert.deepEqual(normalized.gift, {
+    isGift: true,
+    wrap: false,
+    message: true,
+    messageText: "Happy birthday",
+    box: true,
+    boxType: "premium",
+    shipOther: true,
+    recipient: "Maria",
+  });
 });
 
 test("checkout rejects browser totals and mismatched destination", () => {

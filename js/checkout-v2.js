@@ -59,12 +59,22 @@
 
   function checkoutPayload(context) {
     var data = context.shippingData;
+    var gift = data.gift && data.gift.isGift
+      ? {
+          isGift: true,
+          boxType: data.gift.boxType || "",
+          messageText: data.gift.messageText || "",
+          shipOther: !!data.gift.shipOther,
+          recipient: data.gift.recipient || "",
+        }
+      : { isGift: false };
     return {
       items: productLines(context.lines),
       couponCode: context.couponCode || null,
       shippingMethodId: data.courier,
       paymentMethod: "card",
       destinationCountry: data.countryCode,
+      gift: gift,
       customer: {
         firstName: data.firstname,
         lastName: data.lastname,
@@ -105,16 +115,7 @@
     try { sessionStorage.removeItem(key); } catch (_) {}
   }
 
-  function assertSupported(context) {
-    if (context.shippingData.gift && context.shippingData.gift.isGift) {
-      var error = new Error("Gift packaging is not available in Checkout V2 yet");
-      error.code = "GIFT_CHECKOUT_V2_NOT_CONFIGURED";
-      throw error;
-    }
-  }
-
   function submit(context) {
-    assertSupported(context);
     var checkoutKey = storageGet(ORDER_KEY) || randomKey();
     storageSet(ORDER_KEY, checkoutKey);
     return api().postWithHeaders("/api/v2/checkout", checkoutPayload(context), {
@@ -198,8 +199,9 @@
         '</span><strong>' + money(value, result.quote.currency, context.lang) +
         '</strong></div>';
     }).join("") + '<p class="checkout-sidebar__vat">' +
-      (context.lang === "en" ? "Authoritative total calculated by the server"
-        : "Το τελικό ποσό υπολογίστηκε με ασφάλεια από τον server") + '</p>';
+      (context.lang === "en"
+        ? "Prices include 24% VAT. Authoritative total from the server."
+        : "Στις τιμές συμπεριλαμβάνεται ΦΠΑ 24%. Το τελικό ποσό υπολογίστηκε από τον server.") + '</p>';
     box.hidden = false;
     if (localTotals) localTotals.hidden = true;
     if (cta) cta.disabled = false;
@@ -211,15 +213,6 @@
     var status = document.getElementById("checkout-submit-status");
     var cta = document.getElementById("checkout-cta");
     var sequence = ++quoteSequence;
-    try { assertSupported(context); }
-    catch (error) {
-      if (box) box.hidden = true;
-      if (cta) cta.disabled = true;
-      if (status) status.textContent = context.lang === "en"
-        ? "Gift packaging needs server pricing before secure checkout can be enabled."
-        : "Η συσκευασία δώρου χρειάζεται πρώτα τιμολόγηση από τον server.";
-      return;
-    }
     if (cta) cta.disabled = true;
     if (status) status.textContent = context.lang === "en"
       ? "Calculating the final total..." : "Υπολογισμός τελικού ποσού...";

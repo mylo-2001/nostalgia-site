@@ -110,18 +110,40 @@
     var footer = document.querySelector(".site-footer");
     if (!btn) return;
 
+    /* On the home intro curtain, "top" means just past the intro — not y=0,
+       which would re-show the curtain and force another scroll to dismiss it. */
+    function scrollHomePastIntro() {
+      if (document.body.getAttribute("data-page") !== "home") return 0;
+      if (!document.getElementById("site-intro")) return 0;
+      var reduce =
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches &&
+        !document.documentElement.classList.contains("force-site-motion");
+      if (reduce) return 0;
+      var spacer = document.querySelector(".site-intro-spacer");
+      var intro = document.getElementById("site-intro");
+      return Math.max(
+        0,
+        (spacer && spacer.offsetHeight) ||
+          (intro && intro.offsetHeight) ||
+          window.innerHeight ||
+          0
+      );
+    }
+
     function update() {
       var y = window.scrollY || document.documentElement.scrollTop || 0;
       var footerTop = footer ? footer.getBoundingClientRect().top : Infinity;
       var viewport = window.innerHeight || document.documentElement.clientHeight;
       var nearFooter = footerTop < viewport - 24;
+      var homeFloor = scrollHomePastIntro();
+      var showAfter = homeFloor > 0 ? homeFloor + 180 : 260;
 
-      btn.classList.toggle("is-visible", y > 260 && !nearFooter);
+      btn.classList.toggle("is-visible", y > showAfter && !nearFooter);
       btn.classList.toggle("is-near-footer", nearFooter);
     }
 
     btn.addEventListener("click", function () {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: scrollHomePastIntro(), behavior: "smooth" });
     });
 
     window.addEventListener("scroll", update, { passive: true });

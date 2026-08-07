@@ -1,4 +1,12 @@
 (function () {
+  /* COD is not offered on the storefront right now. Keep the policy text
+     here and flip to true when cash-on-delivery returns. */
+  var INCLUDE_COD_PRIVACY = false;
+
+  var COD_PRIVACY_EL =
+    "Για την πρόληψη απάτης στην αντικαταβολή εφαρμόζεται κανoνιστική αξιολόγηση κινδύνου με στοιχεία όπως ποσό/πλήθος προϊόντων, πρόσφατη συχνότητα παραγγελιών και προηγούμενες αποτυχημένες παραδόσεις. Το αποτέλεσμα μπορεί να ζητήσει κάρτα ή ανθρώπινο έλεγχο, δεν οδηγεί σε οριστική απόρριψη χωρίς δυνατότητα επικοινωνίας. Μπορείτε να ζητήσετε ανθρώπινη επανεξέταση στο privacy@nostalgiacandle.gr.";
+  var COD_PRIVACY_EN =
+    "For fraud prevention on cash-on-delivery orders, a rule-based risk assessment uses information such as order value/quantity, recent order frequency and previous failed deliveries. It may require card payment or human review; it does not produce a final refusal without a way to contact us. You may request human review at privacy@nostalgiacandle.gr.";
   var EL = {
     intro: [
       "Η παρούσα πολιτική περιγράφει τον τρόπο με τον οποίο η Nostalgia Collection (Maria Gerostathi) διαχειρίζεται τα προσωπικά δεδομένα στον ιστότοπό μας.",
@@ -61,7 +69,7 @@
           "• υποχρεούμαστε από δικαστική ή διοικητική αρχή.",
           "Η επεξεργασία για την εκτέλεση παραγγελίας βασίζεται στην εκτέλεση της σύμβασης. Η έκδοση παραστατικών και η διατήρηση των σχετικών στοιχείων βασίζονται σε νόμιμες φορολογικές και λογιστικές υποχρεώσεις. Η αποστολή newsletter και η χρήση μη απαραίτητων cookies βασίζονται στη συγκατάθεσή σας. Για την ασφάλεια του ιστότοπου, την πρόληψη απάτης και την τεχνική λειτουργία μπορούμε να βασιζόμαστε σε έννομο συμφέρον, όπου αυτό επιτρέπεται.",
           "Ο ιστότοπος φιλοξενείται σε υποδομή VPS και η βάση PostgreSQL διαχειρίζεται στο ίδιο production περιβάλλον. Όταν ενεργοποιηθούν οι πληρωμές με κάρτα, ο πελάτης θα ανακατευθύνεται στη φιλοξενούμενη σελίδα της Worldline· δεν θα συλλέγουμε ούτε θα αποθηκεύουμε πλήρη αριθμό κάρτας ή CVV.",
-          "Για την πρόληψη απάτης στην αντικαταβολή εφαρμόζεται κανoνιστική αξιολόγηση κινδύνου με στοιχεία όπως ποσό/πλήθος προϊόντων, πρόσφατη συχνότητα παραγγελιών και προηγούμενες αποτυχημένες παραδόσεις. Το αποτέλεσμα μπορεί να ζητήσει κάρτα ή ανθρώπινο έλεγχο, δεν οδηγεί σε οριστική απόρριψη χωρίς δυνατότητα επικοινωνίας. Μπορείτε να ζητήσετε ανθρώπινη επανεξέταση στο privacy@nostalgiacandle.gr.",
+          ...(INCLUDE_COD_PRIVACY ? [COD_PRIVACY_EL] : []),
           "Έχουμε λάβει τεχνικά και οργανωτικά μέτρα για την ασφάλεια των δεδομένων. Ωστόσο, δεν ελέγχουμε όλους τους κινδύνους του Διαδικτύου.",
           "Τα δεδομένα παραγγελίας διατηρούνται έως 6 έτη για φορολογικούς, λογιστικούς ή αποδεικτικούς σκοπούς. Μετά την πάροδο του χρόνου αυτού, η παραγγελία παραμένει μόνο σε ανωνυμοποιημένη μορφή, εκτός αν απαιτείται διαφορετικά από τον νόμο ή από εκκρεμή διαφορά.",
         ],
@@ -199,7 +207,7 @@
           "• we are required by a judicial or administrative authority.",
           "Processing an order is based on performing the contract. Invoicing and retention of related records are based on tax and accounting obligations. Newsletter messages and non-essential cookies are based on your consent. For site security, fraud prevention and technical operation, we may rely on legitimate interest where permitted.",
           "The website is hosted on VPS infrastructure and its PostgreSQL database is managed in the same production environment. Once card payments are enabled, customers will be redirected to Worldline’s hosted payment page; we will not collect or store full card numbers or CVV.",
-          "For fraud prevention on cash-on-delivery orders, a rule-based risk assessment uses information such as order value/quantity, recent order frequency and previous failed deliveries. It may require card payment or human review; it does not produce a final refusal without a way to contact us. You may request human review at privacy@nostalgiacandle.gr.",
+          ...(INCLUDE_COD_PRIVACY ? [COD_PRIVACY_EN] : []),
           "We have implemented technical and organisational security measures. However, we cannot control all Internet-related risks.",
           "Order data is retained for up to 6 years where required for tax, accounting or evidentiary purposes. After that period, the order remains only in anonymised form unless the law or an ongoing dispute requires otherwise.",
         ],

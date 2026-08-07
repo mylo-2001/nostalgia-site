@@ -86,8 +86,8 @@
   animation: none;
   object-fit: cover;
   object-position: var(--hero-pos, 50% 50%);
-  /* slides start very slightly zoomed in… */
-  transform: scale(1.06);
+  /* gentle settle — keep framing readable, especially on phones */
+  transform: scale(1.02);
 }
 
 /* …and the visible one gently pulls back, settling at the clearest framing. */
@@ -96,7 +96,7 @@
 }
 
 @keyframes heroZoomOut {
-  from { transform: scale(1.06); }
+  from { transform: scale(1.02); }
   to { transform: scale(1); }
 }
 
@@ -105,7 +105,7 @@
 .hero-slider__slide--video .hero-home__bg,
 .hero-slider__slide--video.is-active .hero-home__bg {
   animation: none;
-  transform: scale(1.16);
+  transform: scale(1.08);
   transform-origin: 0% 0%; /* keep top-left, crop the bottom-right corner */
 }
 
@@ -5562,6 +5562,20 @@ html.intro-lock body {
 }
 
 @media (max-width: 640px) {
+  /* On phones, avoid ken-burns / heavy crop so the product stays readable. */
+  .hero-slider__slide .hero-home__bg,
+  .hero-slider__slide.is-active .hero-home__bg {
+    animation: none;
+    transform: scale(1);
+    object-position: var(--hero-pos, center center);
+  }
+
+  .hero-slider__slide--video .hero-home__bg,
+  .hero-slider__slide--video.is-active .hero-home__bg {
+    transform: scale(1.03);
+    transform-origin: center center;
+  }
+
   .hero-slider__dot {
     width: 44px;
     height: 44px;

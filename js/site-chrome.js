@@ -170,14 +170,13 @@
       '        <a class="site-footer__social-link" href="https://www.facebook.com/profile.php?id=61593252410347" target="_blank" rel="noopener noreferrer" aria-label="Facebook">' +
       '          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13.5 8.5V6.8c0-.6.4-.8.8-.8h1.8V3h-2.5c-2.8 0-3.4 2-3.4 3.3v2.2H8v3h2.2V21h3.3v-6.5h2.2l.4-3h-2.6z"/></svg>' +
       "        </a>" +
-      '        <a class="site-footer__social-link" href="https://www.linkedin.com/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">' +
+      '        <a class="site-footer__social-link" href="https://www.linkedin.com/in/maria-gerostathi-854457428/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">' +
       '          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.2 8.7A1.9 1.9 0 1 1 6.2 5a1.9 1.9 0 0 1 0 3.7zM4.6 9.9h3.2V20H4.6zM9.8 9.9h3v1.4h.1c.4-.8 1.5-1.7 3.1-1.7 3.3 0 3.9 2.2 3.9 5V20h-3.2v-4.7c0-1.1 0-2.5-1.6-2.5s-1.8 1.2-1.8 2.4V20H9.8z"/></svg>' +
       "        </a>" +
       '        <a class="site-footer__social-link" href="https://www.tiktok.com/@nostalgia_candle0" target="_blank" rel="noopener noreferrer" aria-label="TikTok">' +
       '          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M14.8 4c.5 1.4 1.5 2.5 2.9 3.1.8.3 1.6.5 2.3.5v2.8c-1 0-2-.2-2.9-.6v5.6c0 2.7-2.2 4.9-4.9 4.9a4.9 4.9 0 0 1 0-9.8c.3 0 .6 0 .9.1v2.9a2 2 0 0 0-.9-.2 2.1 2.1 0 1 0 2.1 2.1V4h2.5z"/></svg>' +
       "        </a>" +
-      /* Instagram, Facebook, TikTok, Pinterest → real profiles. LinkedIn still
-         waits for a handle. Use www for Pinterest (not gr. — redirect mirror). */
+      /* Instagram, Facebook, LinkedIn, TikTok, Pinterest → real profiles. Use www for Pinterest (not gr. — redirect mirror). */
       '        <a class="site-footer__social-link" href="https://www.pinterest.com/NostalgiaCollection/" target="_blank" rel="noopener noreferrer" aria-label="Pinterest">' +
       '          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3a9 9 0 0 0-3.3 17.4l1.2-4.4c-.3-.7-.6-1.7-.6-2.8 0-2.3 1.3-4 3.1-4 1.5 0 2.2 1.1 2.2 2.5 0 1.5-1 3.8-1.5 5.9-.4 1.7.9 3.1 2.6 3.1 3.2 0 5.3-4.1 5.3-8.9A8.3 8.3 0 0 0 12 3zm0 0"/></svg>' +
       "        </a>" +

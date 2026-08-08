@@ -247,6 +247,36 @@
     });
   }
 
+  /* Google's four-colour "G". Their branding terms require the official mark
+     and forbid recolouring it, so the fills are literal rather than
+     currentColor — this is the one icon on the site that must not follow the
+     theme. */
+  var GOOGLE_G_SVG =
+    '<svg class="account-google__g" viewBox="0 0 18 18" width="18" height="18" aria-hidden="true" focusable="false">' +
+    '<path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/>' +
+    '<path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"/>' +
+    '<path fill="#FBBC05" d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.01-2.33z"/>' +
+    '<path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.9 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/>' +
+    "</svg>";
+
+  /* A plain link, not a fetch: the flow is a full-page redirect to Google and
+     back, so it must work before any script has run. */
+  function googleButtonHTML() {
+    return (
+      '<div class="account-google">' +
+      '  <a class="account-google__btn" href="/api/auth/google">' +
+      GOOGLE_G_SVG +
+      '    <span data-i18n="account_google_continue">' +
+      t("account_google_continue") +
+      "</span>" +
+      "  </a>" +
+      '  <div class="account-google__sep"><span data-i18n="account_google_or">' +
+      t("account_google_or") +
+      "</span></div>" +
+      "</div>"
+    );
+  }
+
   function buildLoginHTML() {
     return (
       '<div class="account-panel account-panel--login account-panel--auth">' +
@@ -255,6 +285,7 @@
       "  </div>" +
       '  <h2 class="account-panel__title" data-i18n="account_login_title">Σύνδεση</h2>' +
       '  <p class="account-auth__lead" data-i18n="account_login_lead">Συνδέσου για να δεις τις παραγγελίες και τον λογαριασμό σου.</p>' +
+      googleButtonHTML() +
       '  <form class="account-form account-form--auth" id="account-login-form" novalidate>' +
       '    <label class="account-field"><span data-i18n="checkout_email_label">Email</span><input type="email" name="email" required autocomplete="email" /></label>' +
       '    <label class="account-field account-field--password"><span data-i18n="account_password_label">Κωδικός</span>' +
@@ -287,6 +318,7 @@
       '      <p class="account-register__why-text" data-i18n="account_why_text">Δημιούργησε λογαριασμό για ταχύτερο checkout και ιστορικό παραγγελιών.</p>' +
       '    </aside>' +
       '    <form class="account-form account-form--register" id="account-register-form" novalidate>' +
+      googleButtonHTML() +
       '      <p class="account-form__section" data-i18n="account_personal_info">Personal information</p>' +
       '      <label class="account-field"><span data-i18n="checkout_firstname_label">Όνομα</span><input type="text" name="firstname" required autocomplete="given-name" /></label>' +
       '      <label class="account-field"><span data-i18n="checkout_lastname_label">Επώνυμο</span><input type="text" name="lastname" required autocomplete="family-name" /></label>' +
@@ -1572,11 +1604,24 @@
     focusFirstAccountField();
   }
 
+  /* The panel is rebuilt with innerHTML, so any captcha widget inside it is
+     about to lose its element. Turnstile has to be told, or it keeps polling
+     for a container that no longer exists and logs "Cannot find Widget" on a
+     timer — once per re-render, forever. */
+  function releaseCaptchas() {
+    if (!window.NostalgiaCaptcha || !window.NostalgiaCaptcha.remove) return;
+    window.NostalgiaCaptcha.remove(loginCaptcha);
+    window.NostalgiaCaptcha.remove(registerCaptcha);
+    loginCaptcha = null;
+    registerCaptcha = null;
+  }
+
   function renderPanel(opts) {
     opts = opts || {};
     ensureStylesheet();
     var root = getPanelRoot();
     if (!root) return;
+    releaseCaptchas();
     var session = getSession();
     if (isAccountPage()) {
       document.body.classList.remove(
@@ -1643,6 +1688,10 @@
       });
     }
     syncAccountUrl();
+    /* renderPanel replaces the panel's innerHTML, so anything inserted before
+       it ran is gone. The OAuth notice is therefore held until after a render
+       rather than shown when the callback lands. */
+    flushGoogleNotice();
   }
 
   function ensurePanelRoot() {
@@ -1692,7 +1741,7 @@
       '    <h2 class="newsletter-popup__title" id="newsletter-modal-title" data-i18n="newsletter_title">Newsletter</h2>' +
       '    <p class="newsletter-popup__lead" data-i18n="newsletter_lead">Εγγράψου στο newsletter μας και μάθε πρώτος τα νέα της Nostalgia Collection.</p>' +
       '    <form class="newsletter-form" id="newsletter-form" novalidate>' +
-      '      <label class="newsletter-field"><input type="email" name="email" required placeholder="Email" data-i18n-placeholder="newsletter_email_ph" /></label>' +
+      '      <label class="newsletter-field"><input type="email" name="email" required autocomplete="email" placeholder="Email" data-i18n-placeholder="newsletter_email_ph" /></label>' +
       '      <label class="newsletter-field"><input type="text" name="firstname" required placeholder="Όνομα" data-i18n-placeholder="newsletter_firstname_ph" autocomplete="given-name" /></label>' +
       '      <label class="newsletter-field"><input type="text" name="lastname" required placeholder="Επώνυμο" data-i18n-placeholder="newsletter_lastname_ph" autocomplete="family-name" /></label>' +
       '      <p class="newsletter-popup__consent" data-i18n="newsletter_consent_notice">Με την εγγραφή ζητάς να λαμβάνεις νέα και προσφορές με email. Θα σου στείλουμε σύνδεσμο επιβεβαίωσης και μπορείς να ανακαλέσεις τη συγκατάθεσή σου ανά πάσα στιγμή.</p>' +
@@ -1917,12 +1966,166 @@
     }
   }
 
+  /* The OAuth callback lands here with ?google=... . The parameters are removed
+     from the address bar straight away: a reload should not replay a one-time
+     message, and the result of a sign-in has no business being in a shared or
+     bookmarked link. */
+  function handleGoogleReturn() {
+    if (!isAccountPage()) return;
+    var params = new URLSearchParams(window.location.search);
+    var status = params.get("google");
+    if (!status) return;
+
+    var welcome = params.get("welcome") === "1";
+    params.delete("google");
+    params.delete("welcome");
+    var rest = params.toString();
+    try {
+      window.history.replaceState(
+        null,
+        "",
+        window.location.pathname + (rest ? "?" + rest : "")
+      );
+    } catch (e) {}
+
+    pendingGoogle = { status: status, welcome: welcome };
+    flushGoogleNotice();
+  }
+
+  /* Held until the visitor actually deals with it, not until it is first
+     drawn. renderPanel replaces the panel's innerHTML and runs more than once
+     — a session re-sync triggers another pass — so a notice consumed on the
+     first render simply vanished on the second. */
+  var pendingGoogle = null;
+
+  function flushGoogleNotice() {
+    if (!pendingGoogle) return;
+    var host = document.querySelector(".account-panel, .account-dashboard");
+    /* No panel yet — the next render calls back here. */
+    if (!host) return;
+
+    if (pendingGoogle.status !== "ok") {
+      if (!host.querySelector(".account-google__error")) {
+        showGoogleError(pendingGoogle.status, host);
+      }
+      return;
+    }
+    if (pendingGoogle.welcome) askBirthDate(host);
+  }
+
+  function clearGoogleNotice() {
+    pendingGoogle = null;
+  }
+
+  /* Every failure reads the same to the visitor. The specific reason is useful
+     to us, not to them: naming it would let someone probe which addresses
+     exist. It is kept on the element for debugging. */
+  function showGoogleError(reason, host) {
+    var box = document.createElement("p");
+    box.className = "account-form__error account-google__error";
+    box.setAttribute("role", "alert");
+    box.textContent = t("account_google_error");
+    box.setAttribute("data-reason", reason);
+    host.insertBefore(box, host.firstChild);
+  }
+
+  /* The two things the Google flow cannot ask for on its own: a birth date,
+     which Google does not supply, and newsletter consent, which signing in
+     with Google plainly is not. Both are offered once, after the account
+     exists, and skipping is a first-class answer.
+
+     The checkbox starts unticked and stays that way unless the person acts.
+     Consent has to be a deliberate move, and the same notice the register form
+     shows is repeated here rather than assumed. */
+  function askBirthDate(host) {
+    if (document.getElementById("account-birthdate-ask")) return;
+
+    var wrap = document.createElement("div");
+    wrap.className = "account-birthdate";
+    wrap.id = "account-birthdate-ask";
+    wrap.innerHTML =
+      '<p class="account-birthdate__title">' + escapeHtml(t("account_birthdate_ask")) + "</p>" +
+      '<p class="account-birthdate__hint">' + escapeHtml(t("account_birthdate_optional")) + "</p>" +
+      '<label class="account-birthdate__label" for="account-birthdate-input">' +
+      escapeHtml(t("account_birthdate_label")) + "</label>" +
+      '<div class="account-birthdate__row">' +
+      '  <input type="date" class="account-birthdate__input" id="account-birthdate-input" autocomplete="bday" max="' +
+      new Date().toISOString().slice(0, 10) + '" />' +
+      "</div>" +
+      '<label class="account-check account-birthdate__check">' +
+      '  <input type="checkbox" id="account-birthdate-newsletter" />' +
+      "  <span>" + escapeHtml(t("account_newsletter_optin")) + "</span>" +
+      "</label>" +
+      '<p class="account-form__hint account-birthdate__notice">' +
+      escapeHtml(t("newsletter_consent_notice")) + "</p>" +
+      '<div class="account-birthdate__row account-birthdate__row--actions">' +
+      '  <button type="button" class="account-btn account-btn--gold" data-birthdate-save>' +
+      escapeHtml(t("account_birthdate_save")) + "</button>" +
+      '  <button type="button" class="account-link" data-birthdate-skip>' +
+      escapeHtml(t("account_birthdate_skip")) + "</button>" +
+      "</div>";
+
+    host.insertBefore(wrap, host.firstChild);
+
+    wrap.querySelector("[data-birthdate-skip]").addEventListener("click", function () {
+      clearGoogleNotice();
+      wrap.remove();
+    });
+
+    wrap.querySelector("[data-birthdate-save]").addEventListener("click", function () {
+      var date = wrap.querySelector("#account-birthdate-input").value || "";
+      var wantsNewsletter = wrap.querySelector("#account-birthdate-newsletter").checked;
+      clearGoogleNotice();
+
+      var calls = [];
+      if (date) {
+        calls.push(
+          fetch("/api/auth/birth-date", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({ birthDate: date }),
+          })
+        );
+      }
+      /* Reuses the account newsletter endpoint, so this goes through the same
+         double opt-in as every other signup: the row is written as pending and
+         only becomes a subscription once the address owner follows the emailed
+         link. Ticking here subscribes nobody by itself. */
+      if (wantsNewsletter) {
+        calls.push(
+          fetch("/api/auth/newsletter", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({
+              optin: true,
+              lang: (window.NostalgiaI18n && window.NostalgiaI18n.getLang()) || "el",
+            }),
+          })
+        );
+      }
+
+      /* The two are independent: a failed newsletter mail must not lose the
+         birth date, and neither should keep the panel open. */
+      Promise.all(
+        calls.map(function (pr) {
+          return pr.catch(function () {});
+        })
+      ).then(function () {
+        wrap.remove();
+        if (wantsNewsletter) renderPanel();
+      });
+    });
+  }
+
   function init() {
     if (isAccountPage()) {
       panelMode = accountModeFromLocation();
       var params = new URLSearchParams(window.location.search);
       if (params.get("mode") === "register") panelMode = "register";
     }
+    handleGoogleReturn();
     disableLegacyDrawerAccountUI();
     bindAccountDelegation();
     bindNewsletter();

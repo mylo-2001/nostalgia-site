@@ -9,9 +9,29 @@
   var lastGeoCoords = null;
   var geoPrompted = false;
 
+  /* Filled from /api/public-config before anything else runs, so the key lives
+     in .env rather than in a committed js/site-config.js — that file is
+     tracked in a public repository, and a Maps key left there gets scraped and
+     billed to us within hours. A hardcoded NostalgiaSiteConfig still wins if
+     one is present, which keeps older local setups working. */
+  var serverKey = "";
+
   function getKey() {
     var cfg = window.NostalgiaSiteConfig || {};
-    return (cfg.googleMapsApiKey || "").trim();
+    return (cfg.googleMapsApiKey || serverKey || "").trim();
+  }
+
+  function loadKeyFromServer() {
+    var cfg = window.NostalgiaSiteConfig || {};
+    if ((cfg.googleMapsApiKey || "").trim()) return Promise.resolve();
+    return fetch("/api/public-config", { credentials: "same-origin" })
+      .then(function (r) {
+        return r.json();
+      })
+      .then(function (data) {
+        if (data && data.ok && data.googleMapsApiKey) serverKey = data.googleMapsApiKey;
+      })
+      .catch(function () {});
   }
 
   function getLang() {
@@ -73,7 +93,10 @@
       encodeURIComponent(key) +
       "&libraries=places&language=" +
       encodeURIComponent(getLang()) +
-      "&callback=nostalgiaMapsReady";
+      /* loading=async is what Google now asks for; without it the library warns
+         about "suboptimal performance" and blocks longer during load. It only
+         works alongside a callback, which is already how this loads. */
+      "&loading=async&callback=nostalgiaMapsReady";
     document.head.appendChild(script);
   }
 
@@ -310,13 +333,20 @@
     },
   };
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", function () {
+  /* The key now arrives over the network, so init has to wait for it —
+     otherwise the first pass always sees an empty key and falls back to the
+     plain field even when Maps is configured. loadKeyFromServer never
+     rejects, so a failed fetch simply means no autocomplete. */
+  function boot() {
+    loadKeyFromServer().then(function () {
       init();
       if (!getKey()) initWithoutMaps();
     });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
   } else {
-    init();
-    if (!getKey()) initWithoutMaps();
+    boot();
   }
 })();

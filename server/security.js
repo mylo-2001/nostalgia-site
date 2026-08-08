@@ -131,6 +131,17 @@ function newsletterUnsubscribeToken(email) {
     .slice(0, 32);
 }
 
+/* Constant-time string compare for secrets that arrive from outside — OAuth
+   state, tokens, anything an attacker can submit repeatedly. `===` leaks how
+   many leading characters were right through how long it takes to fail. */
+function timingSafeEqualStr(a, b) {
+  const bufA = Buffer.from(String(a == null ? "" : a));
+  const bufB = Buffer.from(String(b == null ? "" : b));
+  if (bufA.length !== bufB.length) return false;
+  if (bufA.length === 0) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
 function verifyNewsletterUnsubscribeToken(email, token) {
   const expected = newsletterUnsubscribeToken(email);
   const a = Buffer.from(String(token || ""));
@@ -314,6 +325,7 @@ module.exports = {
   newsletterUnsubscribeToken,
   hashIpForConsent,
   verifyNewsletterUnsubscribeToken,
+  timingSafeEqualStr,
   enforceHttps,
   securityHeaders,
   checkApiOrigin,

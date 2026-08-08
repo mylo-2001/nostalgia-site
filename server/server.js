@@ -1146,6 +1146,11 @@ app.get("/api/public-config", (req, res) => {
     gaMeasurementId: gaMeasurementId(),
     klaviyoCompanyId: klaviyoCompanyId(),
     metaPixelId: metaPixelId(),
+    /* Public by nature — it ships to every visitor's browser. Served from the
+       environment rather than a committed js/site-config.js so the repo never
+       carries it, and protected by referrer + API restrictions on Google's
+       side, which is the only protection a browser key can have. */
+    googleMapsApiKey: (process.env.GOOGLE_MAPS_API_KEY || "").trim(),
     stripePublishableKey: pk,
     checkoutV2Enabled: process.env.CHECKOUT_V2_ENABLED === "true",
     turnstileSiteKey: security.turnstileSiteKey(),
@@ -1358,6 +1363,200 @@ app.post("/api/auth/logout", (req, res) => {
   if (session) audit(req, "user.logout", session.sub);
   res.json({ ok: true });
 });
+
+/* ---------- Sign in with Google (OAuth 2.0 authorization code) ----------
+ *
+ * The authorization-code flow rather than the browser-side credential: the
+ * code is exchanged server to server, so the client secret and the resulting
+ * identity never pass through the page, and the visitor ends up holding the
+ * same session cookie a password login issues. Nothing downstream needs to
+ * know which way they signed in.
+ */
+
+const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
+const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
+const GOOGLE_STATE_COOKIE = "nostalgia_oauth_state";
+const GOOGLE_STATE_MS = 10 * 60 * 1000;
+
+function googleConfigured() {
+  return !!(
+    (process.env.GOOGLE_CLIENT_ID || "").trim() &&
+    (process.env.GOOGLE_CLIENT_SECRET || "").trim()
+  );
+}
+
+function googleRedirectUri(req) {
+  return publicSiteUrl(req) + "/api/auth/google/callback";
+}
+
+/* Sends the visitor back to the account page with a reason instead of a bare
+   JSON error: they arrive here by browser navigation, not by fetch. */
+function googleFail(res, reason) {
+  return res.redirect("/account?google=" + encodeURIComponent(reason));
+}
+
+app.get("/api/auth/google", (req, res) => {
+  if (!googleConfigured()) return googleFail(res, "not_configured");
+
+  /* Single-use, tied to this browser through an httpOnly cookie. Without it a
+     third party could hand the visitor a pre-made callback URL and have them
+     sign in to an account they do not own. */
+  const state = crypto.randomBytes(32).toString("base64url");
+  auth.setCookie(res, GOOGLE_STATE_COOKIE, state, GOOGLE_STATE_MS);
+
+  const params = new URLSearchParams({
+    client_id: (process.env.GOOGLE_CLIENT_ID || "").trim(),
+    redirect_uri: googleRedirectUri(req),
+    response_type: "code",
+    scope: "openid email profile",
+    state: state,
+    /* Always let people choose which Google account, instead of silently
+       reusing whichever one the browser happens to be signed into. */
+    prompt: "select_account",
+  });
+  res.redirect(GOOGLE_AUTH_URL + "?" + params.toString());
+});
+
+/* Google signs the id_token, and we receive it over TLS straight from the
+   token endpoint rather than via the browser, so the signature adds nothing
+   here — but the claims still have to be checked. An unchecked `aud` would
+   accept a token minted for a different application entirely. */
+function readGoogleIdToken(idToken) {
+  const parts = String(idToken || "").split(".");
+  if (parts.length !== 3) return null;
+  let claims;
+  try {
+    claims = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8"));
+  } catch (e) {
+    return null;
+  }
+  const iss = String(claims.iss || "");
+  if (iss !== "accounts.google.com" && iss !== "https://accounts.google.com") return null;
+  if (String(claims.aud || "") !== (process.env.GOOGLE_CLIENT_ID || "").trim()) return null;
+  if (!claims.exp || Number(claims.exp) * 1000 <= Date.now()) return null;
+  if (!claims.sub || !claims.email) return null;
+  /* An unverified address could belong to somebody else, and this flow trusts
+     the email enough to merge into an existing account. */
+  if (claims.email_verified === false || claims.email_verified === "false") return null;
+  return claims;
+}
+
+app.get("/api/auth/google/callback", ah(async (req, res) => {
+  if (!googleConfigured()) return googleFail(res, "not_configured");
+
+  const cookieState = auth.parseCookies(req)[GOOGLE_STATE_COOKIE] || "";
+  auth.setCookie(res, GOOGLE_STATE_COOKIE, "", 0);
+
+  if (req.query.error) {
+    /* access_denied also covers "your consent screen is still in testing and
+       this address is not a test user", which is the likeliest cause early on. */
+    return googleFail(res, String(req.query.error).slice(0, 40));
+  }
+
+  const queryState = String(req.query.state || "");
+  if (!cookieState || !queryState || !security.timingSafeEqualStr(cookieState, queryState)) {
+    return googleFail(res, "state_mismatch");
+  }
+
+  const code = String(req.query.code || "");
+  if (!code) return googleFail(res, "missing_code");
+
+  let claims;
+  try {
+    const tokenRes = await fetch(GOOGLE_TOKEN_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        code: code,
+        client_id: (process.env.GOOGLE_CLIENT_ID || "").trim(),
+        client_secret: (process.env.GOOGLE_CLIENT_SECRET || "").trim(),
+        redirect_uri: googleRedirectUri(req),
+        grant_type: "authorization_code",
+      }).toString(),
+    });
+    const payload = await tokenRes.json();
+    if (!tokenRes.ok) {
+      console.error("[google oauth] token exchange failed:", payload && payload.error);
+      return googleFail(res, "exchange_failed");
+    }
+    claims = readGoogleIdToken(payload.id_token);
+  } catch (e) {
+    console.error("[google oauth]", e.message);
+    return googleFail(res, "exchange_failed");
+  }
+
+  if (!claims) return googleFail(res, "invalid_token");
+
+  const email = normEmail(claims.email);
+  if (!isEmail(email)) return googleFail(res, "invalid_email");
+
+  /* Resolution order matters. The subject id first, because it survives the
+     owner changing their Google email; the address only as the bridge that
+     links a pre-existing password account the first time. */
+  let user = await db.getUserByGoogleSub(claims.sub);
+  let created = false;
+
+  if (!user) {
+    const existing = await db.getUser(email);
+    if (existing) {
+      user = await db.linkGoogleAccount(email, claims.sub);
+      if (!user) return googleFail(res, "link_conflict");
+      audit(req, "user.google.linked", email);
+    } else {
+      await db.createUser({
+        email,
+        firstname: str(claims.given_name, 80) || email.split("@")[0],
+        lastname: str(claims.family_name, 80) || "",
+        /* Google does not supply a birth date. It is offered afterwards and
+           may stay empty; nothing in the shop requires it. */
+        birthDate: "",
+        newsletterOptin: false,
+        /* Empty hash, never a placeholder that could be guessed:
+           auth.verifyPassword returns false for an empty stored value, so this
+           account simply cannot be entered with a password. */
+        passHash: "",
+        googleSub: claims.sub,
+        authProvider: "google",
+      });
+      user = await db.getUser(email);
+      created = true;
+      audit(req, "user.google.register", email);
+    }
+  }
+
+  if (!user) return googleFail(res, "user_unavailable");
+  if (user.active === false) return googleFail(res, "account_disabled");
+
+  auth.startUserSession(res, user.email);
+  audit(req, "user.google.login", user.email);
+
+  /* `welcome` lets the account page offer the optional birth date once, right
+     after the account is first created. */
+  res.redirect("/account?google=ok" + (created ? "&welcome=1" : ""));
+}));
+
+/* Offered once after a Google account is created, since Google supplies no
+   birth date. Entirely optional — an empty value is a valid answer and clears
+   whatever was there, so "not now" and "actually, remove it" are the same
+   request. */
+app.post("/api/auth/birth-date", ah(async (req, res) => {
+  const session = auth.getUserSession(req);
+  if (!session) return bad(res, 401, "unauthorized");
+
+  const raw = String((req.body && req.body.birthDate) || "").trim();
+  /* Either empty, or a plain ISO date. Anything else is a client bug rather
+     than something to coerce. */
+  if (raw && !/^\d{4}-\d{2}-\d{2}$/.test(raw)) return bad(res, 400, "invalid_date");
+  if (raw) {
+    const d = new Date(raw + "T00:00:00Z");
+    if (isNaN(d.getTime()) || d.getTime() > Date.now()) return bad(res, 400, "invalid_date");
+  }
+
+  const user = await db.setUserBirthDate(session.sub, raw);
+  if (!user) return bad(res, 404, "not_found");
+  audit(req, "user.birthdate.set", session.sub);
+  res.json({ ok: true, user: publicUser(user) });
+}));
 
 app.get("/api/auth/me", ah(async (req, res) => {
   const session = auth.getUserSession(req);
@@ -4763,6 +4962,12 @@ app.use(function (req, res, next) {
   if (req.method !== "GET" && req.method !== "HEAD") return next();
   /* /html/* is an internal folder, not a public path → let it fall through to the 404 guard. */
   if (req.path.startsWith("/html/")) return next();
+
+  /* Site-ownership files must answer 200 at the exact URL the verifier issued.
+     Stripping .html and redirecting is right for a bookmarked page and wrong
+     here — Google and Pinterest ask for that filename, not a tidier one. */
+  if (/^\/(google[0-9a-f]{8,}|pinterest-[0-9a-z]+)\.html$/i.test(req.path)) return next();
+
   const match = req.path.match(/^\/(.+)\.html$/);
   if (!match) return next();
 

@@ -83,3 +83,10 @@ compliance/*
 # The rest of deploy/ (nginx conf, systemd unit, crontab, cron scripts) stays
 # tracked on purpose: it is infrastructure-as-code the server needs on clone,
 # and it holds no secrets — every script reads them from .env at runtime.
+
+# Google OAuth client files. The JSON that Google hands you on creation carries
+# the client_secret in plain text, and it lands in the project root with a name
+# nobody thinks to check. THIS REPO IS PUBLIC — one `git add -A` would publish
+# the credential. Keys belong in .env, which is already ignored.
+client_secret_*.json
+*client_secret*.json

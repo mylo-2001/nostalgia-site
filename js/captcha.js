@@ -64,6 +64,11 @@
         if (!key) return; // CAPTCHA disabled (no site key configured)
         loadScript().then(function () {
           whenReady(function () {
+            /* The config fetch and the script load both take a moment, and the
+               panel can be rebuilt in the meantime. Without this the widget
+               renders into an element that has already been discarded — and
+               since it has no id yet, remove() had nothing to clean up. */
+            if (handle.cancelled || !container.isConnected) return;
             try {
               handle.widgetId = window.turnstile.render(container, {
                 sitekey: key,
@@ -95,6 +100,24 @@
         }
       } catch (e) {}
       if (handle) handle.token = "";
+    },
+
+    /* Call before the container is thrown away. Turnstile keeps its own
+       registry of widgets and goes on polling for one whose element has been
+       removed — which is what fills the console with "Cannot find Widget
+       cf-chl-widget-…". Every re-render leaks another one. */
+    remove: function (handle) {
+      if (!handle) return;
+      /* Set first: a mount that has not resolved yet has no widgetId to remove,
+         so the only way to stop it is to tell it not to render at all. */
+      handle.cancelled = true;
+      try {
+        if (handle.widgetId != null && window.turnstile && window.turnstile.remove) {
+          window.turnstile.remove(handle.widgetId);
+        }
+      } catch (e) {}
+      handle.widgetId = null;
+      handle.token = "";
     },
   };
 })();

@@ -465,9 +465,12 @@ function rowToUser(r) {
     email: r.email,
     firstname: r.firstname,
     lastname: r.lastname,
+    birthDate: r.birth_date || "",
     newsletterOptin: r.newsletter_optin,
     address: r.address || null,
     passHash: r.pass_hash,
+    googleSub: r.google_sub || null,
+    authProvider: r.auth_provider || "password",
     active: r.active !== false,
     orderCount: r.order_count != null ? Number(r.order_count) : 0,
     lastOrderAt: r.last_order_at || null,
@@ -494,10 +497,58 @@ async function getUser(email) {
 
 async function createUser(u) {
   await q(
-    `INSERT INTO users (email, firstname, lastname, birth_date, newsletter_optin, pass_hash)
-     VALUES ($1,$2,$3,$4,$5,$6)`,
-    [u.email, u.firstname, u.lastname, u.birthDate, u.newsletterOptin, u.passHash]
+    `INSERT INTO users (email, firstname, lastname, birth_date, newsletter_optin, pass_hash,
+                        google_sub, auth_provider)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+    [
+      u.email,
+      u.firstname,
+      u.lastname,
+      u.birthDate,
+      u.newsletterOptin,
+      u.passHash,
+      u.googleSub || null,
+      u.authProvider || "password",
+    ]
   );
+}
+
+/* ---------- Google identities ----------
+   The subject id, not the email, is the lasting link: a Google account's email
+   can be changed by its owner, and matching on that alone would silently
+   detach them from their own order history. */
+
+async function getUserByGoogleSub(sub) {
+  if (!sub) return null;
+  const r = await q("SELECT * FROM users WHERE google_sub = $1", [String(sub)]);
+  return r.rowCount ? rowToUser(r.rows[0]) : null;
+}
+
+/* Attaches a Google identity to an account that already exists under the same
+   email — the person who registered with a password and later pressed the
+   Google button. Guarded so a sub already claimed by another row cannot be
+   moved: that would hand one person's account to another. */
+async function linkGoogleAccount(email, sub) {
+  const r = await q(
+    `UPDATE users
+        SET google_sub = $2
+      WHERE email = $1
+        AND (google_sub IS NULL OR google_sub = $2)
+        AND NOT EXISTS (SELECT 1 FROM users WHERE google_sub = $2 AND email <> $1)
+      RETURNING *`,
+    [email, String(sub)]
+  );
+  return r.rowCount ? rowToUser(r.rows[0]) : null;
+}
+
+/* Birth date is optional for Google accounts; it is offered after the first
+   sign-in and may stay empty forever. */
+async function setUserBirthDate(email, birthDate) {
+  const r = await q(
+    "UPDATE users SET birth_date = $2 WHERE email = $1 RETURNING *",
+    [email, String(birthDate || "")]
+  );
+  return r.rowCount ? rowToUser(r.rows[0]) : null;
 }
 
 async function listUsers() {
@@ -2535,6 +2586,9 @@ module.exports = {
   setSettingIfMissing,
   getUser,
   createUser,
+  getUserByGoogleSub,
+  linkGoogleAccount,
+  setUserBirthDate,
   listUsers,
   listUsersPage,
   updateUser,

@@ -398,6 +398,12 @@ module.exports = {
   startUserSession,
   endUserSession,
   getUserSession,
+  /* Exported for the Google OAuth flow, which needs a short-lived state cookie
+     with exactly these semantics (HttpOnly, SameSite=Lax so it survives the
+     top-level redirect back from Google, Secure in production). Reimplementing
+     that in server.js would be a second, subtly different cookie policy. */
+  setCookie,
+  parseCookies,
   startAdminSession,
   endAdminSession,
   getAdminSession,

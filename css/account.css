@@ -2087,3 +2087,164 @@ body[data-page="account"].account-view--logged .account-page__panel {
 .account-check--remember { margin: 4px 0 2px; }
 .account-captcha { margin: 10px 0; min-height: 0; }
 .account-captcha:empty { margin: 0; }
+
+/* ==========================================================================
+   Continue with Google
+   ==========================================================================
+   Placed above the email form on both panels because it is the faster path,
+   and someone who wants it should not have to read past a password field to
+   find it.
+
+   The mark keeps Google's own four colours in both themes — their branding
+   terms forbid recolouring it — so only the surface around it follows the
+   site. */
+.account-google {
+  margin: 0 0 1.1rem;
+}
+
+.account-google__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--rule-hairline);
+  border-radius: 999px;
+  background: var(--surface-paper);
+  color: var(--ink);
+  font-family: var(--font-nav);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition:
+    border-color 0.22s ease,
+    background 0.22s ease,
+    transform 160ms var(--polish-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .account-google__btn:hover {
+    border-color: var(--ink);
+  }
+}
+
+html .account-google__btn:active {
+  transform: scale(0.97);
+}
+
+.account-google__g {
+  flex: 0 0 auto;
+}
+
+/* Hairline either side of the word, drawn with the border rather than a
+   pseudo-element so it inherits the theme's rule colour automatically. */
+.account-google__sep {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  font-family: var(--font-nav);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.account-google__sep::before,
+.account-google__sep::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--rule-hairline);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-google__btn {
+    transition: border-color 0.22s ease, background 0.22s ease;
+  }
+}
+
+/* Optional birth-date prompt, shown once after a Google account is created. */
+.account-birthdate {
+  margin: 0 0 1.25rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--rule-hairline);
+  border-radius: 3px;
+  background: var(--bg-elevated, rgba(0, 0, 0, 0.03));
+}
+
+.account-birthdate__title {
+  margin: 0;
+  font-family: var(--font-nav);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.account-birthdate__hint {
+  margin: 0.3rem 0 0.85rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.account-birthdate__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.account-birthdate__input {
+  flex: 1 1 10rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--rule-hairline);
+  border-radius: 2px;
+  background: var(--surface-paper);
+  color: var(--ink);
+  font: inherit;
+}
+
+/* "Not now" must not read as the lesser option — skipping is a real answer,
+   so it gets the same tap target as the save button. */
+.account-birthdate__row .account-link {
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  padding-inline: 0.4rem;
+}
+
+.account-google__error {
+  margin-bottom: 1rem;
+}
+
+.account-birthdate__label {
+  display: block;
+  margin: 0 0 0.35rem;
+  font-family: var(--font-nav);
+  font-size: 0.64rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.account-birthdate__check {
+  margin-top: 0.9rem;
+}
+
+/* The consent wording is long on purpose — it is the same notice the register
+   form shows, and shortening it here would make the two disagree. */
+.account-birthdate__notice {
+  margin: 0.35rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.account-birthdate__row--actions {
+  margin-top: 1rem;
+}

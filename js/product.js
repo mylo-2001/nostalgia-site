@@ -1107,9 +1107,9 @@
       "    </div>" +
       '    <input type="hidden" id="review-rating" value="0" />' +
 
-      '    <label class="product-reviews__field"><span>' + t("reviews_name") + '</span><input id="review-name" type="text" maxlength="80" /></label>' +
+      '    <label class="product-reviews__field"><span>' + t("reviews_name") + '</span><input id="review-name" type="text" maxlength="80" autocomplete="name" /></label>' +
       '    <label class="product-reviews__field"><span>' + t("reviews_title_field") + '</span>' +
-      '      <input id="review-title" type="text" maxlength="80" />' +
+      '      <input id="review-title" type="text" maxlength="80" autocomplete="off" />' +
       '      <span class="product-reviews__hint">' + t("reviews_title_hint") + "</span>" +
       "    </label>" +
       '    <label class="product-reviews__field"><span>' + t("reviews_placeholder") + '</span>' +

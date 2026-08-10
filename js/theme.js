@@ -115,6 +115,8 @@
     function scrollHomePastIntro() {
       if (document.body.getAttribute("data-page") !== "home") return 0;
       if (!document.getElementById("site-intro")) return 0;
+      if (document.documentElement.classList.contains("no-site-intro")) return 0;
+      if (window.matchMedia("(max-width: 768px)").matches) return 0;
       var reduce =
         window.matchMedia("(prefers-reduced-motion: reduce)").matches &&
         !document.documentElement.classList.contains("force-site-motion");
@@ -237,7 +239,7 @@
     }
     if (document.querySelector('script[data-site-chrome="1"]')) return;
     var script = document.createElement("script");
-    script.src = "js/site-chrome.js?v=partners-acs-cpanel-2";
+    script.src = "js/site-chrome.js?v=promise-icons-1";
     script.async = false;
     script.setAttribute("data-site-chrome", "1");
     script.onload = function () {

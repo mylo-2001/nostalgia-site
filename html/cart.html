@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="el">
 <head>
   <meta charset="UTF-8" />
@@ -8,9 +8,9 @@
   <title>Nostalgia Collection · Καλάθι</title>
   <meta name="robots" content="noindex, nofollow" />
   <link rel="stylesheet" href="css/fonts.css?v=1" />
-<link rel="stylesheet" href="css/base.css?v=stock-notice1" />
+<link rel="stylesheet" href="css/base.css?v=cart-logo1" />
   <link rel="stylesheet" href="css/side-nav.css?v=header-icons2" />
-  <link rel="stylesheet" href="css/shop.css?v=stock-notice1" />
+  <link rel="stylesheet" href="css/shop.css?v=cart-logo1" />
   <link rel="stylesheet" href="css/account.css?v=news-mobile1" />
   <link rel="stylesheet" href="css/legal.css" />
   <script src="js/theme-boot.js"></script>
@@ -91,9 +91,27 @@
     </header>
 
     <main>
-      <section class="cart-page cart-page--editorial cart-page--empty" id="cart-page-root" aria-labelledby="cart-page-title">
-        <header class="cart-page__hero">
-          <h1 class="cart-page__title" id="cart-page-title" data-i18n="cart_page_title">ΚΑΛΑΘΙ</h1>
+
+      <section class="editorial-hero" aria-labelledby="cart-page-title">
+        <figure class="editorial-hero__figure">
+          <div class="editorial-hero__zoom is-animating">
+            <picture>
+              <source type="image/webp" srcset="images/collections-hero/cart-logo-480w.webp 480w, images/collections-hero/cart-logo-960w.webp 960w, images/collections-hero/cart-logo-1440w.webp 1440w" sizes="100vw" />
+              <img class="editorial-hero__img" src="images/collections-hero/cart-logo.webp" alt="" width="1357" height="762" loading="eager" decoding="async" fetchpriority="high" />
+            </picture>
+          </div>
+          <div class="editorial-hero__overlay" aria-hidden="true"></div>
+        </figure>
+        <div class="editorial-hero__inner">
+          <header class="editorial-hero__head">
+            <h1 class="editorial-hero__title" id="cart-page-title" data-i18n="cart_heading">Το καλάθι σου</h1>
+            <p class="editorial-hero__lead" data-i18n="cart_lead">Επίλεξε τα αγαπημένα σου προϊόντα και ολοκλήρωσε την παραγγελία σου εύκολα και γρήγορα.</p>
+          </header>
+        </div>
+      </section>
+
+      <section class="cart-page cart-page--editorial cart-page--empty" id="cart-page-root">
+        <header class="cart-page__hero cart-page__hero--toolbar">
           <div class="cart-page__hero-actions" id="cart-page-hero-actions" hidden>
             <a class="cart-page__link" href="/collection" data-i18n="cart_continue_shopping">Συνέχεια αγορών</a>
             <a class="cart-page__checkout btn-shop btn-shop--primary" href="/checkout" data-i18n="cart_proceed_checkout">Ολοκλήρωση παραγγελίας</a>
@@ -103,7 +121,9 @@
         <div class="cart-page__layout cart-page__layout--empty">
           <div class="cart-page__main">
             <div class="cart-empty" id="cart-empty">
-              <img class="empty-state-visual" src="images/home%20page%20photo/home%20photo%201.png" alt="" width="200" height="200" decoding="async" />
+              <span class="cart-empty__mark" aria-hidden="true">
+                <svg viewBox="0 0 64 64" fill="none"><path d="M18 20h28l-2.2 26.5a3 3 0 0 1-3 2.7H23.2a3 3 0 0 1-3-2.7L18 20z"/><path d="M24 20V16a8 8 0 0 1 16 0v4"/><path d="M28 30v10M36 30v10"/></svg>
+              </span>
               <h2 class="cart-empty__title" data-i18n="cart_empty_title">Το καλάθι σου είναι άδειο</h2>
               <p class="cart-empty__text" data-i18n="cart_empty_text">Πρόσθεσε προϊόντα από τη συλλογή για να ξεκινήσεις.</p>
               <a class="btn-shop btn-shop--primary cart-empty__cta" href="/collection" data-i18n="cart_continue">Συνέχεια αγορών</a>
@@ -220,7 +240,7 @@
   <script defer src="js/europe-countries.js"></script>
   <script defer src="js/images.js?v=4"></script>
     <script defer src="js/i18n-bundles/shared.js?v=stock-notice1"></script>
-  <script defer src="js/i18n-bundles/shop.js?v=stock-notice1"></script>
+  <script defer src="js/i18n-bundles/shop.js?v=cart-logo1"></script>
   <script defer src="js/i18n-bundles/catalog.js?v=clr3"></script>
   <script defer src="js/i18n-core.js?v=1"></script>
     <script defer src="js/business-info.js?v=1"></script>

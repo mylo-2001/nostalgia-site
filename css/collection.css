@@ -1859,6 +1859,30 @@ body.collection-products-open .site-footer {
   transition: color 0.25s ease;
 }
 
+/* Readable catalog typography and a calmer mobile editorial rhythm. */
+.collection-product__name {
+  font-size: max(0.8125rem, 13px);
+  line-height: 1.45;
+}
+
+@media (max-width: 640px) {
+  .collection-section {
+    padding-right: 0.75rem;
+    padding-left: 0.75rem;
+    padding-bottom: 2.75rem;
+  }
+
+  .collection-story,
+  .collection-intro {
+    margin-top: 2rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .collection-catalog__hero-content.is-revealing .collection-catalog__title {
+    animation-duration: 0.65s;
+  }
+}
+
 .collection-product:hover .collection-product__name {
   color: var(--accent);
 }

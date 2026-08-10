@@ -1,5 +1,7 @@
 (function () {
   var REVIEWS_KEY = "nostalgia-reviews";
+  var RELATED_PRODUCT_LIMIT = 8;
+  var relatedMotionObserver = null;
 
   function t(key) {
     if (window.NostalgiaI18n && typeof window.NostalgiaI18n.t === "function") {
@@ -863,6 +865,7 @@
       renderRelatedHTML(product);
 
     mountRelatedCarousel();
+    mountRelatedMotion();
 
     var galleryFigure = document.getElementById("product-gallery-figure");
     if (galleryFigure) {
@@ -1137,7 +1140,12 @@
 
       '  <div class="product-reviews__grid" id="product-reviews-list"></div>' +
       '  <button type="button" class="product-reviews__show-more" id="review-show-more" hidden>' + t("reviews_show_more") + "</button>" +
-      '  <p class="product-reviews__footnote">🔒 ' + t("reviews_verified_purchase_note") + "</p>" +
+      '  <p class="product-reviews__footnote">' +
+      '    <span class="product-reviews__footnote-icon" aria-hidden="true">' +
+      '      <svg viewBox="0 0 24 24" focusable="false"><path d="M7.5 10V7.5a4.5 4.5 0 0 1 9 0V10"/><rect x="5" y="10" width="14" height="10" rx="1.5"/><path d="M12 14v2.5"/></svg>' +
+      "    </span>" +
+      '    <span>' + t("reviews_verified_purchase_note") + "</span>" +
+      "  </p>" +
       "</section>"
     );
   }
@@ -1377,20 +1385,22 @@
       .sort(function () {
         return Math.random() - 0.5;
       })
-      .slice(0, 4);
+      .slice(0, RELATED_PRODUCT_LIMIT);
     if (!related.length) return "";
     var cards = related
-      .map(function (item) {
+      .map(function (item, index) {
         return (
-          '<article class="related-card home-collections__carousel-slide">' +
+          '<article class="related-card home-collections__carousel-slide" style="--related-index:' + index + '">' +
           '  <a href="/product/' +
           encodeURIComponent(item.id) +
           '">' +
-          '    <img src="' +
+          '    <span class="related-card__media">' +
+          '      <img src="' +
           item.image +
           '" alt="' +
           escapeHtml(productTitle(item)) +
           '" loading="lazy" decoding="async" />' +
+          "    </span>" +
           "    <h3>" +
           escapeHtml(productTitle(item)) +
           "</h3>" +
@@ -1436,6 +1446,33 @@
       mediaSelector: ".related-card img",
       dotClass: "home-collections__carousel-dot",
     });
+  }
+
+  function mountRelatedMotion() {
+    if (relatedMotionObserver) {
+      relatedMotionObserver.disconnect();
+      relatedMotionObserver = null;
+    }
+
+    var section = document.querySelector(".related-products");
+    if (!section) return;
+
+    var reduceMotion = window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion || !("IntersectionObserver" in window)) {
+      section.classList.add("is-related-visible");
+      return;
+    }
+
+    section.classList.add("related-products--motion-ready");
+    relatedMotionObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-related-visible");
+        relatedMotionObserver.unobserve(entry.target);
+      });
+    }, { threshold: 0.14, rootMargin: "0px 0px -7% 0px" });
+    relatedMotionObserver.observe(section);
   }
 
   function clearStuckUi() {

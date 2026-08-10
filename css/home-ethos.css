@@ -47,11 +47,13 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(247, 243, 235, 0.62);
+  background:
+    linear-gradient(90deg, rgba(247, 243, 235, 0.82) 0%, rgba(247, 243, 235, 0.7) 54%, rgba(247, 243, 235, 0.64) 100%),
+    radial-gradient(circle at 18% 42%, rgba(255, 253, 248, 0.36), transparent 58%);
 }
 
 [data-theme="dark"] .home-ethos__bg::after {
-  background: rgba(12, 10, 8, 0.86);
+  background: rgba(12, 10, 8, 0.9);
 }
 
 /* Eyebrow pill */
@@ -128,9 +130,9 @@
 
 .home-ethos__link-text {
   font-family: var(--font-display);
-  font-size: clamp(0.7rem, 1vw, 0.82rem);
+  font-size: clamp(0.8125rem, 1vw, 0.875rem);
   font-weight: 500;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--ink);
   border-bottom: 1px solid var(--accent-muted, rgba(197, 160, 96, 0.5));

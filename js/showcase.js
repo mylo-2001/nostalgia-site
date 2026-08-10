@@ -155,11 +155,13 @@
 
     var eyebrow = document.createElement("p");
     eyebrow.className = "collection-coming__eyebrow";
-    eyebrow.textContent = t(mode === "sale" ? "nav_sale" : "nav_new_arrivals");
+    eyebrow.textContent = mode === "sale" ? "NOSTALGIA" : t("nav_new_arrivals");
 
     var title = document.createElement("h3");
     title.className = "collection-coming__title";
-    title.textContent = t(mode === "sale" ? "sale_title" : "new_arrivals_title");
+    title.textContent = mode === "sale"
+      ? (document.documentElement.lang === "en" ? "Selected offers" : "Επιλεγμένες προσφορές")
+      : t("new_arrivals_title");
 
     var lead = document.createElement("p");
     lead.className = "collection-coming__lead";

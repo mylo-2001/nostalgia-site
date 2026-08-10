@@ -65,6 +65,7 @@ new/
 MARKETING-SETUP.md
 WORLDLINE-SETUP.md
 ACS-SETUP.md
+FRONTEND_REFINEMENT_TRACKER.md
 
 # Contact-form attachments uploaded by customers. server.js keeps these out of
 # the public *static* tree, which is not the same as keeping them out of *git* —

@@ -26,10 +26,23 @@
       document.documentElement.lang = l;
     }
   } catch (e) {}
-  /* Temporarily hide curtain until home JS scrolls past it on return visits. */
+  /* Intro curtain: only the first landing on home in a session.
+     Any other page (or return to home) skips it. */
   try {
-    if (sessionStorage.getItem("nostalgia-intro-seen") === "1") {
+    var mobileNoIntro = window.matchMedia("(max-width: 768px)").matches;
+    var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+    var isHome =
+      path === "/" ||
+      path === "/index.html" ||
+      path.endsWith("/html/index.html");
+    if (!isHome) {
+      sessionStorage.setItem("nostalgia-intro-seen", "1");
+    }
+    if (mobileNoIntro) {
+      document.documentElement.classList.add("no-site-intro");
+    } else if (sessionStorage.getItem("nostalgia-intro-seen") === "1") {
       document.documentElement.classList.add("intro-resume");
+      document.documentElement.classList.add("intro-skipped");
     }
   } catch (e) {}
   /* Arms the pre-paint hidden state for [data-motion] sections so GSAP can

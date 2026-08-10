@@ -283,7 +283,7 @@
       '  <div class="account-auth__brand" aria-hidden="true">' +
       '    <span class="account-auth__mark"><img class="account-auth__logo account-auth__logo--dark" src="images/logo/logo.png" alt="" /><img class="account-auth__logo account-auth__logo--light" src="images/logo/logo%20light.png?v=2" alt="" /></span>' +
       "  </div>" +
-      '  <h2 class="account-panel__title" data-i18n="account_login_title">Σύνδεση</h2>' +
+      '  <h1 class="account-panel__title" data-i18n="account_login_title">Σύνδεση</h1>' +
       '  <p class="account-auth__lead" data-i18n="account_login_lead">Συνδέσου για να δεις τις παραγγελίες και τον λογαριασμό σου.</p>' +
       googleButtonHTML() +
       '  <form class="account-form account-form--auth" id="account-login-form" novalidate>' +
@@ -311,7 +311,7 @@
   function buildRegisterHTML() {
     return (
       '<div class="account-panel account-panel--register">' +
-      '  <h2 class="account-panel__title account-panel__title--register" data-i18n="account_create_heading">Create New Customer Account</h2>' +
+      '  <h1 class="account-panel__title account-panel__title--register" data-i18n="account_create_heading">Create New Customer Account</h1>' +
       '  <div class="account-register">' +
       '    <aside class="account-register__why" aria-labelledby="account-why-title">' +
       '      <h3 class="account-register__why-title" id="account-why-title" data-i18n="account_why_title">Why an account?</h3>' +
@@ -329,6 +329,9 @@
       '      <label class="account-field account-field--password"><span data-i18n="account_password_label">Κωδικός</span>' +
       passwordFieldHTML("password", "new-password") +
       "</label>" +
+      '      <p class="account-password-guide">' +
+      (isEnglish() ? "Use at least 8 characters, with uppercase, lowercase and a number." : "Χρησιμοποίησε τουλάχιστον 8 χαρακτήρες, με κεφαλαίο, πεζό και αριθμό.") +
+      "</p>" +
       '      <label class="account-field account-field--password"><span data-i18n="account_password_confirm_label">Επιβεβαίωση κωδικού</span>' +
       passwordFieldHTML("passwordConfirm", "new-password") +
       "</label>" +
@@ -487,7 +490,7 @@
       "  </div>" +
       '  <nav class="account-dashboard__actions" aria-label="' + (isEnglish() ? "Quick links" : "Σύντομες ενέργειες") + '">' +
       '    <a class="account-dash-card" href="#account-orders">' +
-      '      <span class="account-dash-card__icon" aria-hidden="true">◫</span>' +
+      '      <span class="account-dash-card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-2-1.25L14 21l-2-1.25L10 21l-2-1.25L6 21V3Z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg></span>' +
       '      <span class="account-dash-card__body">' +
       '        <span class="account-dash-card__title" data-i18n="account_quick_orders">' + t("account_quick_orders") + "</span>" +
       '        <span class="account-dash-card__desc" data-i18n="account_quick_orders_desc">' + t("account_quick_orders_desc") + "</span>" +
@@ -495,7 +498,7 @@
       '      <span class="account-dash-card__chev" aria-hidden="true">›</span>' +
       "    </a>" +
       '    <a class="account-dash-card" href="/wishlist">' +
-      '      <span class="account-dash-card__icon" aria-hidden="true">♡</span>' +
+      '      <span class="account-dash-card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></svg></span>' +
       '      <span class="account-dash-card__body">' +
       '        <span class="account-dash-card__title" data-i18n="account_quick_wishlist">' + t("account_quick_wishlist") + "</span>" +
       '        <span class="account-dash-card__desc" data-i18n="account_quick_wishlist_desc">' + t("account_quick_wishlist_desc") + "</span>" +
@@ -504,7 +507,7 @@
       '      <span class="account-dash-card__chev" aria-hidden="true">›</span>' +
       "    </a>" +
       '    <a class="account-dash-card" href="#account-address">' +
-      '      <span class="account-dash-card__icon" aria-hidden="true">⌖</span>' +
+      '      <span class="account-dash-card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>' +
       '      <span class="account-dash-card__body">' +
       '        <span class="account-dash-card__title" data-i18n="account_quick_addresses">' + t("account_quick_addresses") + "</span>" +
       '        <span class="account-dash-card__desc" data-i18n="account_quick_addresses_desc">' + t("account_quick_addresses_desc") + "</span>" +
@@ -1739,14 +1742,14 @@
       '  <div class="newsletter-popup__panel" role="dialog" aria-labelledby="newsletter-modal-title">' +
       '    <button type="button" class="newsletter-popup__close" data-newsletter-close aria-label="Close">×</button>' +
       '    <h2 class="newsletter-popup__title" id="newsletter-modal-title" data-i18n="newsletter_title">Newsletter</h2>' +
-      '    <p class="newsletter-popup__lead" data-i18n="newsletter_lead">Εγγράψου στο newsletter μας και μάθε πρώτος τα νέα της Nostalgia Collection.</p>' +
+      '    <p class="newsletter-popup__lead" data-i18n="newsletter_lead">Εγγραφείτε στο newsletter μας και μάθετε πρώτοι τα νέα της Nostalgia Collection.</p>' +
       '    <form class="newsletter-form" id="newsletter-form" novalidate>' +
       '      <label class="newsletter-field"><input type="email" name="email" required autocomplete="email" placeholder="Email" data-i18n-placeholder="newsletter_email_ph" /></label>' +
       '      <label class="newsletter-field"><input type="text" name="firstname" required placeholder="Όνομα" data-i18n-placeholder="newsletter_firstname_ph" autocomplete="given-name" /></label>' +
       '      <label class="newsletter-field"><input type="text" name="lastname" required placeholder="Επώνυμο" data-i18n-placeholder="newsletter_lastname_ph" autocomplete="family-name" /></label>' +
-      '      <p class="newsletter-popup__consent" data-i18n="newsletter_consent_notice">Με την εγγραφή ζητάς να λαμβάνεις νέα και προσφορές με email. Θα σου στείλουμε σύνδεσμο επιβεβαίωσης και μπορείς να ανακαλέσεις τη συγκατάθεσή σου ανά πάσα στιγμή.</p>' +
+      '      <p class="newsletter-popup__consent" data-i18n="newsletter_consent_notice">Με την εγγραφή ζητάτε να λαμβάνετε νέα και προσφορές με email. Θα σας στείλουμε σύνδεσμο επιβεβαίωσης και μπορείτε να ανακαλέσετε τη συγκατάθεσή σας ανά πάσα στιγμή.</p>' +
       '      <button type="submit" class="newsletter-form__submit" data-i18n="newsletter_submit">Εγγραφή</button>' +
-      '      <p class="newsletter-form__success" id="newsletter-success" hidden data-i18n="newsletter_success">Ευχαριστούμε για την εγγραφή σου!</p>' +
+      '      <p class="newsletter-form__success" id="newsletter-success" hidden data-i18n="newsletter_success">Ευχαριστούμε για την εγγραφή σας!</p>' +
       "    </form>" +
       '    <a class="newsletter-popup__privacy" href="/privacy" data-i18n="footer_privacy">Προστασία Δεδομένων</a>' +
       "  </div>" +
@@ -1833,7 +1836,7 @@
           if (success) {
             success.textContent = document.documentElement.lang === "en"
               ? "Check your email to confirm your subscription."
-              : "Έλεγξε το email σου για να επιβεβαιώσεις την εγγραφή.";
+              : "Ελέγξτε το email σας για να επιβεβαιώσετε την εγγραφή.";
             success.hidden = false;
           }
           window.setTimeout(closeNewsletter, 3200);

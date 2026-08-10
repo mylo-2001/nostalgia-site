@@ -4,6 +4,7 @@
  */
 (function () {
   var autocomplete = null;
+  var autocompleteElement = null;
   var streetInput = null;
   var scriptLoading = false;
   var lastGeoCoords = null;
@@ -105,7 +106,9 @@
     for (var i = 0; i < components.length; i++) {
       var c = components[i];
       if (c.types && c.types.indexOf(type) >= 0) {
-        return useShort ? c.short_name || c.long_name : c.long_name || c.short_name;
+        return useShort
+          ? c.short_name || c.shortText || c.long_name || c.longText
+          : c.long_name || c.longText || c.short_name || c.shortText;
       }
     }
     return "";
@@ -137,9 +140,9 @@
   }
 
   function applyPlace(place) {
-    if (!place || !place.address_components) return;
+    if (!place || (!place.address_components && !place.addressComponents)) return;
 
-    var comps = place.address_components;
+    var comps = place.address_components || place.addressComponents;
     var route = componentValue(comps, "route");
     var streetNumber = componentValue(comps, "street_number");
     var city =
@@ -186,7 +189,11 @@
   }
 
   function biasAutocompleteToCoords(lat, lng) {
-    if (!autocomplete || !window.google || !window.google.maps) return;
+    if ((!autocomplete && !autocompleteElement) || !window.google || !window.google.maps) return;
+    if (autocompleteElement) {
+      autocompleteElement.locationBias = { center: { lat: lat, lng: lng }, radius: 18000 };
+      return;
+    }
     var circle = new window.google.maps.Circle({
       center: { lat: lat, lng: lng },
       radius: 18000,
@@ -264,30 +271,49 @@
       autocomplete = null;
     }
 
-    var opts = {
-      types: ["address"],
-      fields: ["address_components", "formatted_address", "geometry"],
-    };
-    var restrict = countryRestrictions();
-    if (restrict) opts.componentRestrictions = restrict;
+    var Places = window.google.maps.places;
+    if (!Places.PlaceAutocompleteElement) {
+      showHint(false);
+      return;
+    }
 
-    autocomplete = new window.google.maps.places.Autocomplete(streetInput, opts);
+    autocompleteElement = new Places.PlaceAutocompleteElement({
+      includedPrimaryTypes: ["street_address", "route"],
+      includedRegionCodes: countryRestrictions() ? [mapsCountryCode(getCountryCode())] : [],
+    });
+    autocompleteElement.id = "checkout-street-autocomplete";
+    autocompleteElement.className = "checkout-place-autocomplete";
+    autocompleteElement.placeholder = streetInput.placeholder || (getLang() === "en" ? "Street address" : "Οδός και αριθμός");
+    streetInput.parentNode.insertBefore(autocompleteElement, streetInput);
+    streetInput.classList.add("checkout-street-source");
+    streetInput.setAttribute("aria-hidden", "true");
+    streetInput.tabIndex = -1;
 
     if (lastGeoCoords) {
       biasAutocompleteToCoords(lastGeoCoords.lat, lastGeoCoords.lng);
     }
 
-    autocomplete.addListener("place_changed", function () {
-      var place = autocomplete.getPlace();
-      if (!place || !place.address_components) return;
-      applyPlace(place);
+    autocompleteElement.addEventListener("gmp-select", function (event) {
+      var place = event.placePrediction.toPlace();
+      place.fetchFields({ fields: ["addressComponents", "formattedAddress", "location"] }).then(function () {
+        applyPlace(place);
+      });
+    });
+    autocompleteElement.addEventListener("gmp-error", function () {
+      autocompleteElement.hidden = true;
+      streetInput.classList.remove("checkout-street-source");
+      streetInput.removeAttribute("aria-hidden");
+      streetInput.tabIndex = 0;
+      showHint(false);
     });
   }
 
   function setCountry(code) {
-    if (!autocomplete || !window.google) return;
+    if ((!autocomplete && !autocompleteElement) || !window.google) return;
     var restrict = countryRestrictions(code);
-    if (restrict) autocomplete.setComponentRestrictions(restrict);
+    if (autocompleteElement) {
+      autocompleteElement.includedRegionCodes = restrict ? [mapsCountryCode(code)] : [];
+    } else if (restrict) autocomplete.setComponentRestrictions(restrict);
     else autocomplete.setComponentRestrictions({});
   }
 

@@ -60,6 +60,25 @@
     });
   }
 
+  var PROMISE_ICONS = {
+    shipping:
+      '<span class="site-promise__icon" aria-hidden="true">' +
+      '<svg viewBox="0 0 48 48" focusable="false"><path d="M5.5 14.5h22v20h-22zM27.5 21.5h7l8 8v5h-15zM34.5 22v8h7.5M11.5 38a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM35.5 38a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM9 9.5h15M4 9.5h1"/></svg>' +
+      "</span>",
+    returns:
+      '<span class="site-promise__icon" aria-hidden="true">' +
+      '<svg viewBox="0 0 48 48" focusable="false"><path d="M13 17.5 24 11l11 6.5v13L24 37l-11-6.5zM13.5 17.8 24 24l10.5-6.2M24 24v12.5M8 17a17 17 0 0 1 28-7M36 5v5h-5M40 31a17 17 0 0 1-28 7M12 43v-5h5"/></svg>' +
+      "</span>",
+    gift:
+      '<span class="site-promise__icon" aria-hidden="true">' +
+      '<svg viewBox="0 0 48 48" focusable="false"><path d="M7.5 20.5h33v8h-33zM10.5 28.5h27v12h-27zM24 20.5v20M11 16.5h26M24 16.5c-5 0-9-1.8-9-5 0-2 1.5-3.5 3.6-3.5 3.7 0 5.4 5.3 5.4 8.5Zm0 0c5 0 9-1.8 9-5 0-2-1.5-3.5-3.6-3.5-3.7 0-5.4 5.3-5.4 8.5Z"/></svg>' +
+      "</span>",
+    sample:
+      '<span class="site-promise__icon" aria-hidden="true">' +
+      '<svg viewBox="0 0 48 48" focusable="false"><path d="M16 16.5h17v23H16zM18.5 10h12v6.5h-12zM21 6.5h7.5V10M33 21.5h3.5M36.5 18.5v6M12 10v5M9.5 12.5h5M35.5 8v4M33.5 10h4"/><path d="M20 32c2.5 1.7 5.5 1.7 9 0"/></svg>' +
+      "</span>"
+  };
+
   function preFooterTemplate() {
     return (
       '<div class="site-prefooter" id="site-prefooter">' +
@@ -68,6 +87,7 @@
       '">' +
       '    <div class="site-promise__inner">' +
       '      <article class="site-promise__item">' +
+      PROMISE_ICONS.shipping +
       '        <span class="site-promise__title" data-i18n="footer_promise_1_title">' +
       escapeHtml(t("footer_promise_1_title")) +
       "</span>" +
@@ -75,6 +95,7 @@
       escapeHtml(t("footer_promise_1_text")) +
       "</p></article>" +
       '      <article class="site-promise__item">' +
+      PROMISE_ICONS.returns +
       '        <span class="site-promise__title" data-i18n="footer_promise_2_title">' +
       escapeHtml(t("footer_promise_2_title")) +
       "</span>" +
@@ -82,6 +103,7 @@
       escapeHtml(t("footer_promise_2_text")) +
       "</p></article>" +
       '      <article class="site-promise__item">' +
+      PROMISE_ICONS.gift +
       '        <span class="site-promise__title" data-i18n="footer_promise_3_title">' +
       escapeHtml(t("footer_promise_3_title")) +
       "</span>" +
@@ -89,6 +111,7 @@
       escapeHtml(t("footer_promise_3_text")) +
       "</p></article>" +
       '      <article class="site-promise__item">' +
+      PROMISE_ICONS.sample +
       '        <span class="site-promise__title" data-i18n="footer_promise_4_title">' +
       escapeHtml(t("footer_promise_4_title")) +
       "</span>" +
@@ -146,7 +169,7 @@
       '      <ul class="site-footer__list">' +
       '        <li><a href="/new-arrivals" data-i18n="nav_new_arrivals">' + t("nav_new_arrivals") + "</a></li>" +
       '        <li><a href="/sale" data-i18n="nav_sale">' + t("nav_sale") + "</a></li>" +
-      '        <li><a href="/seasonal">Seasonal Editions</a></li>' +
+      '        <li><a href="/seasonal">Εποχικές εκδόσεις</a></li>' +
       '        <li><a href="/scent-finder" data-i18n="nav_scent_finder">' + t("nav_scent_finder") + "</a></li>" +
       '        <li><a href="/gift-experience" data-i18n="nav_gift">' + t("nav_gift") + "</a></li>" +
       "      </ul>" +
@@ -1428,7 +1451,7 @@
           if (ok) {
             ok.textContent = document.documentElement.lang === "en"
               ? "Check your email to confirm your subscription."
-              : "Έλεγξε το email σου για να επιβεβαιώσεις την εγγραφή.";
+              : "Ελέγξτε το email σας για να επιβεβαιώσετε την εγγραφή.";
             ok.hidden = false;
           }
         });

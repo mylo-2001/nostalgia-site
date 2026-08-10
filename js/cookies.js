@@ -174,7 +174,7 @@
       '    <a href="/privacy#cookies" data-i18n="cookie_privacy_policy">Πολιτική Απορρήτου</a>.' +
       "  </p>" +
       '  <div class="cookie-banner__actions">' +
-      '    <button type="button" class="cookie-banner__btn cookie-banner__btn--secondary" data-cookie-continue-without data-i18n="cookie_reject_all">Απόρριψη όλων</button>' +
+      '    <button type="button" class="cookie-banner__btn cookie-banner__btn--secondary" data-cookie-continue-without data-i18n="cookie_reject_all">Αποδοχή μόνο των απαραίτητων</button>' +
       '    <button type="button" class="cookie-banner__btn cookie-banner__btn--secondary" data-cookie-manage data-i18n="cookie_manage">Διαχείριση cookies</button>' +
       '    <button type="button" class="cookie-banner__btn cookie-banner__btn--primary" data-cookie-accept data-i18n="cookie_accept_all">Αποδοχή όλων</button>' +
       "  </div>" +
@@ -238,7 +238,7 @@
       "    </li>" +
       "  </ul>" +
       '  <div class="cookie-settings__actions">' +
-      '    <button type="button" class="cookie-banner__btn cookie-banner__btn--outline" data-cookie-refuse data-i18n="cookie_reject_all">Απόρριψη όλων</button>' +
+      '    <button type="button" class="cookie-banner__btn cookie-banner__btn--outline" data-cookie-refuse data-i18n="cookie_reject_all">Αποδοχή μόνο των απαραίτητων</button>' +
       '    <button type="button" class="cookie-banner__btn cookie-banner__btn--outline" data-cookie-save data-i18n="cookie_confirm_choices">Επιβεβαίωση επιλογών</button>' +
       "  </div>" +
       "</div>";

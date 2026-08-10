@@ -314,8 +314,8 @@
   display: inline-block;
   font-family: var(--font-hero);
   font-weight: 500;
-  font-size: 0.74rem;
-  letter-spacing: 0.2em;
+  font-size: 0.875rem;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   padding: 0.82rem 2rem;
   /* One clear hero action: a quiet filled-gold seal against the photography. */
@@ -607,9 +607,9 @@
 .home-manifesto__cta {
   display: inline-block;
   font-family: var(--font-display);
-  font-size: clamp(0.6rem, 0.9vw, 0.68rem);
+  font-size: clamp(0.8125rem, 0.95vw, 0.875rem);
   font-weight: 500;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   padding: 0.72rem 1.5rem;
   color: var(--accent);
@@ -1016,9 +1016,9 @@
   display: inline-block;
   margin-top: 0.15rem;
   font-family: var(--font-display);
-  font-size: clamp(0.58rem, 0.78vw, 0.66rem);
+  font-size: clamp(0.8125rem, 0.9vw, 0.875rem);
   font-weight: 500;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--accent);
   border-bottom: 1px solid rgba(197, 160, 96, 0.45);
@@ -1032,7 +1032,7 @@
 .home-moment__cta:hover {
   color: var(--ink);
   border-color: var(--accent);
-  letter-spacing: 0.24em;
+  letter-spacing: 0.16em;
 }
 
 .home-moment__frame {
@@ -1373,9 +1373,9 @@
 
 .home-about__cta {
   font-family: var(--font-display);
-  font-size: clamp(0.62rem, 1.05vw, 0.72rem);
+  font-size: clamp(0.8125rem, 1.05vw, 0.875rem);
   font-weight: 500;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   padding: 0.7rem 1.4rem;
   border: 1px solid rgba(111, 80, 39, 0.55);
@@ -1451,6 +1451,43 @@
   background: var(--surface-muted);
   border-color: rgba(197, 160, 96, 0.18);
   box-shadow: 0 22px 50px -20px rgba(0, 0, 0, 0.6);
+}
+
+.home-about__card-icon {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin: 0 0 0.8rem;
+  color: var(--accent);
+}
+
+.home-about__card-icon::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -0.38rem;
+  width: 1rem;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.38;
+}
+
+.home-about__card-icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+[data-theme="dark"] .home-about__card-icon {
+  color: color-mix(in srgb, var(--accent) 82%, #f5f0e8);
 }
 
 .home-about__card-title {
@@ -3330,8 +3367,8 @@
   padding: 0.72rem 1.95rem;
   border: 1px solid rgba(36, 28, 20, 0.4);
   font-family: var(--font-nav, var(--font-display));
-  font-size: 0.62rem;
-  letter-spacing: 0.22em;
+  font-size: clamp(0.8125rem, 0.95vw, 0.875rem);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--ink);
   text-decoration: none;
@@ -3811,7 +3848,10 @@
 }
 
 .home-collections__carousel--editorial .home-collections__carousel-viewport {
-  padding: 0 0.15rem;
+  /* Leave a small vertical safety area for the larger 14px CTA. Without it,
+     the viewport's overflow clipping hides the button's bottom edge until the
+     hover transform lifts the card. */
+  padding: 0 0.15rem 0.5rem;
 }
 
 .home-collections__carousel--editorial .home-collections__carousel-track {
@@ -3975,9 +4015,9 @@
   min-width: 9.5rem;
   padding: 0.72rem 1.35rem;
   font-family: var(--font-display);
-  font-size: clamp(0.58rem, 0.9vw, 0.66rem);
+  font-size: clamp(0.8125rem, 0.95vw, 0.875rem);
   font-weight: 500;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: inherit;
   border: 1px solid currentColor;
@@ -4081,8 +4121,8 @@
 .home-collections__carousel--editorial .home-collections__cat-cta {
   min-width: 8.5rem;
   padding: 0.7rem 1.55rem;
-  font-size: 0.62rem;
-  letter-spacing: 0.24em;
+  font-size: clamp(0.8125rem, 0.95vw, 0.875rem);
+  letter-spacing: 0.12em;
 }
 
 .home-collections__head {
@@ -4397,9 +4437,9 @@
   min-width: 11rem;
   padding: 0.85rem 1.5rem;
   font-family: var(--font-display);
-  font-size: clamp(0.58rem, 0.85vw, 0.66rem);
+  font-size: clamp(0.8125rem, 0.95vw, 0.875rem);
   font-weight: 500;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   text-decoration: none;
   color: var(--surface-paper);
@@ -4423,7 +4463,7 @@
   background: var(--accent);
   border-color: var(--accent);
   color: var(--surface-paper);
-  letter-spacing: 0.26em;
+  letter-spacing: 0.16em;
   transform: translateY(-2px);
 }
 
@@ -5133,9 +5173,9 @@ body[data-page="home"] .home-experience__inner {
   min-width: 10rem;
   padding: 0.72rem 1.35rem;
   font-family: var(--font-display);
-  font-size: 0.58rem;
+  font-size: clamp(0.8125rem, 0.95vw, 0.875rem);
   font-weight: 500;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   text-decoration: none;
   color: var(--surface-paper);
@@ -5200,10 +5240,26 @@ body[data-page="home"] .home-experience__inner {
   visibility: hidden;
 }
 
-/* Only until site-intro.js scrolls past — then the class is removed */
-html.intro-resume .site-intro {
-  visibility: hidden;
-  pointer-events: none;
+/* Return visits / internal navigation: keep curtain off until JS confirms skip */
+html.intro-resume .site-intro,
+html.intro-resume .site-intro-spacer,
+html.intro-resume .site-intro-page-placeholder {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Session skip only (return to home) — never collapse spacer during live scroll */
+html.intro-skipped .site-intro,
+html.intro-skipped .site-intro-spacer,
+html.intro-skipped .site-intro-page-placeholder,
+body[data-page="home"].intro-skipped .site-intro,
+body[data-page="home"].intro-skipped .site-intro-spacer,
+body[data-page="home"].intro-skipped .site-intro-page-placeholder {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
 }
 
 .site-intro-spacer {
@@ -5212,6 +5268,35 @@ html.intro-resume .site-intro {
   height: 100vh;
   height: 100svh;
   pointer-events: none;
+}
+
+/* Mobile: intro curtain does not exist — home starts at the hero */
+@media (max-width: 768px) {
+  .site-intro,
+  .site-intro-spacer,
+  .site-intro-page-placeholder {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    transform: none !important;
+    z-index: -1 !important;
+  }
+
+  html.intro-resume .site-intro,
+  html.no-site-intro .site-intro {
+    display: none !important;
+  }
+
+  html.intro-lock,
+  html.intro-lock body {
+    position: static !important;
+    overflow: visible !important;
+    touch-action: auto !important;
+  }
 }
 
 body[data-page="home"].intro-hero-active .site-header,
@@ -5664,5 +5749,25 @@ html.intro-lock body {
   .home-manifesto {
     padding-top: 1.5rem;
     padding-bottom: 1.5rem;
+  }
+}
+/* 2026 full-site refinement: keep the long editorial home page paced on phones. */
+@media (max-width: 640px) {
+  body[data-page="home"] .hero-home {
+    min-height: min(84svh, 720px);
+  }
+
+  body[data-page="home"] .home-section,
+  body[data-page="home"] .home-experience,
+  body[data-page="home"] .home-journal,
+  body[data-page="home"] .home-services {
+    padding-top: clamp(2.5rem, 10vw, 3.5rem);
+    padding-bottom: clamp(2.5rem, 10vw, 3.5rem);
+  }
+
+  body[data-page="home"] .home-collections__carousel,
+  body[data-page="home"] .home-collections__carousel-viewport,
+  body[data-page="home"] .home-collections__carousel-track {
+    max-width: 100%;
   }
 }

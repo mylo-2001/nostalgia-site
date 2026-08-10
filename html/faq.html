@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="css/fonts.css?v=1" />
 <link rel="stylesheet" href="css/base.css?v=mobile-fix1" />
   <link rel="stylesheet" href="css/side-nav.css?v=menu-visual3" />
-  <link rel="stylesheet" href="css/legal.css" />
+  <link rel="stylesheet" href="css/legal.css?v=svg-pass1" />
   <link rel="stylesheet" href="css/shop.css?v=clr8" />
 </head>
 <body data-page="faq">
@@ -52,18 +52,33 @@
         </figure>
         <div class="editorial-hero__inner">
           <header class="editorial-hero__head">
-            <h1 class="editorial-hero__title" data-i18n="footer_faq">Help</h1>
+            <h1 class="editorial-hero__title" data-i18n="footer_faq">Συχνές ερωτήσεις</h1>
           </header>
         </div>
       </section>
       <section class="legal-page">
         <article class="legal-content faq-content">
           <nav class="faq-toc" aria-label="FAQ κατηγορίες">
-            <a href="#faq-products">Προϊόντα</a>
-            <a href="#faq-ordering">Παραγγελία & Πληρωμή</a>
-            <a href="#faq-shipping">Αποστολή & Παράδοση</a>
-            <a href="#faq-returns">Επιστροφές</a>
-            <a href="#faq-other">Άλλα</a>
+            <a href="#faq-products">
+              <span class="faq-toc__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8l2 4H6l2-4z"/><path d="M6 8h12v11a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V8z"/><path d="M12 12v4"/><path d="M10.5 14.5c.5-.8 1.5-.8 2 0"/></svg></span>
+              <span>Προϊόντα</span>
+            </a>
+            <a href="#faq-ordering">
+              <span class="faq-toc__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg></span>
+              <span>Παραγγελία &amp; Πληρωμή</span>
+            </a>
+            <a href="#faq-shipping">
+              <span class="faq-toc__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v10H3z"/><path d="M14 10h4l3 3v4h-7"/><circle cx="7" cy="18.5" r="1.5"/><circle cx="17" cy="18.5" r="1.5"/></svg></span>
+              <span>Αποστολή &amp; Παράδοση</span>
+            </a>
+            <a href="#faq-returns">
+              <span class="faq-toc__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.3-5.6"/><path d="M4 4v4.5h4.5"/></svg></span>
+              <span>Επιστροφές</span>
+            </a>
+            <a href="#faq-other">
+              <span class="faq-toc__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 10v6"/><path d="M12 7.5h.01"/></svg></span>
+              <span>Άλλα</span>
+            </a>
           </nav>
 
           <section class="faq-group" id="faq-products">
@@ -91,7 +106,7 @@
           </section>
 
           <section class="faq-group" id="faq-ordering">
-            <h2>Ordering and Payment</h2>
+            <h2>Παραγγελία και πληρωμή</h2>
             <details class="faq-item">
               <summary>Πώς κάνω παραγγελία;</summary>
               <p>Επιλέγετε προϊόν, προσθήκη στο καλάθι και ολοκλήρωση checkout με στοιχεία αποστολής και τρόπο πληρωμής.</p>
@@ -111,7 +126,7 @@
           </section>
 
           <section class="faq-group" id="faq-shipping">
-            <h2>Shipping and Delivery</h2>
+            <h2>Αποστολή και παράδοση</h2>
             <details class="faq-item">
               <summary>Ποιος είναι ο χρόνος παράδοσης;</summary>
               <p>Συνήθως 1-3 εργάσιμες για ετοιμοπαράδοτα προϊόντα. Για custom ή υψηλό φόρτο ενδέχεται να απαιτηθεί περισσότερος χρόνος.</p>
@@ -127,7 +142,7 @@
           </section>
 
           <section class="faq-group" id="faq-returns">
-            <h2>Returns</h2>
+            <h2>Επιστροφές</h2>
             <details class="faq-item">
               <summary>Ποια είναι η πολιτική επιστροφών;</summary>
               <p>Μπορείτε να ζητήσετε επιστροφή εντός 14 ημερών, εφόσον το προϊόν είναι αχρησιμοποίητο και στην αρχική του κατάσταση.</p>
@@ -153,10 +168,10 @@
   <script defer src="js/api.js?v=1"></script>
   <script defer src="js/europe-countries.js"></script>
   <script defer src="js/images.js?v=4"></script>
-    <script defer src="js/i18n-bundles/shared.js?v=stock-notice1"></script>
+    <script defer src="js/i18n-bundles/shared.js?v=cookie-necessary1"></script>
   <script defer src="js/i18n-bundles/content.js?v=ship35"></script>
   <script defer src="js/i18n-core.js?v=1"></script>
-  <script defer src="js/cookies.js"></script>
+  <script defer src="js/cookies.js?v=cookie-necessary1"></script>
   <script src="js/tracking.js?v=1" defer></script>
   <script src="js/welcome-offer.js?v=1" defer></script>
   <script defer src="js/products.js"></script>

@@ -6,8 +6,8 @@
  *           page-intro / section-rule, global header responsive rules.
  */
 
-@import url("page-hero.css?v=1");
-@import url("site-prefooter.css?v=1");
+@import url("page-hero.css?v=cart-logo1");
+@import url("site-prefooter.css?v=2");
 
 :root {
   --font-display: "Playfair Display", Georgia, serif;
@@ -2978,7 +2978,7 @@ html .wishlist-card__add:active {
   .site-footer__partners-title,
   .product-info__avail,
   .cart-link__badge {
-    font-size: max(0.75rem, 12px) !important;
+    font-size: max(0.8125rem, 13px) !important;
     letter-spacing: 0.08em;
   }
 
@@ -3230,4 +3230,23 @@ html .site-remind__link:active {
 .cart-page--editorial .stock-pill {
   display: block;
   margin: -0.25rem 0 0.55rem;
+}
+/* Full-site refinement safeguards: scoped clipping prevents decorative media
+   from creating a real mobile page scrollbar while preserving local scrollers. */
+@media (max-width: 768px) {
+  body[data-page="home"],
+  body[data-page="collection"],
+  body[data-page="showcase"] {
+    overflow-x: clip;
+  }
+
+  body[data-page="home"] .page-wrap,
+  body[data-page="collection"] .page-wrap,
+  body[data-page="showcase"] .page-wrap,
+  body[data-page="home"] main,
+  body[data-page="collection"] main,
+  body[data-page="showcase"] main {
+    max-width: 100%;
+    overflow-x: clip;
+  }
 }

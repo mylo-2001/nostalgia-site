@@ -47,7 +47,7 @@
       desc: "Αρωματικά κεριά και diffusers σε έκπτωση — περιορισμένος αριθμός τεμαχίων.",
     },
     seasonal: {
-      title: "Seasonal Editions · Nostalgia Collection",
+      title: "Εποχικές εκδόσεις · Nostalgia Collection",
       desc: "Εποχιακές, περιορισμένες συλλογές χειροποίητων αρωματικών κεριών Nostalgia Collection.",
     },
     faq: {

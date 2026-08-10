@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="css/fonts.css?v=1" />
 <link rel="stylesheet" href="css/base.css?v=mobile-fix1" />
   <link rel="stylesheet" href="css/side-nav.css?v=menu-visual3" />
-  <link rel="stylesheet" href="css/legal.css" />
+  <link rel="stylesheet" href="css/legal.css?v=cookie-necessary1" />
   <link rel="stylesheet" href="css/shop.css?v=clr8" />
   <script src="js/theme-boot.js"></script>
 </head>
@@ -59,13 +59,25 @@
         </div>
       </section>
 
-      <section class="legal-page">
+      <section class="legal-page legal-page--privacy">
+        <div class="legal-layout">
+          <aside class="legal-toc">
+            <div class="legal-toc__inner">
+              <p class="legal-toc__eyebrow" id="privacy-toc-label">Περιεχόμενα</p>
+              <nav class="legal-toc__nav" aria-labelledby="privacy-toc-label">
+                <ol class="legal-toc__list" id="privacy-toc"></ol>
+              </nav>
+            </div>
+          </aside>
 
-        <article class="legal-content" id="privacy-content"></article>
+          <div class="legal-document">
+            <article class="legal-content" id="privacy-content"></article>
 
-        <p class="legal-cookie-link">
-          <button type="button" class="legal-cookie-link__btn" id="privacy-cookie-settings" data-i18n="cookie_manage">Ρυθμίσεις cookies</button>
-        </p>
+            <p class="legal-cookie-link">
+              <button type="button" class="legal-cookie-link__btn" id="privacy-cookie-settings" data-i18n="cookie_manage">Ρυθμίσεις cookies</button>
+            </p>
+          </div>
+        </div>
       </section>
     </main>
 
@@ -120,14 +132,14 @@
   <script defer src="js/api.js?v=1"></script>
   <script defer src="js/europe-countries.js"></script>
   <script defer src="js/images.js?v=4"></script>
-    <script defer src="js/i18n-bundles/shared.js?v=stock-notice1"></script>
+    <script defer src="js/i18n-bundles/shared.js?v=cookie-necessary1"></script>
   <script defer src="js/i18n-bundles/content.js?v=ship35"></script>
   <script defer src="js/i18n-core.js?v=1"></script>
     <script defer src="js/business-info.js?v=1"></script>
   <script defer src="js/cart.js"></script>
   <script defer src="js/privacy-content.js?v=nocod1"></script>
   <script defer src="js/privacy.js"></script>
-  <script defer src="js/cookies.js"></script>
+  <script defer src="js/cookies.js?v=cookie-necessary1"></script>
   <script src="js/tracking.js?v=1" defer></script>
   <script src="js/welcome-offer.js?v=1" defer></script>
   <script defer src="js/products.js"></script>

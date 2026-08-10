@@ -118,12 +118,12 @@
       chromeOpen() +
       stepperHTML(1) +
       '  <h2 class="welcome-offer__title" id="welcome-offer-title">' +
-      esc(t("offer_title", en ? "Get 10% off your first order" : "Κέρδισε 10% στην πρώτη σου παραγγελία")) +
+      esc(t("offer_title", en ? "Get 10% off your first order" : "Κερδίστε 10% στην πρώτη σας παραγγελία")) +
       "</h2>" +
       '  <p class="welcome-offer__lead">' +
       esc(t("offer_lead", en
         ? "Subscribe to our newsletter and get your personal discount code."
-        : "Γράψου στο newsletter και λάβε τον προσωπικό σου εκπτωτικό κωδικό.")) +
+        : "Εγγραφείτε στο newsletter και λάβετε τον προσωπικό σας εκπτωτικό κωδικό.")) +
       "</p>" +
       '  <form class="welcome-offer__form" novalidate>' +
       '    <label class="welcome-offer__label" for="welcome-offer-email">' + esc(t("offer_email_label", en ? "Email" : "Email")) + "</label>" +
@@ -140,7 +140,7 @@
       '  <p class="welcome-offer__trust-note">' + ICON.shield +
       "<span>" + esc(t("offer_trust_note", en
         ? "No spam. You can unsubscribe at any time."
-        : "Χωρίς ανεπιθύμητα μηνύματα. Μπορείς να διαγραφείς οποιαδήποτε στιγμή.")) + "</span></p>" +
+        : "Χωρίς ανεπιθύμητα μηνύματα. Μπορείτε να διαγραφείτε οποιαδήποτε στιγμή.")) + "</span></p>" +
       '  <button type="button" class="welcome-offer__decline" data-offer-close>' +
       esc(t("offer_decline", en ? "No thanks" : "Όχι ευχαριστώ")) +
       "</button>" +
@@ -159,7 +159,7 @@
       '  <p class="welcome-offer__lead">' +
       esc(t("offer_success_lead", en
         ? "Your discount code is ready — we also sent it to your email."
-        : "Ο εκπτωτικός κωδικός σου είναι έτοιμος και στάλθηκε και στο email σου.")) +
+        : "Ο εκπτωτικός κωδικός σας είναι έτοιμος και στάλθηκε και στο email σας.")) +
       "</p>" +
       '  <div class="welcome-offer__code-box">' +
       '    <span class="welcome-offer__code">' + esc(NEWSLETTER_CODE) + "</span>" +
@@ -172,7 +172,7 @@
       esc(t("offer_continue_shopping", en ? "CONTINUE SHOPPING" : "ΣΥΝΕΧΕΙΑ ΑΓΟΡΩΝ")) +
       "</button>" +
       '  <p class="welcome-offer__trust-note">' + ICON.shield +
-      "<span>" + esc(t("offer_first_order_only", en ? "Valid on your first order." : "Ισχύει για την πρώτη σου παραγγελία.")) + "</span></p>" +
+      "<span>" + esc(t("offer_first_order_only", en ? "Valid on your first order." : "Ισχύει για την πρώτη σας παραγγελία.")) + "</span></p>" +
       "</div>"
     );
   }
@@ -188,12 +188,12 @@
       chromeOpen() +
       stepperHTML(3) +
       '  <h2 class="welcome-offer__title welcome-offer__title--sm" id="welcome-offer-title">' +
-      esc(t("offer_upsell_title", en ? "Want an extra 5%?" : "Θέλεις επιπλέον 5%;")) +
+      esc(t("offer_upsell_title", en ? "Want an extra 5%?" : "Θέλετε επιπλέον 5%;")) +
       "</h2>" +
       '  <p class="welcome-offer__lead">' +
       esc(t("offer_upsell_lead", en
         ? "Create an account and get 15% total on your first order, plus faster checkout and access to your order history."
-        : "Δημιούργησε λογαριασμό και κέρδισε συνολικά 15% στην πρώτη σου παραγγελία, μαζί με γρηγορότερο checkout και πρόσβαση στο ιστορικό αγορών σου.")) +
+        : "Δημιουργήστε λογαριασμό και κερδίστε συνολικά 15% στην πρώτη σας παραγγελία, μαζί με γρηγορότερο checkout και πρόσβαση στο ιστορικό αγορών σας.")) +
       "</p>" +
       '  <ul class="welcome-offer__benefits">' +
       rows.map(function (r) {
@@ -278,7 +278,7 @@
         e.preventDefault();
         var email = (input.value || "").trim();
         if (!email || email.indexOf("@") === -1) {
-          status(t("offer_bad_email", isEn() ? "Please enter a valid email." : "Δώσε ένα έγκυρο email."), true);
+          status(t("offer_bad_email", isEn() ? "Please enter a valid email." : "Δώστε ένα έγκυρο email."), true);
           return;
         }
         status(t("offer_sending", isEn() ? "Sending…" : "Αποστολή…"), false);

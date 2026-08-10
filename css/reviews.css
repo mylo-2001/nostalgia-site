@@ -471,8 +471,26 @@
 .reviews-page__empty {
   grid-column: 1 / -1;
   text-align: center;
-  padding: 2rem 1rem;
+  max-width: 38rem;
+  margin: 0 auto;
+  padding: clamp(3rem, 8vw, 5rem) 1.5rem;
+  border: 1px solid var(--rule-hairline);
+  background: color-mix(in srgb, var(--accent) 4%, var(--surface-paper));
   color: var(--ink-muted);
+}
+
+.reviews-page__empty::before {
+  content: "N";
+  display: grid;
+  width: 3.6rem;
+  height: 3.6rem;
+  place-items: center;
+  margin: 0 auto 1.2rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 50%;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  color: var(--accent);
 }
 
 /* ——— Single review page ——— */
@@ -594,4 +612,18 @@
   text-align: center;
   padding: 3rem 1rem;
   color: var(--ink-muted);
+}
+
+.review-page__not-found::before {
+  content: "";
+  display: block;
+  width: 3.8rem;
+  height: 3.8rem;
+  margin: 0 auto 1.25rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--rule-hairline));
+  border-radius: 50%;
+  background:
+    linear-gradient(32deg, transparent 47%, currentColor 48% 52%, transparent 53%) center / 1.7rem 1.7rem no-repeat,
+    color-mix(in srgb, var(--accent) 5%, var(--surface-paper));
+  color: var(--accent);
 }

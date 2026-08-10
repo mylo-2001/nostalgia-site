@@ -4538,13 +4538,13 @@ const {
   adminUiPathRegex,
 } = require("./admin-ui-path");
 
-/* Guessable legacy URLs must not reveal the panel. */
+/* Guessable legacy URLs must not reveal the panel — same branded 404 as the rest of the site. */
 app.get(/^\/admin(\/.*)?$/, (req, res) => {
-  res.status(404).type("text/plain").send("Not found");
+  res.status(404).sendFile(path.join(HTML_DIR, "404.html"));
 });
 if (ADMIN_UI_PATH !== "/admin-react") {
   app.get(/^\/admin-react(\/.*)?$/, (req, res) => {
-    res.status(404).type("text/plain").send("Not found");
+    res.status(404).sendFile(path.join(HTML_DIR, "404.html"));
   });
 }
 

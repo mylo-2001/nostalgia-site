@@ -224,7 +224,7 @@
       '            <li><a class="side-nav__link" href="/sale" data-side-nav-preview="sale" data-i18n="nav_sale">Εκπτώσεις</a></li>' +
       '            <li><a class="side-nav__link" href="/scent-finder" data-side-nav-preview="scent" data-i18n="nav_scent_finder">Scent Finder</a></li>' +
       '            <li><a class="side-nav__link" href="/gift-experience" data-side-nav-preview="gift" data-i18n="nav_gift">Gift Experience</a></li>' +
-      '            <li><a class="side-nav__link" href="/seasonal" data-side-nav-preview="seasonal">Seasonal Editions</a></li>' +
+      '            <li><a class="side-nav__link" href="/seasonal" data-side-nav-preview="seasonal">Εποχικές εκδόσεις</a></li>' +
       '            <li><button type="button" class="side-nav__link side-nav__link--expand" data-side-panel="about"><span class="side-nav__link-text" data-i18n="nav_about">Σχετικά</span><span class="side-nav__chev" aria-hidden="true">›</span></button></li>' +
       '            <li><a class="side-nav__link" href="/contact" data-side-nav-preview="contact" data-i18n="nav_contact">Επικοινωνία</a></li>' +
       "          </ul>" +

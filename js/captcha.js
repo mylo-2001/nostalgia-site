@@ -72,6 +72,9 @@
             try {
               handle.widgetId = window.turnstile.render(container, {
                 sitekey: key,
+                theme: "auto",
+                size: "flexible",
+                appearance: "interaction-only",
                 callback: function (tok) { handle.token = tok; },
                 "error-callback": function () { handle.token = ""; },
                 "expired-callback": function () { handle.token = ""; },

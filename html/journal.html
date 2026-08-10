@@ -9,8 +9,9 @@
   <link rel="stylesheet" href="css/fonts.css?v=1" />
 <link rel="stylesheet" href="css/base.css?v=mobile-fix1" />
   <link rel="stylesheet" href="css/side-nav.css?v=menu-visual3" />
-  <link rel="stylesheet" href="css/legal.css" />
+  <link rel="stylesheet" href="css/legal.css?v=cookie-necessary1" />
   <link rel="stylesheet" href="css/shop.css?v=clr8" />
+  <link rel="stylesheet" href="css/journal.css?v=editorial1" />
   <script src="js/theme-boot.js"></script>
 </head>
 <body data-page="journal">
@@ -59,7 +60,10 @@
       </section>
       <section class="legal-page">
         <article class="legal-content">
-          <p class="site-reveal" data-i18n="journal_intro">Ιστορίες από το εργαστήριο, τη συλλογή και τη Μαρία Γεροστάθη.</p>
+          <header class="journal-intro site-reveal">
+            <span class="journal-intro__eyebrow" aria-hidden="true">NOSTALGIA JOURNAL</span>
+            <p class="journal-intro__lead" data-i18n="journal_intro">Ιστορίες από το εργαστήριο, τη συλλογή και τη Μαρία Γεροστάθη.</p>
+          </header>
 
           <article class="journal-feature site-reveal">
             <a class="journal-feature__media" href="/about">
@@ -73,6 +77,10 @@
             </div>
           </article>
 
+          <div class="journal-section-head site-reveal" aria-hidden="true">
+            <span data-i18n="journal_tag_editorial">Αρθρογραφία</span><i></i><span data-i18n="journal_tag_craft">Φροντίδα</span><i></i><span data-i18n="journal_tag_scent">Άρωμα</span>
+          </div>
+
           <div class="journal-grid">
             <article class="journal-card site-reveal site-reveal--d1">
               <a href="/collection/ni-terra" class="journal-card__media">
@@ -80,8 +88,9 @@
               </a>
               <div class="journal-card__body">
                 <p class="journal-card__tag" data-i18n="journal_tag_collection">Συλλογή</p>
-                <h2 class="journal-card__title" data-i18n="journal_card1_title">NI Terra — φυσικά υλικά, μνήμη, φως</h2>
+                <h2 class="journal-card__title"><a href="/collection/ni-terra" data-i18n="journal_card1_title">NI Terra — φυσικά υλικά, μνήμη, φως</a></h2>
                 <p class="journal-card__excerpt" data-i18n="journal_card1_excerpt">Μια νέα σειρά εμπνευσμένη από τη γη και την τελετουργία του κεριού.</p>
+                <a class="journal-card__read" href="/collection/ni-terra" data-i18n="journal_featured_cta">Διαβάστε την ιστορία</a>
               </div>
             </article>
             <article class="journal-card site-reveal site-reveal--d2">
@@ -90,8 +99,9 @@
               </a>
               <div class="journal-card__body">
                 <p class="journal-card__tag" data-i18n="journal_tag_studio">Εργαστήριο</p>
-                <h2 class="journal-card__title" data-i18n="journal_card2_title">Behind the scenes</h2>
+                <h2 class="journal-card__title"><a href="/about" data-i18n="journal_card2_title">Behind the scenes</a></h2>
                 <p class="journal-card__excerpt" data-i18n="journal_card2_excerpt">Από την επιλογή πρώτων υλών μέχρι την τελική σύνθεση αρωμάτων.</p>
+                <a class="journal-card__read" href="/about" data-i18n="journal_featured_cta">Διαβάστε την ιστορία</a>
               </div>
             </article>
             <article class="journal-card site-reveal site-reveal--d3">
@@ -100,8 +110,9 @@
               </a>
               <div class="journal-card__body">
                 <p class="journal-card__tag" data-i18n="journal_tag_editorial">Editorial</p>
-                <h2 class="journal-card__title" data-i18n="journal_card3_title">Vintage Unique Objects</h2>
+                <h2 class="journal-card__title"><a href="/collection/vintage-unique-objects" data-i18n="journal_card3_title">Vintage Unique Objects</a></h2>
                 <p class="journal-card__excerpt" data-i18n="journal_card3_excerpt">Πώς γεννιούνται οι συλλογές και πώς συνδέονται με τον χρόνο.</p>
+                <a class="journal-card__read" href="/collection/vintage-unique-objects" data-i18n="journal_featured_cta">Διαβάστε την ιστορία</a>
               </div>
             </article>
             <article class="journal-card site-reveal site-reveal--d1">
@@ -110,8 +121,9 @@
               </a>
               <div class="journal-card__body">
                 <p class="journal-card__tag" data-i18n="journal_tag_scent">Άρωμα</p>
-                <h2 class="journal-card__title" data-i18n="journal_card4_title">Βρες το άρωμα που σου μοιάζει</h2>
+                <h2 class="journal-card__title"><a href="/scent-finder" data-i18n="journal_card4_title">Βρες το άρωμα που σου μοιάζει</a></h2>
                 <p class="journal-card__excerpt" data-i18n="journal_card4_excerpt">Ένα σύντομο quiz που σε οδηγεί στο κερί ή το diffuser που ταιριάζει στον χώρο και τη διάθεσή σου.</p>
+                <a class="journal-card__read" href="/scent-finder" data-i18n="journal_featured_cta">Διαβάστε την ιστορία</a>
               </div>
             </article>
             <article class="journal-card site-reveal site-reveal--d2">
@@ -120,8 +132,9 @@
               </a>
               <div class="journal-card__body">
                 <p class="journal-card__tag" data-i18n="journal_tag_gift">Δώρο</p>
-                <h2 class="journal-card__title" data-i18n="journal_card5_title">Η τέχνη του δώρου</h2>
+                <h2 class="journal-card__title"><a href="/gift-experience" data-i18n="journal_card5_title">Η τέχνη του δώρου</a></h2>
                 <p class="journal-card__excerpt" data-i18n="journal_card5_excerpt">Συσκευασία, χειρόγραφη κάρτα και αποστολή στον παραλήπτη — μια τελετουργία που μένει.</p>
+                <a class="journal-card__read" href="/gift-experience" data-i18n="journal_featured_cta">Διαβάστε την ιστορία</a>
               </div>
             </article>
             <article class="journal-card site-reveal site-reveal--d3">
@@ -130,8 +143,9 @@
               </a>
               <div class="journal-card__body">
                 <p class="journal-card__tag" data-i18n="journal_tag_craft">Φροντίδα</p>
-                <h2 class="journal-card__title" data-i18n="journal_card6_title">Πώς να φροντίζεις το κερί σου</h2>
+                <h2 class="journal-card__title"><a href="/collection/art-class-murano-candle" data-i18n="journal_card6_title">Πώς να φροντίζεις το κερί σου</a></h2>
                 <p class="journal-card__excerpt" data-i18n="journal_card6_excerpt">Τρία ήρεμα βήματα για καθαρή φλόγα, ομοιόμορφο λιώσιμο και άρωμα που «ζει» περισσότερο.</p>
+                <a class="journal-card__read" href="/collection/art-class-murano-candle" data-i18n="journal_featured_cta">Διαβάστε την ιστορία</a>
               </div>
             </article>
           </div>
@@ -150,10 +164,10 @@
   <script defer src="js/api.js?v=1"></script>
   <script defer src="js/europe-countries.js"></script>
   <script defer src="js/images.js?v=4"></script>
-    <script defer src="js/i18n-bundles/shared.js?v=stock-notice1"></script>
+    <script defer src="js/i18n-bundles/shared.js?v=cookie-necessary1"></script>
   <script defer src="js/i18n-bundles/content.js?v=ship35"></script>
   <script defer src="js/i18n-core.js?v=1"></script>
-  <script defer src="js/cookies.js"></script>
+  <script defer src="js/cookies.js?v=cookie-necessary1"></script>
   <script src="js/tracking.js?v=1" defer></script>
   <script src="js/welcome-offer.js?v=1" defer></script>
   <script defer src="js/products.js"></script>

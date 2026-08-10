@@ -780,8 +780,8 @@ body.has-quick-view-open {
   border: 1px solid rgba(245, 240, 232, 0.4);
   color: rgba(245, 240, 232, 0.95);
   font-family: var(--font-nav);
-  font-size: 0.58rem;
-  letter-spacing: 0.14em;
+  font-size: clamp(0.8125rem, 0.95vw, 0.875rem);
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   text-decoration: none;
   transition: border-color var(--transition), color var(--transition), background var(--transition);
@@ -803,8 +803,8 @@ body.has-quick-view-open {
 .home-seasonal__secondary {
   color: var(--ink-muted);
   font-family: var(--font-nav);
-  font-size: 0.58rem;
-  letter-spacing: 0.12em;
+  font-size: clamp(0.8125rem, 0.95vw, 0.875rem);
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   text-decoration: none;
   border-bottom: 1px solid var(--accent-muted);

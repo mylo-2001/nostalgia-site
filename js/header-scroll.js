@@ -9,7 +9,13 @@
   var delta = 6;
 
   function introHeight() {
-    return intro ? intro.offsetHeight || window.innerHeight || 0 : 0;
+    if (!intro) return 0;
+    if (document.documentElement.classList.contains("no-site-intro")) return 0;
+    try {
+      if (window.matchMedia("(max-width: 768px)").matches) return 0;
+    } catch (e) {}
+    var h = intro.offsetHeight || 0;
+    return h > 0 ? h : 0;
   }
 
   function heroHeight() {

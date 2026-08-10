@@ -108,7 +108,7 @@
       url +
       '"><img src="' +
       escapeHtml(p.image) +
-      '" alt="" width="88" height="88" loading="lazy" decoding="async" /></a>' +
+      '" alt="' + escapeHtml(p.title) + '" width="88" height="88" loading="lazy" decoding="async" onerror="this.onerror=null;this.src=\'images/home%20page%20photo/home%20photo%201.png\';this.classList.add(\'is-fallback\')" /></a>' +
       '<div class="cart-line__body">' +
       '<a class="cart-line__name" href="' +
       url +

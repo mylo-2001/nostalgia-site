@@ -24,6 +24,23 @@
 
   if (!intro || !pageWrap) return;
 
+  /* Phone / narrow tablet: no intro curtain — go straight to the home page. */
+  var mobileNoIntro = false;
+  try {
+    mobileNoIntro = window.matchMedia("(max-width: 768px)").matches;
+  } catch (e) {
+    mobileNoIntro = false;
+  }
+  if (mobileNoIntro) {
+    document.documentElement.classList.add("no-site-intro");
+    document.documentElement.classList.remove("intro-resume");
+    intro.setAttribute("aria-hidden", "true");
+    intro.classList.add("is-lifted");
+    body.classList.add("intro-past");
+    body.classList.add("intro-hero-active");
+    return;
+  }
+
   function hasSeenIntro() {
     try {
       return sessionStorage.getItem(INTRO_SEEN_KEY) === "1";
@@ -38,15 +55,67 @@
     } catch (e) {}
   }
 
-  /* Returning to home: land past the curtain (don't replay entry).
-     Intro stays available if the user scrolls back to the top. */
-  var resumePastIntro = hasSeenIntro() && !reduce;
+  function isInternalReturn() {
+    try {
+      if (!document.referrer) return false;
+      var ref = new URL(document.referrer);
+      if (ref.origin !== window.location.origin) return false;
+      var refPath = (ref.pathname || "/").replace(/\/+$/, "") || "/";
+      var here = (location.pathname || "/").replace(/\/+$/, "") || "/";
+      return refPath !== here;
+    } catch (e) {
+      return false;
+    }
+  }
 
+  /* Returning from another page / already seen this session: skip the curtain
+     entirely (same as mobile) — do not rebuild spacers or replay entry. */
+  var resumePastIntro = !reduce && (hasSeenIntro() || isInternalReturn());
   if (resumePastIntro) {
+    markIntroSeen();
+    document.documentElement.classList.add("intro-skipped");
+    document.documentElement.classList.add("intro-resume");
+    document.documentElement.classList.remove("intro-lock");
+    intro.setAttribute("aria-hidden", "true");
+    intro.classList.add("is-lifted");
+    body.classList.add("intro-past");
+    body.classList.add("intro-hero-active");
+    body.classList.add("intro-skipped");
     try {
       if ("scrollRestoration" in history) history.scrollRestoration = "manual";
     } catch (e) {}
+    try {
+      window.scrollTo(0, 0);
+    } catch (e) {}
+    window.requestAnimationFrame(function () {
+      try {
+        document.documentElement.classList.remove("intro-resume");
+      } catch (e) {}
+    });
+    return;
   }
+
+  /* Leaving home for another site page → never show intro again this session */
+  document.addEventListener(
+    "click",
+    function (e) {
+      var a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
+      if (!a) return;
+      var href = a.getAttribute("href") || "";
+      if (!href || href.charAt(0) === "#" || href.indexOf("mailto:") === 0 || href.indexOf("tel:") === 0) return;
+      try {
+        var url = new URL(a.href, window.location.href);
+        if (url.origin !== window.location.origin) return;
+        var next = (url.pathname || "/").replace(/\/+$/, "") || "/";
+        var home =
+          next === "/" ||
+          next === "/index.html" ||
+          next.endsWith("/html/index.html");
+        if (!home) markIntroSeen();
+      } catch (err) {}
+    },
+    true
+  );
 
   /* Kick off the wordmark letter reveal once the first paint is ready */
   if (logos) {
@@ -231,15 +300,6 @@
   window.addEventListener("load", measure, { passive: true });
 
   measure();
-
-  if (resumePastIntro) {
-    markIntroSeen();
-    scrollToY(lead, false);
-    update();
-    try {
-      document.documentElement.classList.remove("intro-resume");
-    } catch (e) {}
-  }
 
   startSync();
 })();

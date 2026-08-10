@@ -14,58 +14,46 @@
       position: relative;
       min-height: 100vh;
       min-height: 100svh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
+      display: grid;
+      place-items: center;
       overflow: hidden;
-      padding: clamp(2rem, 5vw, 4.5rem) 1.5rem;
+      padding: clamp(2rem, 6vh, 4.5rem) clamp(1.25rem, 4vw, 2.5rem);
       background: var(--surface-paper);
       color: var(--ink);
     }
 
-    .nf::before,
-    .nf::after {
+    .nf::before {
       content: "";
       position: absolute;
-      left: clamp(1rem, 4vw, 4rem);
-      right: clamp(1rem, 4vw, 4rem);
-      height: 1px;
-      background: var(--rule-hairline);
+      inset: clamp(0.9rem, 2.2vw, 1.5rem);
+      border: 1px solid var(--rule-hairline);
       pointer-events: none;
     }
-
-    .nf::before { top: clamp(1rem, 3vw, 2rem); }
-    .nf::after { bottom: clamp(1rem, 3vw, 2rem); }
 
     .nf__content {
       position: relative;
       z-index: 1;
       display: flex;
-      width: min(100%, 680px);
+      width: min(100%, 36rem);
       flex-direction: column;
       align-items: center;
+      text-align: center;
     }
 
     .nf__brand {
-      position: relative;
       display: block;
-      width: min(78vw, 520px);
-      height: clamp(72px, 9vw, 104px);
-      margin-bottom: clamp(1.4rem, 3.5vh, 2.5rem);
-      overflow: hidden;
+      width: min(72vw, 28rem);
+      margin: 0 0 clamp(1.8rem, 4.5vh, 2.8rem);
+      line-height: 0;
       opacity: 0;
-      animation: nfReveal 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.08s forwards;
+      transform: translate3d(0, 12px, 0);
+      animation: nfReveal 0.95s cubic-bezier(0.16, 1, 0.3, 1) 0.08s forwards;
     }
 
     .nf__logo {
-      position: absolute;
-      top: 50%;
-      left: 0;
       display: block;
       width: 100%;
       height: auto;
-      transform: translateY(-50%);
     }
 
     .nf__logo--night { display: none; }
@@ -75,78 +63,80 @@
       filter: invert(1) brightness(1.08);
     }
 
-    .nf__code-row {
-      display: flex;
-      width: min(100%, 590px);
+    .nf__mark {
+      display: inline-flex;
       align-items: center;
-      gap: clamp(1rem, 4vw, 2.2rem);
+      gap: 0.85rem;
+      margin: 0;
+      font-family: var(--font-nav, Montserrat, system-ui, sans-serif);
+      font-size: 0.68rem;
+      font-weight: 500;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--accent);
       opacity: 0;
-      animation: nfCodeReveal 1s cubic-bezier(0.16, 1, 0.3, 1) 0.22s forwards;
+      animation: nfReveal 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.22s forwards;
     }
 
-    .nf__code-row::before,
-    .nf__code-row::after {
+    .nf__mark::before,
+    .nf__mark::after {
       content: "";
-      flex: 1 1 auto;
+      width: clamp(1.4rem, 4vw, 2.4rem);
       height: 1px;
       background: var(--accent-muted);
     }
 
-    .nf__code {
-      font-family: var(--font-display);
-      font-size: clamp(6rem, 16vw, 10rem);
-      font-weight: 400;
-      line-height: 0.88;
-      letter-spacing: 0;
-      color: var(--accent);
-      margin: 0;
-    }
-
-    .nf__copy {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      opacity: 0;
-      transform: translate3d(0, 12px, 0);
-      animation: nfReveal 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.42s forwards;
-    }
-
     .nf__title {
-      font-family: var(--font-display);
-      font-size: clamp(1.45rem, 3.4vw, 2rem);
+      margin: 1.05rem 0 0;
+      font-family: var(--font-display, "Playfair Display", Georgia, serif);
+      font-size: clamp(1.7rem, 3.8vw, 2.35rem);
       font-weight: 500;
-      letter-spacing: 0;
-      margin: clamp(1.8rem, 4vh, 2.8rem) 0 0;
+      line-height: 1.15;
+      letter-spacing: 0.01em;
+      color: var(--ink);
+      opacity: 0;
+      transform: translate3d(0, 10px, 0);
+      animation: nfReveal 0.95s cubic-bezier(0.16, 1, 0.3, 1) 0.34s forwards;
     }
 
     .nf__text {
-      max-width: 46ch;
-      margin: 0.9rem 0 0;
-      font-size: clamp(0.98rem, 1.5vw, 1.12rem);
+      max-width: 34ch;
+      margin: 0.95rem 0 0;
+      font-family: var(--font-body, "Cormorant Garamond", Georgia, serif);
+      font-size: clamp(1.05rem, 1.8vw, 1.22rem);
       line-height: 1.7;
       color: var(--ink-muted);
+      opacity: 0;
+      transform: translate3d(0, 10px, 0);
+      animation: nfReveal 0.95s cubic-bezier(0.16, 1, 0.3, 1) 0.46s forwards;
     }
 
-    [data-theme="dark"] .nf__text { color: rgba(240, 232, 218, 0.72); }
+    .nf__actions {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.2rem;
+      margin-top: clamp(1.9rem, 4.5vh, 2.8rem);
+      opacity: 0;
+      transform: translate3d(0, 10px, 0);
+      animation: nfReveal 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.58s forwards;
+    }
 
     .nf__btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 0.8rem;
-      min-height: 52px;
-      margin-top: clamp(1.9rem, 4vh, 2.8rem);
-      padding: 0.9rem 2rem;
-      border: 1px solid rgba(36, 28, 20, 0.42);
-      font-family: var(--font-nav, var(--font-display));
+      gap: 0.75rem;
+      min-height: 3.1rem;
+      padding: 0.85rem 1.9rem;
+      border: 1px solid color-mix(in srgb, var(--ink) 42%, transparent);
+      background: transparent;
+      font-family: var(--font-nav, Montserrat, system-ui, sans-serif);
       font-size: 0.68rem;
       letter-spacing: 0.18em;
       text-transform: uppercase;
       color: var(--ink);
       text-decoration: none;
-      opacity: 0;
-      transform: translate3d(0, 10px, 0);
-      animation: nfReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.62s forwards;
       transition:
         background 0.25s ease,
         color 0.25s ease,
@@ -155,8 +145,6 @@
     }
 
     .nf__btn-arrow {
-      font-size: 1rem;
-      line-height: 1;
       transition: transform 0.25s ease;
     }
 
@@ -165,7 +153,7 @@
       background: var(--ink);
       color: var(--surface-paper);
       border-color: var(--ink);
-      box-shadow: 0 10px 28px rgba(36, 28, 20, 0.12);
+      box-shadow: 0 12px 28px color-mix(in srgb, var(--ink) 12%, transparent);
       outline: none;
     }
 
@@ -174,15 +162,81 @@
       transform: translateX(-3px);
     }
 
-    [data-theme="dark"] .nf__btn {
-      color: rgba(240, 232, 218, 0.9);
-      border-color: rgba(197, 160, 96, 0.42);
+    .nf__links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.85rem 1.15rem;
+      font-family: var(--font-nav, Montserrat, system-ui, sans-serif);
+      font-size: 0.8rem;
+      letter-spacing: 0.03em;
     }
+
+    .nf__links a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      color: var(--ink-muted);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .nf__links a:hover,
+    .nf__links a:focus-visible {
+      color: var(--accent);
+      outline: none;
+    }
+
+    .nf__links a:hover .nf__link-icon,
+    .nf__links a:focus-visible .nf__link-icon {
+      border-color: color-mix(in srgb, var(--accent) 55%, var(--rule-hairline));
+      background: color-mix(in srgb, var(--accent) 10%, transparent);
+      color: var(--accent);
+    }
+
+    .nf__links a:hover span:last-child,
+    .nf__links a:focus-visible span:last-child {
+      border-bottom-color: currentColor;
+    }
+
+    .nf__link-icon {
+      display: grid;
+      place-items: center;
+      width: 2rem;
+      height: 2rem;
+      flex: 0 0 auto;
+      border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--rule-hairline));
+      border-radius: 50%;
+      color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 6%, transparent);
+      transition:
+        border-color 0.2s ease,
+        background 0.2s ease,
+        color 0.2s ease;
+    }
+
+    .nf__link-icon svg {
+      width: 0.95rem;
+      height: 0.95rem;
+    }
+
+    .nf__links a > span:last-child {
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s ease;
+      padding-bottom: 1px;
+    }
+
+    [data-theme="dark"] .nf__btn {
+      border-color: color-mix(in srgb, var(--accent) 48%, transparent);
+      color: var(--ink);
+    }
+
     [data-theme="dark"] .nf__btn:hover,
     [data-theme="dark"] .nf__btn:focus-visible {
       background: var(--accent);
       color: #0a0908;
       border-color: var(--accent);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
     }
 
     @keyframes nfReveal {
@@ -192,39 +246,22 @@
       }
     }
 
-    @keyframes nfCodeReveal {
-      from {
-        opacity: 0;
-        transform: scale(0.96);
-      }
-      to {
-        opacity: 1;
-        transform: scale(1);
-      }
-    }
-
     @media (max-height: 700px) {
-      .nf {
-        padding-top: 2.5rem;
-        padding-bottom: 2.5rem;
-      }
-
       .nf__brand {
-        width: min(68vw, 430px);
-        height: 70px;
-        margin-bottom: 1.2rem;
+        width: min(64vw, 22rem);
+        margin-bottom: 1.25rem;
       }
 
-      .nf__code { font-size: clamp(5rem, 16vh, 7.5rem); }
-      .nf__title { margin-top: 1.4rem; }
-      .nf__btn { margin-top: 1.5rem; }
+      .nf__title { font-size: clamp(1.45rem, 4vw, 1.85rem); }
+      .nf__actions { margin-top: 1.4rem; }
     }
 
     @media (prefers-reduced-motion: reduce) {
       .nf__brand,
-      .nf__code-row,
-      .nf__copy,
-      .nf__btn {
+      .nf__mark,
+      .nf__title,
+      .nf__text,
+      .nf__actions {
         animation: none;
         opacity: 1;
         transform: none;
@@ -240,7 +277,7 @@
           class="nf__logo nf__logo--paper"
           src="images/home-photo-beforemenu/photo3-logo-transparent-480w.webp?v=1"
           srcset="images/home-photo-beforemenu/photo3-logo-transparent-480w.webp?v=1 480w, images/home-photo-beforemenu/photo3-logo-transparent-960w.webp?v=1 960w"
-          sizes="min(78vw, 520px)"
+          sizes="min(72vw, 28rem)"
           width="1566"
           height="522"
           alt="Nostalgia Candle"
@@ -249,25 +286,39 @@
           class="nf__logo nf__logo--night"
           src="images/home-photo-beforemenu/photo1-logo-transparent-480w.webp?v=1"
           srcset="images/home-photo-beforemenu/photo1-logo-transparent-480w.webp?v=1 480w, images/home-photo-beforemenu/photo1-logo-transparent-960w.webp?v=1 960w"
-          sizes="min(78vw, 520px)"
+          sizes="min(72vw, 28rem)"
           width="1562"
           height="516"
           alt=""
         />
       </a>
-      <div class="nf__code-row" aria-hidden="true">
-        <p class="nf__code">404</p>
+
+      <p class="nf__mark" aria-hidden="true">404</p>
+      <h1 class="nf__title" id="nf-title">Η σελίδα δεν βρέθηκε</h1>
+      <p class="nf__text" id="nf-text">
+        Η σελίδα που ψάχνεις δεν υπάρχει ή έχει μετακινηθεί. Επίστρεψε στην αρχική για να συνεχίσεις την περιήγηση.
+      </p>
+
+      <div class="nf__actions">
+        <a class="nf__btn" href="/" id="nf-btn">
+          <svg class="nf__btn-arrow" viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="m12.5 4.5-5.5 5.5 5.5 5.5M7.5 10H17"/></svg>
+          <span id="nf-btn-label">Επιστροφή στην αρχική</span>
+        </a>
+        <nav class="nf__links" aria-label="Χρήσιμοι σύνδεσμοι">
+          <a href="/collection">
+            <span class="nf__link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8l2 4H6l2-4z"/><path d="M6 8h12v11a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V8z"/><path d="M12 12v4"/><path d="M10.5 14.5c.5-.8 1.5-.8 2 0"/></svg></span>
+            <span id="nf-collection">Η συλλογή</span>
+          </a>
+          <a href="/scent-finder">
+            <span class="nf__link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="m16.2 16.2 3.3 3.3"/><path d="M11 8.2c1.2 0 2.2.8 2.5 1.8"/></svg></span>
+            <span id="nf-scent">Εύρεση αρώματος</span>
+          </a>
+          <a href="/contact">
+            <span class="nf__link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="m4 7 8 6 8-6"/></svg></span>
+            <span id="nf-contact">Επικοινωνία</span>
+          </a>
+        </nav>
       </div>
-      <div class="nf__copy">
-        <h1 class="nf__title" id="nf-title">Η σελίδα δεν βρέθηκε</h1>
-        <p class="nf__text" id="nf-text">
-          Η σελίδα που ψάχνεις δεν υπάρχει ή έχει μετακινηθεί. Επίστρεψε στην αρχική για να συνεχίσεις την περιήγηση.
-        </p>
-      </div>
-      <a class="nf__btn" href="/" id="nf-btn">
-        <span class="nf__btn-arrow" aria-hidden="true">←</span>
-        <span id="nf-btn-label">Επιστροφή στην αρχική</span>
-      </a>
     </div>
   </main>
 
@@ -281,6 +332,9 @@
           document.getElementById("nf-text").textContent =
             "The page you are looking for doesn't exist or has moved. Head back to the home page to keep browsing.";
           document.getElementById("nf-btn-label").textContent = "Back to home";
+          document.getElementById("nf-collection").textContent = "The collection";
+          document.getElementById("nf-scent").textContent = "Find your scent";
+          document.getElementById("nf-contact").textContent = "Contact";
           document.title = "Nostalgia Collection · 404";
         }
       } catch (e) {}

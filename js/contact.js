@@ -11,6 +11,17 @@
     var form = document.getElementById("contact-email-form");
     if (!form) return;
     var statusEl = document.getElementById("contact-form-status");
+    var uploadText = document.getElementById("contact-upload-text");
+    var attachmentInput = form.elements.attachment;
+    function defaultUploadText() {
+      return document.documentElement.lang === "en" ? "Choose a file" : "Επιλέξτε αρχείο";
+    }
+    function syncUploadText() {
+      var selected = attachmentInput && attachmentInput.files && attachmentInput.files[0];
+      if (uploadText) uploadText.textContent = selected ? selected.name : defaultUploadText();
+    }
+    if (attachmentInput) attachmentInput.addEventListener("change", syncUploadText);
+    document.addEventListener("nostalgia:languagechange", syncUploadText);
     var captcha = window.NostalgiaCaptcha
       ? window.NostalgiaCaptcha.mount(document.getElementById("contact-captcha"))
       : null;
@@ -116,6 +127,7 @@
         }).then(function (res) {
           if (res.ok) {
             form.reset();
+            syncUploadText();
             if (window.NostalgiaCaptcha) window.NostalgiaCaptcha.reset(captcha);
             if (statusEl) {
               statusEl.textContent =

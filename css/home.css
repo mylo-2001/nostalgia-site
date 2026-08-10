@@ -3706,6 +3706,12 @@
   transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
+/* Author `display:inline-flex` must not override the hidden attribute,
+   or disabled/no-op arrows stay visible and steal attention. */
+.home-collections__carousel-nav[hidden] {
+  display: none !important;
+}
+
 .home-collections__carousel-nav span {
   display: block;
   font-size: 1.35rem;

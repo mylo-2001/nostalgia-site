@@ -19,6 +19,7 @@ const PAGES = [
   "checkout",
   "wishlist",
   "faq",
+  "how-it-works",
   "journal",
   "scent-finder",
   "gift-experience",

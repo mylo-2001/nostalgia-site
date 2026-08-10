@@ -158,6 +158,7 @@
       '      <ul class="site-footer__list">' +
       "        <li><a href=\"/account\" data-i18n=\"account_my_account\">" + t("account_my_account") + "</a></li>" +
       '        <li><a href="/wishlist" data-i18n="footer_wishlist">' + t("footer_wishlist") + "</a></li>" +
+      '        <li><a href="/how-it-works" data-i18n="footer_how_it_works">' + t("footer_how_it_works") + "</a></li>" +
       '        <li><a href="/shipping-returns" data-i18n="footer_shipping_returns">' + t("footer_shipping_returns") + "</a></li>" +
       '        <li><a href="/payments" data-i18n="footer_payments">' + t("footer_payments") + "</a></li>" +
       '        <li><a href="/faq" data-i18n="footer_faq">' + t("footer_faq") + "</a></li>" +

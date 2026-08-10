@@ -18,7 +18,7 @@
     if (w <= 640) return 1;
     if (w <= 780) return 2;
     if (w <= 1080) return 3;
-    return 5;
+    return 4;
   }
 
   function perViewDuo(w) {

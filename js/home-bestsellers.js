@@ -14,7 +14,7 @@
    * quick "add to cart" button, plus links through to the product page.
    */
 
-  var LIMIT = 5;
+  var LIMIT = 8;
   var gridEl;
   var sectionEl;
   var bestSellerIds = null; // filled from the backend once fetched

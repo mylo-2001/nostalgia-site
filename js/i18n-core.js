@@ -105,6 +105,7 @@ window.NostalgiaI18nRegister = function (bundle) {
       faq: "meta_title_faq",
       shipping: "meta_title_shipping",
       payments: "meta_title_payments",
+      "how-it-works": "meta_title_how_it_works",
       terms: "meta_title_terms",
       journal: "meta_title_journal",
       "scent-finder": "meta_title_scent_finder",

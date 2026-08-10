@@ -347,6 +347,7 @@ const SITEMAP_PAGES = [
   { slug: "about", priority: "0.7" },
   { slug: "contact", priority: "0.7" },
   { slug: "faq", priority: "0.7" },
+  { slug: "how-it-works", priority: "0.7" },
   { slug: "journal", priority: "0.7" },
   { slug: "shipping-returns", priority: "0.7" },
   { slug: "payments", priority: "0.7" },

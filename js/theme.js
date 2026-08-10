@@ -239,7 +239,7 @@
     }
     if (document.querySelector('script[data-site-chrome="1"]')) return;
     var script = document.createElement("script");
-    script.src = "js/site-chrome.js?v=promise-icons-1";
+    script.src = "js/site-chrome.js?v=how-it-works1";
     script.async = false;
     script.setAttribute("data-site-chrome", "1");
     script.onload = function () {

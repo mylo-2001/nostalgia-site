@@ -255,14 +255,34 @@
 .home-bestsellers__carousel {
   --carousel-gap: clamp(0.85rem, 1.8vw, 1.4rem);
   margin-top: 0.35rem;
+  /* Keep nav outside the card hit-area so clicks don't land on products. */
+  gap: 0.85rem 0.65rem;
 }
 
 .home-bestsellers__carousel .home-bestsellers__grid {
   gap: var(--carousel-gap);
 }
 
+.home-bestsellers__carousel .home-collections__carousel-nav {
+  position: relative;
+  z-index: 6;
+  flex-shrink: 0;
+  width: 2.85rem;
+  height: 2.85rem;
+  min-width: 44px;
+  min-height: 44px;
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(36, 28, 20, 0.22);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.16);
+}
+
+.home-bestsellers__carousel .home-collections__carousel-nav:not(:disabled):hover {
+  background: #fff;
+  color: var(--accent);
+}
+
 .home-bestsellers__carousel .bestseller-card {
-  flex: 0 0 calc((100% - 4 * var(--carousel-gap)) / 5);
+  flex: 0 0 calc((100% - 3 * var(--carousel-gap)) / 4);
   min-width: 0;
   max-width: none;
 }

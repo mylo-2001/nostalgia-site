@@ -1806,6 +1806,10 @@
     document.querySelectorAll("[data-newsletter-open]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         if (window.NostalgiaSideNav) window.NostalgiaSideNav.close();
+        if (window.NostalgiaWelcomeOffer && typeof window.NostalgiaWelcomeOffer.open === "function") {
+          window.NostalgiaWelcomeOffer.open();
+          return;
+        }
         openNewsletter();
       });
     });

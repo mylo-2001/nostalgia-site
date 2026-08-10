@@ -714,6 +714,11 @@
     figure._zoomBound = true;
     var ZOOM = 2.3;
     main.addEventListener("mousemove", function (e) {
+      /* Keep loupe off nav hit-targets so arrows stay clickable. */
+      if (e.target && e.target.closest && e.target.closest(".product-gallery__nav")) {
+        lens.classList.remove("is-active");
+        return;
+      }
       var rect = img.getBoundingClientRect();
       if (!rect.width || !rect.height) return;
       var x = e.clientX - rect.left;
@@ -759,12 +764,14 @@
         ? '<span class="product-sale-badge">-' + window.NostalgiaProducts.discountPercent(product) + "%</span>"
         : "";
     var html =
+      '<div class="product-gallery__stage">' +
       '<div class="product-gallery__main" id="product-gallery-main">' +
       saleTag +
       '<img class="product-gallery__img" id="product-gallery-img" src="' +
       escapeHtml(galleryWebp(imgs[0], 960)) +
       '" alt="' + alt + '" fetchpriority="high" decoding="async" />' +
       '<div class="product-zoom-lens" id="product-zoom-lens" aria-hidden="true"></div>' +
+      "</div>" +
       arrows +
       "</div>";
     if (multi) {

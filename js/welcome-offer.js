@@ -312,7 +312,11 @@
   }
 
   function open() {
-    if (document.getElementById("welcome-offer")) return;
+    var existing = document.getElementById("welcome-offer");
+    if (existing) {
+      existing.classList.add("is-open");
+      return;
+    }
     var host = document.createElement("div");
     host.id = "welcome-offer";
     host.className = "welcome-offer";
@@ -372,6 +376,18 @@
     schedule();
   }
 
-  /* Exposed so a "get 10% off" link anywhere can reopen it. */
+  /* Exposed so a "get 10% off" / newsletter CTA anywhere can reopen it. */
   window.NostalgiaWelcomeOffer = { open: open, close: close };
+
+  document.addEventListener("click", function (e) {
+    var trigger = e.target && e.target.closest
+      ? e.target.closest("[data-welcome-offer-open]")
+      : null;
+    if (!trigger) return;
+    e.preventDefault();
+    if (window.NostalgiaSideNav && typeof window.NostalgiaSideNav.close === "function") {
+      window.NostalgiaSideNav.close();
+    }
+    open();
+  });
 })();

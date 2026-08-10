@@ -1953,6 +1953,13 @@ body.cart-modal-open {
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16);
 }
 
+/* Stage keeps arrows beside the photo (not over it) so the loupe
+   does not steal hover/clicks from prev/next. */
+.product-gallery__stage {
+  position: relative;
+  padding: 0 2.65rem;
+}
+
 .product-gallery__main {
   position: relative;
   overflow: hidden;
@@ -1979,27 +1986,27 @@ body.cart-modal-open {
   padding: 0;
   border: none;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   color: #2b2b2b;
   cursor: pointer;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
-  opacity: 0.9;
-  transition: opacity 0.25s ease, background 0.25s ease, color 0.25s ease;
-  z-index: 2;
+  opacity: 1;
+  transition: background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+  z-index: 8;
 }
 
 .product-gallery__nav:hover {
-  opacity: 1;
   background: #fff;
   color: var(--accent);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
 }
 
 .product-gallery__nav--prev {
-  left: 0.6rem;
+  left: 0.15rem;
 }
 
 .product-gallery__nav--next {
-  right: 0.6rem;
+  right: 0.15rem;
 }
 
 .product-gallery__nav svg {
@@ -5443,6 +5450,10 @@ body.cart-modal-open {
     padding: 0.55rem 0.35rem;
     margin-left: 0;
     font-size: 0.82rem;
+  }
+
+  .product-gallery__stage {
+    padding: 0 2.35rem;
   }
 
   .product-gallery__nav {

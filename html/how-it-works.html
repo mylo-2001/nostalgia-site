@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="images/logo/logo.png" type="image/png" />
+  <title>Nostalgia Collection · Πώς γίνεται η παραγγελία</title>
+  <meta name="description" content="Ροές Nostalgia: παραγγελία, λογαριασμός, newsletter και εύρεση δώρου — με animated διάγραμμα από την αρχή έως το τέλος." />
+  <link rel="stylesheet" href="css/fonts.css?v=1" />
+  <link rel="stylesheet" href="css/base.css?v=mobile-fix1" />
+  <link rel="stylesheet" href="css/side-nav.css?v=menu-visual3" />
+  <link rel="stylesheet" href="css/legal.css?v=cookie-necessary1" />
+  <link rel="stylesheet" href="css/page-hero.css?v=1" />
+  <link rel="stylesheet" href="css/shop.css?v=qty-contrast1" />
+  <link rel="stylesheet" href="css/order-flow.css?v=7" />
+  <script src="js/theme-boot.js"></script>
+</head>
+<body data-page="how-it-works">
+  <div class="page-wrap">
+    <header class="site-header">
+      <nav class="site-header__bar" data-i18n-aria="nav_aria">
+        <div class="mobile-nav-panel" id="mobile-nav-panel">
+          <div class="site-nav site-nav--left">
+            <a href="/" data-i18n="nav_home">Αρχική</a>
+            <a href="/collection" data-i18n="nav_collection">Συλλογή</a>
+          </div>
+          <a class="site-header__logo site-header__logo--pulse" href="/" data-i18n-aria="logo_aria">
+            <img class="brand-logo brand-logo--dark" src="images/logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
+            <img class="brand-logo brand-logo--light" src="images/logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
+          </a>
+          <div class="site-nav site-nav--right">
+            <a href="/about" data-i18n="nav_about">Σχετικά</a>
+            <a href="/contact" data-i18n="nav_contact">Επικοινωνία</a>
+            <button type="button" class="lang-toggle" id="lang-toggle">English</button>
+            <button type="button" class="theme-toggle" id="theme-toggle"></button>
+          </div>
+        </div>
+        <a class="site-header__logo site-header__logo--topbar" href="/" data-i18n-aria="logo_aria">
+          <img class="brand-logo brand-logo--dark" src="images/logo/logo.png" width="200" height="58" alt="Nostalgia Collection" />
+          <img class="brand-logo brand-logo--light" src="images/logo/logo%20light.png?v=2" width="200" height="58" alt="Nostalgia Collection" />
+        </a>
+        <button class="mobile-nav-toggle" type="button" aria-controls="mobile-nav-panel" aria-expanded="false" aria-label="Open navigation"><span></span><span></span><span></span></button>
+      </nav>
+    </header>
+
+    <main>
+      <section class="editorial-hero">
+        <figure class="editorial-hero__figure">
+          <div class="editorial-hero__zoom is-animating">
+            <picture>
+              <source
+                type="image/webp"
+                srcset="images/collections-hero/how-work-hero-480w.webp 480w, images/collections-hero/how-work-hero-960w.webp 960w, images/collections-hero/how-work-hero-1440w.webp 1440w"
+                sizes="100vw"
+              />
+              <img
+                class="editorial-hero__img"
+                src="images/collections-hero/how-work-hero.webp"
+                alt=""
+                width="1357"
+                height="766"
+                loading="eager"
+                decoding="async"
+                fetchpriority="high"
+              />
+            </picture>
+          </div>
+          <div class="editorial-hero__overlay" aria-hidden="true"></div>
+        </figure>
+        <div class="editorial-hero__inner">
+          <header class="editorial-hero__head">
+            <h1 class="editorial-hero__title" data-i18n="of_hero_title">Από την επιλογή έως την πόρτα σας</h1>
+          </header>
+        </div>
+      </section>
+
+      <section class="order-flow-page" aria-labelledby="order-flow-heading">
+        <div class="order-flow-page__inner">
+          <div class="order-flow-page__intro">
+            <p class="order-flow-page__eyebrow" data-of-eyebrow data-i18n="of_eyebrow">Ροή παραγγελίας</p>
+            <h2 id="order-flow-heading" class="order-flow-page__title" data-i18n="of_title">Πώς γίνεται η παραγγελία</h2>
+            <p class="order-flow-page__lead" data-of-lead data-i18n="of_lead">
+              Όλη η διαδρομή στο site — από την επιλογή προϊόντος μέχρι την πληρωμή, το email επιβεβαίωσης, το tracking και την παράδοση.
+            </p>
+          </div>
+
+          <div class="order-flow" id="order-flow" data-journey="order" data-mode="both">
+            <div class="order-flow__modes" data-order-submodes role="tablist" aria-label="Διαδρομές παραγγελίας">
+              <button type="button" class="order-flow__mode is-active" data-flow-mode="both" role="tab" aria-selected="true" data-i18n="of_mode_both">Όλη η ροή</button>
+              <button type="button" class="order-flow__mode" data-flow-mode="cart" role="tab" aria-selected="false" data-i18n="of_mode_cart">Μέσω καλαθιού</button>
+              <button type="button" class="order-flow__mode" data-flow-mode="wish" role="tab" aria-selected="false" data-i18n="of_mode_wish">Μέσω αγαπημένων</button>
+            </div>
+
+            <div class="order-flow__stage" data-flow-stage></div>
+            <div data-flow-ctas></div>
+
+            <aside class="order-flow__more">
+              <p class="order-flow__more-label" data-i18n="of_more_label">Επίσης μπορείτε να δείτε</p>
+              <div class="order-flow__journeys" role="tablist" aria-label="Άλλες διαδρομές">
+                <button type="button" class="order-flow__journey is-active" data-journey="order" role="tab" aria-selected="true" data-i18n="of_journey_order">Παραγγελία</button>
+                <button type="button" class="order-flow__journey" data-journey="account" role="tab" aria-selected="false" data-i18n="of_journey_account">Λογαριασμός</button>
+                <button type="button" class="order-flow__journey" data-journey="newsletter" role="tab" aria-selected="false" data-i18n="of_journey_newsletter">Newsletter</button>
+                <button type="button" class="order-flow__journey" data-journey="gift" role="tab" aria-selected="false" data-i18n="of_journey_gift">Εύρεση δώρου</button>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer"></footer>
+  </div>
+
+  <script defer src="js/api.js?v=1"></script>
+  <script defer src="js/europe-countries.js"></script>
+  <script defer src="js/images.js?v=4"></script>
+  <script defer src="js/i18n-bundles/shared.js?v=of2"></script>
+  <script defer src="js/i18n-bundles/content.js?v=of4"></script>
+  <script defer src="js/i18n-core.js?v=of4"></script>
+  <script defer src="js/cookies.js?v=cookie-necessary1"></script>
+  <script src="js/tracking.js?v=1" defer></script>
+  <script src="js/welcome-offer.js?v=3" defer></script>
+  <script defer src="js/products.js"></script>
+  <script defer src="js/side-nav.js?v=cat10"></script>
+  <script defer src="js/cart.js"></script>
+  <script defer src="js/account.js"></script>
+  <script defer src="js/breadcrumbs.js?v=of1"></script>
+  <script defer src="js/order-flow.js?v=8"></script>
+  <script defer src="js/theme.js?v=btt-intro1"></script>
+  <script defer src="js/header-scroll.js"></script>
+</body>
+</html>

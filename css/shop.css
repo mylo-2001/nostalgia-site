@@ -4690,23 +4690,73 @@ body.cart-modal-open {
 .checkout-place-autocomplete {
   display: block;
   width: 100%;
-  color-scheme: light dark;
+  max-width: 100%;
+  min-height: 0;
+  height: calc(1.35em + 1.44rem + 2px);
+  color-scheme: light;
   font-family: var(--font-body);
   font-size: 1rem;
+  line-height: 1.35;
   color: var(--ink);
-  --gmp-mat-color-surface: var(--surface-paper);
+  --gmp-mat-color-surface: var(--surface-canvas, var(--surface-paper));
   --gmp-mat-color-on-surface: var(--ink);
-  --gmp-mat-color-primary: var(--accent);
+  --gmp-mat-color-on-surface-variant: var(--ink-muted);
+  --gmp-mat-color-primary: var(--accent, #c5a060);
+  --gmp-mat-color-outline: var(--rule-strong);
+  --gmp-mat-color-outline-variant: var(--rule-strong);
+  --gmp-mat-focus-state-layer-color: var(--accent, #c5a060);
+  --gmp-mat-focus-state-layer-opacity: 0.16;
+  --md-sys-color-primary: var(--accent, #c5a060);
+  --md-focus-ring-color: var(--accent, #c5a060);
+  --md-outlined-text-field-focus-outline-color: var(--accent, #c5a060);
+  --md-outlined-text-field-hover-outline-color: var(--accent, #c5a060);
+  --md-outlined-text-field-outline-color: var(--rule-strong);
+  --md-outlined-text-field-container-shape: 2px;
+  --md-outlined-text-field-container-height: calc(1.35em + 1.44rem + 2px);
+  --md-outlined-text-field-top-space: 0.72rem;
+  --md-outlined-text-field-bottom-space: 0.72rem;
+}
+
+.checkout-place-autocomplete:focus,
+.checkout-place-autocomplete:focus-visible,
+.checkout-place-autocomplete:focus-within {
+  outline: none;
 }
 
 .checkout-place-autocomplete::part(input) {
-  min-height: 2.9rem;
-  padding: 0.75rem 0.85rem;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 0;
+  height: 100%;
+  margin: 0;
+  padding: 0.72rem 0.85rem;
   border: 1px solid var(--rule-strong);
   border-radius: 2px;
-  background: var(--surface-paper);
+  background: var(--surface-canvas, var(--surface-paper));
   color: var(--ink);
   font: inherit;
+  line-height: 1.35;
+  outline: none !important;
+  box-shadow: none !important;
+  caret-color: var(--accent, #c5a060);
+}
+
+.checkout-place-autocomplete::part(input):focus,
+.checkout-place-autocomplete::part(input):focus-visible {
+  outline: 2px solid rgba(197, 160, 96, 0.45) !important;
+  outline-offset: 0;
+  border-color: var(--accent, #c5a060) !important;
+  box-shadow: none !important;
+}
+
+.checkout-page--editorial .checkout-place-autocomplete::part(input):focus,
+.checkout-page--editorial .checkout-place-autocomplete::part(input):focus-visible,
+body[data-page="checkout"] .checkout-place-autocomplete::part(input):focus,
+body[data-page="checkout"] .checkout-place-autocomplete::part(input):focus-visible {
+  outline: 2px solid var(--accent, #c5a060) !important;
+  outline-offset: 2px;
+  border-color: var(--accent, #c5a060) !important;
+  box-shadow: none !important;
 }
 
 .checkout-street-source {

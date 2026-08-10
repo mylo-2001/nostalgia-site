@@ -14,7 +14,9 @@ module.exports = async function handler(req, res) {
       res.end(
         "Server error: " +
           (err && err.message ? err.message : String(err)) +
-          "\n\nCheck Vercel env vars (DATABASE_URL, SESSION_SECRET, SITE_URL)."
+          (err && /deadlock|EMAXCONN|timeout/i.test(String(err.message || ""))
+            ? "\n\nTemporary database contention — refresh in a few seconds."
+            : "\n\nCheck Vercel env vars (DATABASE_URL, SESSION_SECRET, SITE_URL).")
       );
     }
   }

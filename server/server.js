@@ -5420,11 +5420,18 @@ let initializationPromise = null;
 function initialize() {
   if (!initializationPromise) {
     initializationPromise = (async () => {
-      await db.init();
-      await ensureSecret();
-      await ensureAdmin();
-      if (mailer.emailConfigured()) {
-        processQueuedCampaigns(10).catch((error) => console.error("[marketing-campaign] startup recovery failed:", error.message));
+      try {
+        await db.init();
+        await ensureSecret();
+        await ensureAdmin();
+        if (mailer.emailConfigured()) {
+          processQueuedCampaigns(10).catch((error) => console.error("[marketing-campaign] startup recovery failed:", error.message));
+        }
+      } catch (error) {
+        /* Allow the next request to retry instead of sticky-failing this
+           serverless isolate after a transient DB deadlock/timeout. */
+        initializationPromise = null;
+        throw error;
       }
     })();
   }

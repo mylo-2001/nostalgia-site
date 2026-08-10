@@ -431,9 +431,44 @@ async function init() {
     }
     readPool = new Pool(readPoolOpts);
   }
-  await q(SCHEMA);
+  await applyBootstrapSchema();
   await seedDefaultStock();
   await importLegacyJson();
+}
+
+/* On Vercel, many cold starts hit / (and favicon/health) at once. Each runs
+   CREATE TABLE/INDEX IF NOT EXISTS. Concurrent DDL on the same relations
+   deadlocks in Postgres (40P01) and the whole site returns 500. One advisory
+   lock serializes bootstrap; short retries cover the rare race that remains. */
+async function applyBootstrapSchema() {
+  const lockKey = 87231405; /* stable int — nostalgia bootstrap schema */
+  const maxAttempts = 5;
+  let lastError = null;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query("SELECT pg_advisory_xact_lock($1)", [lockKey]);
+      await client.query(SCHEMA);
+      await client.query("COMMIT");
+      return;
+    } catch (error) {
+      try {
+        await client.query("ROLLBACK");
+      } catch (_) {}
+      lastError = error;
+      const code = error && error.code;
+      const msg = String((error && error.message) || "");
+      const isDeadlock = code === "40P01" || /deadlock detected/i.test(msg);
+      if (!isDeadlock || attempt === maxAttempts) throw error;
+      await new Promise(function (resolve) {
+        setTimeout(resolve, 80 * attempt + Math.floor(Math.random() * 120));
+      });
+    } finally {
+      client.release();
+    }
+  }
+  throw lastError || new Error("schema_bootstrap_failed");
 }
 
 /* ---------- settings ---------- */

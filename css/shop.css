@@ -434,6 +434,7 @@ body.has-side-nav .site-header__tools .site-header__corner {
   border-radius: 50%;
   background: transparent;
   color: inherit;
+  -webkit-text-fill-color: currentColor;
   font-size: 1.15rem;
   line-height: 1;
   cursor: pointer;
@@ -449,6 +450,8 @@ body.has-side-nav .site-header__tools .site-header__corner {
   border: none;
   background: transparent;
   color: inherit;
+  -webkit-text-fill-color: currentColor;
+  caret-color: currentColor;
   font-family: var(--font-nav);
   font-size: 0.95rem;
   font-weight: 600;
@@ -467,6 +470,18 @@ body.has-side-nav .site-header__tools .site-header__corner {
 .qty-stepper--compact {
   min-width: 6.5rem;
   height: 2.35rem;
+}
+
+/* Drawer uses the solid CTA pill — keep contrast explicit for iOS Safari. */
+.cart-drawer .qty-stepper {
+  color: var(--shop-cta-text);
+}
+
+.cart-drawer .qty-stepper__btn,
+.cart-drawer .qty-stepper__input {
+  color: var(--shop-cta-text);
+  -webkit-text-fill-color: var(--shop-cta-text);
+  caret-color: var(--shop-cta-text);
 }
 
 /* Cart drawer — Trudon-style, slide από δεξιά */
@@ -1039,6 +1054,8 @@ body.cart-modal-open {
 .cart-page--editorial .qty-stepper--cart .qty-stepper__btn,
 .cart-page--editorial .qty-stepper--cart .qty-stepper__input {
   color: var(--ink);
+  -webkit-text-fill-color: var(--ink);
+  caret-color: var(--ink);
 }
 
 .cart-page--editorial .qty-stepper--cart .qty-stepper__btn:hover {
@@ -1622,9 +1639,24 @@ body.cart-modal-open {
     color: var(--ink);
   }
 
-  .product-page .qty-stepper__btn,
-  .product-page .qty-stepper__input {
+  .product-page .product-info__actions-row .qty-stepper__btn,
+  .product-page .product-info__actions-row .qty-stepper__input {
     color: var(--ink);
+    -webkit-text-fill-color: var(--ink);
+  }
+
+  /* Qty row keeps the solid CTA pill — keep contrasting text on mobile.
+     A previous rule painted ALL product qty inputs with --ink and made the
+     number invisible (black-on-black in light, low-contrast in dark). */
+  .product-page .product-info__qty-row .qty-stepper {
+    color: var(--shop-cta-text);
+  }
+
+  .product-page .product-info__qty-row .qty-stepper__btn,
+  .product-page .product-info__qty-row .qty-stepper__input {
+    color: var(--shop-cta-text);
+    -webkit-text-fill-color: var(--shop-cta-text);
+    caret-color: var(--shop-cta-text);
   }
 
   .product-page .product-info__actions-row .btn-shop--primary {

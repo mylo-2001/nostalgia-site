@@ -433,6 +433,9 @@
     var salePrice = v.price != null
       ? (v.salePrice != null ? v.salePrice : null)
       : (base.salePrice != null ? base.salePrice : null);
+    var priorPrice = v.price != null
+      ? (v.priorPrice != null ? v.priorPrice : null)
+      : (base.priorPrice != null ? base.priorPrice : null);
     var label = variantColorLabel(v);
     return Object.assign({}, base, {
       id: v.id,
@@ -446,6 +449,7 @@
       images: imgs,
       price: price,
       salePrice: salePrice,
+      priorPrice: priorPrice,
       stock: v.stock != null ? v.stock : null,
       limited: v.stock != null,
       sku: v.sku || "",
@@ -476,6 +480,7 @@
           }
           if (def.price != null) p.price = def.price;
           if (def.salePrice != null) p.salePrice = def.salePrice;
+          p.priorPrice = def.priorPrice != null ? def.priorPrice : null;
           if (def.stock != null) { p.stock = def.stock; p.limited = true; }
         }
       } else {
@@ -546,6 +551,13 @@
         }
       });
     }
+    if (data.priorPrices) {
+      catalog.forEach(function (p) {
+        if (!p.custom) {
+          p.priorPrice = data.priorPrices[p.id] != null ? data.priorPrices[p.id] : null;
+        }
+      });
+    }
     if (data.stock) {
       applyServerStock(data.stock);
     }
@@ -587,6 +599,7 @@
         descriptionEn: sp.descriptionEn || "",
         price: sp.price != null ? sp.price : null,
         salePrice: sp.salePrice != null ? sp.salePrice : null,
+        priorPrice: sp.priorPrice != null ? sp.priorPrice : null,
         createdAt: sp.createdAt || null,
         scent: CAT_SCENT[sp.catId] || null,
         custom: true,
@@ -642,7 +655,9 @@
 
   function discountPercent(p) {
     if (!isOnSale(p)) return 0;
-    return Math.round((1 - Number(p.salePrice) / Number(p.price)) * 100);
+    var reference = p.priorPrice != null ? Number(p.priorPrice) : Number(p.price);
+    if (!(reference > Number(p.salePrice))) return 0;
+    return Math.round((1 - Number(p.salePrice) / reference) * 100);
   }
 
   /* The price actually charged: sale price when on sale, else regular. */
@@ -663,7 +678,7 @@
 
   function getOnSale() {
     refreshTitles();
-    return catalog.filter(isOnSale).sort(function (a, b) {
+    return catalog.filter(function (p) { return discountPercent(p) > 0; }).sort(function (a, b) {
       return discountPercent(b) - discountPercent(a);
     });
   }

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
 import { ProductContentEditor } from "../components/ProductContentEditor";
 import { ProductVariants } from "../components/ProductVariants";
+import { PriceHistory } from "../components/PriceHistory";
 import type { AdminProduct } from "../types/product";
 import { money } from "../lib/format";
 
@@ -90,6 +91,7 @@ function ProductRow({ p, onSaved }: { p: AdminProduct; onSaved: () => void }) {
       </div>
       {contentOpen ? <ProductContentEditor product={p} onSaved={onSaved} /> : null}
       {variantsOpen ? <ProductVariants product={p} onChanged={onSaved} /> : null}
+      <PriceHistory itemId={p.id} />
     </div>
   );
 }

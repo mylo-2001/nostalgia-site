@@ -48,7 +48,7 @@ const { createAdminDatabaseSession, recordAdminLoginEvent, revokeAdminSession } 
   require("./services/admin-session-service");
 const { createV2Router } = require("./routes/v2-router");
 const { StripePaymentProvider } = require("./payments/stripe-provider");
-const { processPaymentWebhook } = require("./services/payment-service");
+const { getOrderPaymentStatus, processPaymentWebhook } = require("./services/payment-service");
 const { processRefundWebhook } = require("./services/return-refund-service");
 const { expireInventoryReservations } = require("./services/inventory-service");
 const { processNotificationBatch } = require("./services/notification-outbox-service");
@@ -247,7 +247,12 @@ app.use((req, res, next) => {
   return jsonSmall(req, res, next);
 });
 app.use(security.checkApiOrigin);
-app.use("/api/v2", createV2Router({ getPool: () => db.getPool(), getStripe }));
+app.use("/api/v2", createV2Router({
+  getPool: () => db.getPool(),
+  getStripe,
+  worldlinePaymentsEnabled,
+  acs,
+}));
 
 /* ---------- helpers ---------- */
 
@@ -353,25 +358,42 @@ const SITEMAP_PAGES = [
   { slug: "payments", priority: "0.7" },
   { slug: "privacy", priority: "0.7" },
   { slug: "terms", priority: "0.7" },
+  { slug: "cookie-policy", priority: "0.6" },
+  { slug: "warranty", priority: "0.6" },
+  { slug: "cancellations", priority: "0.6" },
   { slug: "review-policy", priority: "0.4" },
 ];
 
-/* ---------- stripe ---------- */
+/* ---------- storefront card provider gate ---------- */
 
-let stripeClient = null;
-let stripeKeyCached = undefined;
+/* Worldline is the sole intended storefront card provider. This remains false
+   until the official adapter, signed callbacks, refunds and reconciliation
+   have been implemented and tested. Legacy Stripe code cannot enable it. */
+const WORLDLINE_INTEGRATION_IMPLEMENTED = false;
+const TERMS_VERSION = "2026-08-11";
+
+function worldlinePaymentsEnabled() {
+  return WORLDLINE_INTEGRATION_IMPLEMENTED &&
+    String(process.env.PAYMENT_PROVIDER || "").toLowerCase() === "worldline";
+}
 
 async function getStripe() {
-  /* Legacy adapter only. It must never become active merely because an old
-     key still exists while the storefront is being migrated to Worldline. */
-  if (String(process.env.PAYMENT_PROVIDER || "").toLowerCase() !== "stripe") return null;
-  const setting = (await db.getSetting("stripe")) || {};
-  const key = process.env.STRIPE_SECRET_KEY || setting.secretKey || "";
-  if (key !== stripeKeyCached) {
-    stripeKeyCached = key;
-    stripeClient = key ? new Stripe(key) : null;
-  }
-  return stripeClient;
+  /* Kept only because legacy payment routes still accept this dependency.
+     Returning null unconditionally makes old Stripe environment variables
+     incapable of activating checkout. Replace the routes with Worldline when
+     its official documentation is available. */
+  return null;
+}
+
+async function hasConfirmedFullRefund(orderId, fallbackAmount) {
+  const verified = await db.getPool().query(`
+    SELECT COALESCE(SUM(r.amount) FILTER (WHERE r.status='confirmed'),0) AS refunded,
+      COALESCE((SELECT p.amount FROM payments p WHERE p.order_id=$1
+        ORDER BY p.attempt DESC LIMIT 1), $2::numeric) AS charged
+    FROM refunds r WHERE r.order_id=$1
+  `, [orderId, fallbackAmount]);
+  const amounts = verified.rows[0];
+  return Number(amounts.refunded) >= Number(amounts.charged) && Number(amounts.charged) > 0;
 }
 
 /* ---------- product helpers ---------- */
@@ -437,6 +459,28 @@ function applyPromotionPricing(matchProduct, regularPrice, manualSalePrice, manu
   return { price: regularPrice, salePrice: null, saleUntil: null, promotion: null };
 }
 
+function collectPriceObservation(target, itemId, regularPrice, resolved) {
+  if (!target || regularPrice == null || !resolved) return;
+  const currentPrice = resolved.salePrice != null ? resolved.salePrice : regularPrice;
+  const promotion = resolved.promotion || null;
+  target.push({
+    itemId,
+    price: currentPrice,
+    regularPrice,
+    sourceType: promotion ? "promotion" : (resolved.salePrice != null ? "manual" : null),
+    sourceId: promotion ? promotion.id : null,
+    sourceStartedAt: promotion ? promotion.startsAt : null,
+    sourceEndsAt: promotion ? promotion.endsAt : (resolved.salePrice != null ? resolved.saleUntil : null),
+  });
+}
+
+async function observeResolvedProductPrice(product, observedAt) {
+  if (!product || product.regularPrice == null) return;
+  const observations = [];
+  collectPriceObservation(observations, product.id, product.regularPrice, product);
+  await db.reconcilePriceHistory(observations, observedAt || new Date());
+}
+
 /* Compose a purchasable product object from a base product + one colour
    variant. The variant supplies its own images / stock / sku / price; the
    name, description, category and content stay on the base. Promotions are
@@ -499,7 +543,9 @@ async function resolveVariant(id, overrides, ctx) {
   ctx = ctx || (await loadPromotionContext());
   const base = await resolveProduct(v.productId, overrides, ctx);
   if (!base) return null;
-  return composeVariant(base, v, ctx);
+  const product = composeVariant(base, v, ctx);
+  await observeResolvedProductPrice(product, ctx.now);
+  return product;
 }
 
 /* The single canonical per-product/variant price resolver — checkout, order
@@ -517,7 +563,7 @@ async function resolveProduct(id, overrides, ctx) {
     const resolved = applyPromotionPricing(
       { id: st.id, catId: st.catId, createdAt: null }, regular, ov.salePrice, ov.saleUntil, ctx
     );
-    return Object.assign({}, st, {
+    const product = Object.assign({}, st, {
       custom: false,
       price: resolved.price,
       regularPrice: regular,
@@ -525,13 +571,15 @@ async function resolveProduct(id, overrides, ctx) {
       saleUntil: resolved.saleUntil,
       promotion: resolved.promotion,
     });
+    await observeResolvedProductPrice(product, ctx.now);
+    return product;
   }
   const cu = await db.getCustomProduct(id);
   if (cu && cu.active !== false) {
     const resolved = applyPromotionPricing(
       { id: cu.id, catId: cu.catId, createdAt: cu.createdAt }, cu.price, cu.salePrice, cu.saleUntil, ctx
     );
-    return Object.assign({}, cu, {
+    const product = Object.assign({}, cu, {
       custom: true,
       price: resolved.price,
       regularPrice: cu.price,
@@ -539,6 +587,8 @@ async function resolveProduct(id, overrides, ctx) {
       saleUntil: resolved.saleUntil,
       promotion: resolved.promotion,
     });
+    await observeResolvedProductPrice(product, ctx.now);
+    return product;
   }
   return null;
 }
@@ -546,10 +596,11 @@ async function resolveProduct(id, overrides, ctx) {
 /* `ctx` (from loadPromotionContext()) is optional so any legacy call site
    still works without promotions; bulk listing handlers load it once and
    pass it through to avoid a DB round trip per product. */
-function publicProduct(p, details, ctx) {
+function publicProduct(p, details, ctx, priceObservations) {
   const resolved = applyPromotionPricing(
     { id: p.id, catId: p.catId, createdAt: p.createdAt }, p.price, p.salePrice, p.saleUntil, ctx
   );
+  collectPriceObservation(priceObservations, p.id, p.price, resolved);
   const base = {
     id: p.id,
     catId: p.catId,
@@ -576,10 +627,11 @@ function publicProduct(p, details, ctx) {
    base price; salePrice is only present while a discount (manual sale OR a
    live promotion) is active. `matchProduct` is the variant's BASE product
    identity (promotions aren't targetable per-variant in this MVP). */
-function publicVariant(v, matchProduct, ctx) {
+function publicVariant(v, matchProduct, ctx, priceObservations) {
   const resolved = v.price != null
     ? applyPromotionPricing(matchProduct || { id: v.productId, catId: null, createdAt: null }, v.price, v.salePrice, v.saleUntil, ctx)
     : { salePrice: null, saleUntil: null };
+  if (v.price != null) collectPriceObservation(priceObservations, v.id, v.price, resolved);
   return {
     id: v.id,
     productId: v.productId,
@@ -1141,7 +1193,6 @@ app.get("/api/health", ah(async (req, res) => {
 }));
 
 app.get("/api/public-config", (req, res) => {
-  const pk = (process.env.STRIPE_PUBLISHABLE_KEY || "").trim();
   res.json({
     ok: true,
     gaMeasurementId: gaMeasurementId(),
@@ -1152,8 +1203,8 @@ app.get("/api/public-config", (req, res) => {
        carries it, and protected by referrer + API restrictions on Google's
        side, which is the only protection a browser key can have. */
     googleMapsApiKey: (process.env.GOOGLE_MAPS_API_KEY || "").trim(),
-    stripePublishableKey: pk,
-    checkoutV2Enabled: process.env.CHECKOUT_V2_ENABLED === "true",
+    worldlinePaymentsEnabled: worldlinePaymentsEnabled(),
+    checkoutV2Enabled: worldlinePaymentsEnabled() && process.env.CHECKOUT_V2_ENABLED === "true",
     turnstileSiteKey: security.turnstileSiteKey(),
     siteUrl: publicSiteUrl(req),
     email: {
@@ -1924,28 +1975,39 @@ app.get("/api/catalog", ah(async (req, res) => {
     }
     const prices = {};
     const salePrices = {};
+    const priorPrices = {};
     const stock = {};
+    const priceObservations = [];
     Object.keys(overrides).forEach((id) => {
       const ov = overrides[id];
       if (catalog.PRODUCT_IDS.has(id)) {
         if (ov.price != null) prices[id] = ov.price;
         const resolved = applyPromotionPricing(identityFor(id), ov.price != null ? ov.price : null, ov.salePrice, ov.saleUntil, ctx);
         if (resolved.salePrice != null) salePrices[id] = resolved.salePrice;
+        collectPriceObservation(priceObservations, id, ov.price, resolved);
       }
       stock[id] = ov.stock;
     });
     const variants = {};
     Object.keys(variantsByProduct).forEach((pid) => {
       const matchProduct = identityFor(pid);
-      variants[pid] = variantsByProduct[pid].map((v) => publicVariant(v, matchProduct, ctx));
+      variants[pid] = variantsByProduct[pid].map((v) => publicVariant(v, matchProduct, ctx, priceObservations));
+    });
+    const publicProducts = customs.map(function (p) {
+      return publicProduct(p, detailsMap[p.id], ctx, priceObservations);
+    });
+    const references = await db.reconcilePriceHistory(priceObservations, ctx.now);
+    Object.keys(references).forEach((id) => { priorPrices[id] = references[id]; });
+    publicProducts.forEach((product) => { product.priorPrice = references[product.id] ?? null; });
+    Object.keys(variants).forEach((pid) => {
+      variants[pid].forEach((variant) => { variant.priorPrice = references[variant.id] ?? null; });
     });
     return {
       ok: true,
-      products: customs.map(function (p) {
-        return publicProduct(p, detailsMap[p.id], ctx);
-      }),
+      products: publicProducts,
       prices,
       salePrices,
+      priorPrices,
       stock,
       details: detailsMap,
       variants,
@@ -1970,11 +2032,15 @@ app.get("/api/products", ah(async (req, res) => {
     const detailsMap = await db.getAllProductDetails({ read: true });
     const customs = await db.listCustomProducts(true, { read: true });
     const ctx = await loadPromotionContext();
+    const priceObservations = [];
+    const products = customs.map(function (p) {
+      return publicProduct(p, detailsMap[p.id], ctx, priceObservations);
+    });
+    const references = await db.reconcilePriceHistory(priceObservations, ctx.now);
+    products.forEach((product) => { product.priorPrice = references[product.id] ?? null; });
     return {
       ok: true,
-      products: customs.map(function (p) {
-        return publicProduct(p, detailsMap[p.id], ctx);
-      }),
+      products,
     };
   });
 }));
@@ -2231,6 +2297,9 @@ const ORDER_TABS = ["active", "new", "card_paid", "cod", "processing", "ready", 
 
 app.post("/api/orders", ah(async (req, res) => {
   const b = req.body || {};
+  if (b.termsAccepted !== true || b.termsVersion !== TERMS_VERSION) {
+    return bad(res, 400, "terms_not_accepted");
+  }
   if (!(await security.verifyTurnstile(b.captchaToken, req.ip))) {
     return bad(res, 400, "captcha_failed");
   }
@@ -2389,6 +2458,8 @@ app.post("/api/orders", ah(async (req, res) => {
           }
         : { isGift: false },
     items,
+    termsVersion: TERMS_VERSION,
+    termsAcceptedAt: new Date(),
   };
 
   await db.createOrder(order);
@@ -2477,6 +2548,7 @@ app.post("/api/orders", ah(async (req, res) => {
   res.json({
     ok: true,
     order: { id: order.id, number: order.number, total, discount },
+    guestAccessToken: session ? null : order.accessToken,
     checkoutUrl,
   });
 }));
@@ -2520,14 +2592,24 @@ app.post("/api/orders/:id/cancel", ah(async (req, res) => {
   const order = await db.getOrder(req.params.id);
   if (!order) return bad(res, 404, "not_found");
 
-  /* Logged-in users must own the order; guests are authorized by possession of
-     the unguessable order id (shown only to them on the success page). */
   const session = auth.getUserSession(req);
   if (session) {
     const owns =
       (order.userEmail && order.userEmail === session.sub) ||
       (order.customer && normEmail(order.customer.email) === normEmail(session.sub));
     if (!owns) return bad(res, 403, "forbidden");
+  } else {
+    const token = String(req.get("x-order-access-token") || "");
+    let authorized = !!token && !!order.accessToken &&
+      security.timingSafeEqualStr(token, order.accessToken);
+    if (!authorized && token) {
+      try {
+        await getOrderPaymentStatus({ pool: db.getPool(), orderId: order.id,
+          guestAccessToken: token });
+        authorized = true;
+      } catch (_) { authorized = false; }
+    }
+    if (!authorized) return bad(res, 401, "order_access_denied");
   }
 
   if (order.status === "cancelled") return res.json({ ok: true, alreadyCancelled: true, refunded: order.paymentStatus === "refunded" });
@@ -2536,25 +2618,14 @@ app.post("/api/orders/:id/cancel", ah(async (req, res) => {
   const doneish = ["shipped", "delivered", "completed"].includes(order.status);
   if (shippedish || doneish) return bad(res, 409, "not_cancellable");
 
-  const now = new Date().toISOString();
+  const paidStatuses = new Set(["paid", "refunded", "partial_refund", "partially_refunded"]);
   let refunded = false;
-
-  if (order.payment !== "cod" && order.paymentStatus === "paid" && order.stripeSessionId) {
-    const stripe = await getStripe();
-    if (stripe) {
-      try {
-        const s = await stripe.checkout.sessions.retrieve(order.stripeSessionId);
-        if (s && s.payment_intent) {
-          await stripe.refunds.create({ payment_intent: s.payment_intent });
-          refunded = true;
-        }
-      } catch (e) {
-        console.error("[stripe] refund failed:", e.message);
-        return bad(res, 502, "refund_failed");
-      }
-    }
+  if (order.payment !== "cod" && paidStatuses.has(order.paymentStatus)) {
+    refunded = await hasConfirmedFullRefund(order.id, order.total);
+    if (!refunded) return bad(res, 409, "provider_refund_required");
   }
 
+  const now = new Date().toISOString();
   const fields = { status: "cancelled" };
   if (refunded) fields.payment_status = "refunded";
   await db.updateOrder(order.id, fields);
@@ -2858,19 +2929,15 @@ app.get("/api/admin/audit", requireAdmin, ah(async (req, res) => {
   res.json({ ok: true, ...out });
 }));
 
-/* ---------- settings (Stripe) ---------- */
+/* ---------- settings ---------- */
 
 app.get("/api/admin/settings", requireAdmin, ah(async (req, res) => {
-  const stripe = (await db.getSetting("stripe")) || {};
-  const key = process.env.STRIPE_SECRET_KEY || stripe.secretKey || "";
   res.json({
     ok: true,
-    stripe: {
-      configured: !!key,
-      keyHint: key ? "••••" + key.slice(-4) : null,
-      fromEnv: !!process.env.STRIPE_SECRET_KEY,
-      publishableFromEnv: !!process.env.STRIPE_PUBLISHABLE_KEY,
-      webhookFromEnv: !!process.env.STRIPE_WEBHOOK_SECRET,
+    worldline: {
+      enabled: worldlinePaymentsEnabled(),
+      implemented: WORLDLINE_INTEGRATION_IMPLEMENTED,
+      documentationPending: !WORLDLINE_INTEGRATION_IMPLEMENTED,
     },
     analytics: { configured: !!gaMeasurementId(), id: gaMeasurementId() || null, fromEnv: !!(process.env.GA_MEASUREMENT_ID || process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID) },
     email: {
@@ -2883,13 +2950,7 @@ app.get("/api/admin/settings", requireAdmin, ah(async (req, res) => {
 }));
 
 app.post("/api/admin/settings/stripe", requireAdmin, ah(async (req, res) => {
-  const key = String((req.body && req.body.secretKey) || "").trim();
-  if (key && !/^(sk|rk)_(test|live)_/.test(key)) {
-    return bad(res, 400, "invalid_key");
-  }
-  await db.setSetting("stripe", { secretKey: key });
-  stripeKeyCached = undefined; // force re-init on next use
-  res.json({ ok: true, configured: !!key });
+  res.status(410).json({ ok: false, error: "legacy_provider_disabled" });
 }));
 
 /* ---------- overview / orders ---------- */
@@ -2937,6 +2998,11 @@ app.patch("/api/admin/orders/:id", requireAdmin, ah(async (req, res) => {
   if (body.status !== undefined) {
     const status = String(body.status);
     if (!ORDER_STATUSES.includes(status)) return bad(res, 400, "invalid_status");
+    if (status === "cancelled" && current.payment !== "cod" &&
+        ["paid", "refunded", "partial_refund"].includes(current.paymentStatus) &&
+        !(await hasConfirmedFullRefund(current.id, current.total))) {
+      return bad(res, 409, "provider_refund_required");
+    }
     if (status !== current.status) {
       fields.status = status;
       events.push({ at: now, actor: actor, type: "status", from: current.status, to: status });
@@ -2945,6 +3011,10 @@ app.patch("/api/admin/orders/:id", requireAdmin, ah(async (req, res) => {
   if (body.paymentStatus !== undefined) {
     const ps = String(body.paymentStatus);
     if (!PAYMENT_STATUSES.includes(ps)) return bad(res, 400, "invalid_payment_status");
+    if (["refunded", "partial_refund"].includes(ps)) {
+      return bad(res, 409, "provider_refund_required");
+    }
+    if (current.payment !== "cod") return bad(res, 409, "provider_managed_payment");
     if (ps !== current.paymentStatus) {
       fields.payment_status = ps;
       events.push({ at: now, actor: actor, type: "payment", from: current.paymentStatus, to: ps });
@@ -3670,6 +3740,11 @@ app.get("/api/admin/products", requireAdmin, ah(async (req, res) => {
     });
   });
   res.json({ ok: true, products: statics.concat(customs) });
+}));
+
+app.get("/api/admin/products/:id/price-history", requireAdmin, ah(async (req, res) => {
+  const history = await db.listProductPriceHistory(req.params.id, req.query.days);
+  res.json({ ok: true, itemId: req.params.id, history });
 }));
 
 app.post("/api/admin/products", requireAdmin, ah(async (req, res) => {
@@ -4932,10 +5007,16 @@ app.get("/llms.txt", ah(async (req, res) => {
     "- Email: info@nostalgiacandle.gr",
     "- Έδρα: Θεσσαλονίκη, Ελλάδα",
     "",
-    "## Optional",
+    "## Νομικά / Legal",
     "",
-    "- [Όροι χρήσης](" + base + "/terms)",
+    "- [Όροι πώλησης και χρήσης](" + base + "/terms)",
     "- [Πολιτική απορρήτου](" + base + "/privacy)",
+    "- [Πολιτική Cookies](" + base + "/cookie-policy)",
+    "- [Ακυρώσεις και υπαναχώρηση](" + base + "/cancellations)",
+    "- [Εγγυήσεις και ελαττωματικά προϊόντα](" + base + "/warranty)",
+    "- [Πολιτική cookies](" + base + "/cookie-policy)",
+    "- [Ακυρώσεις και υπαναχώρηση](" + base + "/cancellations)",
+    "- [Εγγυήσεις και ελαττωματικά](" + base + "/warranty)",
     "",
   );
 
@@ -5302,6 +5383,11 @@ app.get("/collection/:slug", ah(async (req, res) => {
 
 app.get("/review/:id", function (req, res) {
   res.sendFile(path.join(HTML_DIR, "review.html"));
+});
+
+/* Short alias used in some legal drafts and older links. */
+app.get(["/cookies", "/cookies/"], function (req, res) {
+  res.redirect(301, "/cookie-policy");
 });
 
 /* Never expose server internals or repo plumbing through the static server. */

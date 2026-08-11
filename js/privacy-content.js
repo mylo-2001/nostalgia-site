@@ -10,7 +10,7 @@
   var EL = {
     intro: [
       "Η παρούσα πολιτική περιγράφει τον τρόπο με τον οποίο η Nostalgia Collection (Maria Gerostathi) διαχειρίζεται τα προσωπικά δεδομένα στον ιστότοπό μας.",
-      "Τελευταία ενημέρωση: 6 Αυγούστου 2026.",
+      "Τελευταία ενημέρωση: 11 Αυγούστου 2026.",
       "Στο πλαίσιο της εμπορικής μας δραστηριότητας, η Nostalgia Collection, ως υπεύθυνος επεξεργασίας, συλλέγει και επεξεργάζεται προσωπικά δεδομένα όταν χρησιμοποιείτε τον ιστότοπο και την online υπηρεσία παραγγελιών.",
       "Κατανοούμε τις ανησυχίες σας σχετικά με την ιδιωτικότητα των πληροφοριών που μας κοινοποιείτε. Η παροχή προσωπικών δεδομένων δεν σημαίνει σε κάθε περίπτωση συγκατάθεση: κάθε επεξεργασία βασίζεται στην κατάλληλη νομική βάση, όπως η εκτέλεση παραγγελίας, η συμμόρφωση με νόμιμη υποχρέωση, η συγκατάθεση ή το έννομο συμφέρον, όπου αυτό επιτρέπεται.",
       "Η παρούσα πολιτική ισχύει για όλα τα προσωπικά δεδομένα που μας παρέχετε.",
@@ -59,17 +59,27 @@
         id: "management",
         title: "3. Διαχείριση προσωπικών δεδομένων",
         paragraphs: [
-          "Μέσω του ιστότοπου συλλέγουμε δεδομένα αποκλειστικά απαραίτητα για:",
+          "Πηγή δεδομένων: οι περισσότερες πληροφορίες προέρχονται απευθείας από εσάς, όταν δημιουργείτε λογαριασμό, υποβάλλετε παραγγελία ή φόρμα, γράφετε αξιολόγηση ή εγγράφεστε στο newsletter. Αν χρησιμοποιήσετε σύνδεση Google, τα βασικά στοιχεία λογαριασμού προέρχονται από την Google. Τεχνικά δεδομένα ασφάλειας και χρήσης δημιουργούνται από τον browser, τον server και τους παρόχους μας κατά τη λειτουργία της υπηρεσίας.",
+          "Τα προσωπικά δεδομένα που μπορεί να συλλέξουμε, ανάλογα με τη χρήση, περιλαμβάνουν:",
+          "• στοιχεία ταυτότητας και επικοινωνίας: ονοματεπώνυμο, email, τηλέφωνο,",
+          "• στοιχεία αποστολής και χρέωσης: διεύθυνση, πόλη, Τ.Κ., χώρα,",
+          "• δεδομένα παραγγελίας: προϊόντα, ποσότητες, αξία, κατάσταση, ιστορικό επικοινωνίας σχετικά με την παραγγελία,",
+          "• δεδομένα πληρωμής σε επίπεδο συναλλαγής (κατάσταση πληρωμής, αναγνωριστικά παρόχου) — χωρίς πλήρη αριθμό κάρτας ή CVV,",
+          "• δεδομένα λογαριασμού: προτιμήσεις, wishlist, ιστορικό εξαγωγής/διαγραφής όπου εφαρμόζεται,",
+          "• περιεχόμενο που μας στέλνετε: μηνύματα φόρμας επικοινωνίας, αξιολογήσεις,",
+          "• τεχνικά δεδομένα συσκευής/σύνδεσης όπου απαιτούνται για ασφάλεια ή λειτουργία (π.χ. IP σε αρχεία ασφαλείας), καθώς και ψευδωνυμοποιημένα στατιστικά ή marketing αναγνωριστικά μόνο μετά από συγκατάθεση.",
+          "Δεν συλλέγουμε ημερομηνία γέννησης για τη δημιουργία ή λειτουργία λογαριασμού.",
+          "Τα υποχρεωτικά πεδία στις φόρμες μας σημειώνονται με αστερίσκο (*). Χωρίς αυτά δεν μπορούμε να επεξεργαστούμε το αίτημά σας.",
+          "Μέσω του ιστότοπου επεξεργαζόμαστε δεδομένα αποκλειστικά απαραίτητα για:",
           "• τη διαχείριση παραγγελιών (στοιχεία αποστολής, επικοινωνίας, τιμολόγησης όπου απαιτείται),",
           "• την επικοινωνία μαζί σας σχετικά με την παραγγελία σας,",
           "• την αποθήκευση προτιμήσεων (γλώσσα, θέμα, καλάθι) όπου επιλέγετε.",
-          "Δεν συλλέγουμε ημερομηνία γέννησης για τη δημιουργία ή λειτουργία λογαριασμού.",
-          "Τα υποχρεωτικά πεδία στις φόρμες μας σημειώνονται με αστερίσκο (*). Χωρίς αυτά δεν μπορούμε να επεξεργαστούμε το αίτημά σας.",
           "Η Nostalgia Collection είναι ο κύριος αποδέκτης των δεδομένων σας. Κοινοποιούμε δεδομένα σε τρίτους μόνο όταν:",
           "• απαιτείται για την εκτέλεση της παραγγελίας ή την παροχή υπηρεσίας, όπως σε εταιρεία courier, εξωτερικό πάροχο πληρωμών ή πάροχο τεχνικής υποστήριξης,",
           "• μας έχετε δώσει ρητή συγκατάθεση, όπου αυτή απαιτείται,",
           "• υποχρεούμαστε από δικαστική ή διοικητική αρχή.",
           "Η επεξεργασία για την εκτέλεση παραγγελίας βασίζεται στην εκτέλεση της σύμβασης. Η έκδοση παραστατικών και η διατήρηση των σχετικών στοιχείων βασίζονται σε νόμιμες φορολογικές και λογιστικές υποχρεώσεις. Η αποστολή newsletter και η χρήση μη απαραίτητων cookies βασίζονται στη συγκατάθεσή σας. Για την ασφάλεια του ιστότοπου, την πρόληψη απάτης και την τεχνική λειτουργία μπορούμε να βασιζόμαστε σε έννομο συμφέρον, όπου αυτό επιτρέπεται.",
+          "Δεν πραγματοποιούμε σήμερα αποκλειστικά αυτοματοποιημένη λήψη αποφάσεων ή profiling που παράγει έννομα αποτελέσματα ή σας επηρεάζει με παρόμοιο σημαντικό τρόπο. Αν ενεργοποιηθεί στο μέλλον τέτοια επεξεργασία, θα ενημερώσουμε προηγουμένως την παρούσα πολιτική για τη λογική, τη σημασία, τις συνέπειες και τις διαθέσιμες εγγυήσεις.",
           "Ο ιστότοπος φιλοξενείται σε υποδομή VPS και η βάση PostgreSQL διαχειρίζεται στο ίδιο production περιβάλλον. Όταν ενεργοποιηθούν οι πληρωμές με κάρτα, ο πελάτης θα ανακατευθύνεται στη φιλοξενούμενη σελίδα της Worldline· δεν θα συλλέγουμε ούτε θα αποθηκεύουμε πλήρη αριθμό κάρτας ή CVV.",
           ...(INCLUDE_COD_PRIVACY ? [COD_PRIVACY_EL] : []),
           "Έχουμε λάβει τεχνικά και οργανωτικά μέτρα για την ασφάλεια των δεδομένων. Ωστόσο, δεν ελέγχουμε όλους τους κινδύνους του Διαδικτύου.",
@@ -102,6 +112,7 @@
           "Κάθε επιλογή καταγράφεται με τη χρονική στιγμή, την έκδοση της πολιτικής και έναν τυχαίο αναγνωριστικό αριθμό browser που δεν συνδέεται με λογαριασμό. Δεν αποθηκεύουμε IP ή user-agent στο αρχείο συγκατάθεσης.",
           "Μπορείτε επίσης να ρυθμίσετε τον browser σας ώστε να αποδέχεται ή να απορρίπτει cookies. Η άρνηση ορισμένων cookies ενδέχεται να περιορίσει λειτουργίες (π.χ. καλάθι).",
           "Για περισσότερες πληροφορίες: Αρχή Προστασίας Δεδομένων Προσωπικού Χαρακτήρα (www.dpa.gr) ή CNIL (www.cnil.fr).",
+          "Η ξεχωριστή Πολιτική Cookies στο /cookie-policy εξηγεί κατηγορίες, συγκατάθεση και ανάκληση· ο πίνακας παρακάτω αποτελεί μέρος και των δύο κειμένων.",
         ],
         html:
           "<p><strong>Αναλυτικός πίνακας cookies:</strong></p>" +
@@ -125,7 +136,8 @@
           "<tr><td>__kla_session</td><td>Αναγνώριση session για email marketing</td><td>Klaviyo</td><td>Session</td></tr>" +
           "</tbody></table></div>" +
           "<p>Τα cookies ανάλυσης και marketing εμφανίζονται μόνο εφόσον τα αποδεχτείτε στο banner και εφόσον τα αντίστοιχα εργαλεία είναι ενεργοποιημένα από το κατάστημα.</p>" +
-          "<p>Εφόσον αποδεχτείτε τα cookies ανάλυσης, τα δεδομένα του Google Analytics κοινοποιούνται στην Google και για δικούς της σκοπούς, ως αυτοτελή υπεύθυνο επεξεργασίας. Δείτε αναλυτικά στην ενότητα «Στοιχεία υπευθύνου και συνεργατών».</p>",
+          "<p>Εφόσον αποδεχτείτε τα cookies ανάλυσης, τα δεδομένα του Google Analytics κοινοποιούνται στην Google και για δικούς της σκοπούς, ως αυτοτελή υπεύθυνο επεξεργασίας. Δείτε αναλυτικά στην ενότητα «Στοιχεία υπευθύνου και συνεργατών».</p>" +
+          "<p>Δείτε επίσης την <a href='/cookie-policy'>Πολιτική Cookies</a> για τον μηχανισμό επιλογών και ανάκλησης.</p>",
       },
       {
         id: "retention",
@@ -154,13 +166,22 @@
           "Παρά τα μέτρα αυτά, καμία μετάδοση δεδομένων στο Διαδίκτυο δεν είναι απολύτως ασφαλής· δεσμευόμαστε να ανταποκρινόμαστε έγκαιρα σε τυχόν περιστατικά ασφαλείας.",
         ],
       },
+      {
+        id: "policy-changes",
+        title: "8. Αλλαγές πολιτικής",
+        paragraphs: [
+          "Δημοσιεύουμε την ημερομηνία τελευταίας ενημέρωσης στην αρχή της πολιτικής.",
+          "Για ουσιώδη αλλαγή που επηρεάζει ενεργό λογαριασμό ή νέα χρήση δεδομένων, ενημερώνουμε με εμφανή ειδοποίηση στον ιστότοπο και, όπου είναι κατάλληλο ή απαιτείται, με email πριν αρχίσει η νέα επεξεργασία.",
+          "Όπου απαιτείται νέα συγκατάθεση, δεν βασιζόμαστε στην παλαιά επιλογή. Η συνέχιση χρήσης του ιστοτόπου μετά από μη ουσιώδεις ενημερώσεις σημαίνει ότι έχετε λάβει γνώση της επικαιροποιημένης πολιτικής.",
+        ],
+      },
     ],
   };
 
   var EN = {
     intro: [
       "This policy details how Nostalgia Collection (Maria Gerostathi) handles personal data on our website.",
-      "Last updated: 6 August 2026.",
+      "Last updated: 11 August 2026.",
       "As part of our commercial activity, Nostalgia Collection, as data controller, collects and processes your personal data when you use the website and online ordering service.",
       "We understand your concerns about the privacy of the personal information you share with us. Providing personal data does not always mean consent: each processing activity relies on the appropriate legal basis, such as fulfilling an order, complying with a legal obligation, consent or legitimate interest where permitted.",
       "This policy applies to all personal data you provide to Nostalgia Collection.",
@@ -195,12 +216,21 @@
         id: "management",
         title: "3. Management of personal data",
         paragraphs: [
+          "Source of data: most information comes directly from you when you create an account, place an order, submit a form or review, or subscribe to the newsletter. If you use Google sign-in, basic account details come from Google. Technical security and usage data is generated by the browser, server and our providers while operating the service.",
+          "Depending on use, personal data we may collect includes:",
+          "• identity and contact details: name, email, phone number,",
+          "• shipping and billing details: address, city, postcode, country,",
+          "• order data: products, quantities, value, status, and related order communications,",
+          "• payment data at transaction level (payment status, provider references) — never full card number or CVV,",
+          "• account data: preferences, wishlist, export/erasure history where applicable,",
+          "• content you send us: contact-form messages and reviews,",
+          "• technical device/connection data where needed for security or operation (for example IP addresses in security logs), plus pseudonymous analytics or marketing identifiers only after consent.",
           "Depending on the service, our processors/partners include ACS Courier for delivery, Worldline for hosted card payments when enabled, Pointer.gr for business email, Papaki for the domain, Cloudinary for product images, Cloudflare Turnstile for form protection, Google Analytics for consent-based statistics and Klaviyo for consent-based marketing features. Production is hosted on a VPS with PostgreSQL managed by us.",
           "On the checkout page, the address field uses Google Maps to suggest addresses as you type. What you type is sent to Google so it can return those suggestions. If you press the locate-me button, your browser asks for your explicit permission first, and only then are your coordinates sent to Google to be turned into an address — we never collect or store your location, and never request it without an action from you. The feature is a convenience: you can always type your address by hand and the order completes normally. Google's own Privacy Policy (policies.google.com/privacy) governs the processing Google carries out.",
           "If you choose \"Continue with Google\" to sign in or create an account, Google discloses your first name, last name, email address and a stable account identifier to us. We use them solely to create or find your account and sign you in. We never receive or store your Google password. The legal basis is performance of the contract — providing the account you asked for. Google sign-in is optional: registering with an email and password remains available, and you can delete your account at any time from the \"My account\" page. Google does not learn what you bought or viewed on the site, only that you signed in.",
           "If you consent to analytics cookies, Google Analytics data is also shared with Google (Google Ireland Limited and Google LLC) for purposes beyond providing the measurement service, for which Google acts as an independent controller rather than a processor: improving Google's products and services; producing aggregated benchmarks and industry modelling, where identifiers are removed before use; providing technical support on our account; and making optimisation suggestions to us based on account usage data. Google does not use this data to personalise or target advertising. The legal basis is your consent, which you may withdraw at any time from the cookie settings; withdrawal stops any further sharing. Google's own Privacy Policy (policies.google.com/privacy) governs the processing Google carries out as an independent controller.",
           "Where a provider may process data outside the EEA, we use the applicable GDPR mechanism, such as an adequacy decision or Standard Contractual Clauses, and assess the relevant safeguards.",
-          "Through our website we collect data strictly necessary for:",
+          "Through our website we process data strictly necessary for:",
           "• managing orders (shipping details, contact information, invoicing where required),",
           "• communicating with you about your order,",
           "• storing preferences (language, theme, cart) where you choose.",
@@ -211,6 +241,7 @@
           "• you have given consent where consent is required,",
           "• we are required by a judicial or administrative authority.",
           "Processing an order is based on performing the contract. Invoicing and retention of related records are based on tax and accounting obligations. Newsletter messages and non-essential cookies are based on your consent. For site security, fraud prevention and technical operation, we may rely on legitimate interest where permitted.",
+          "We currently carry out no solely automated decision-making or profiling that produces legal effects or similarly significantly affects you. If such processing is enabled in the future, we will first update this policy with the logic, significance, expected consequences and available safeguards.",
           "The website is hosted on VPS infrastructure and its PostgreSQL database is managed in the same production environment. Once card payments are enabled, customers will be redirected to Worldline’s hosted payment page; we will not collect or store full card numbers or CVV.",
           ...(INCLUDE_COD_PRIVACY ? [COD_PRIVACY_EN] : []),
           "We have implemented technical and organisational security measures. However, we cannot control all Internet-related risks.",
@@ -243,6 +274,7 @@
           "Each cookie choice is recorded with its timestamp, policy version and a random browser identifier that is not linked to an account. We do not store IP addresses or user-agent strings in the consent record.",
           "You may also configure your browser to accept or reject cookies. Refusing certain cookies may limit functionality (e.g. cart).",
           "For more information visit the Hellenic DPA (www.dpa.gr) or CNIL (www.cnil.fr).",
+          "The separate Cookie Policy at /cookie-policy explains categories, consent and withdrawal; the table below forms part of both texts.",
         ],
         html:
           "<p><strong>Detailed cookie table:</strong></p>" +
@@ -266,7 +298,8 @@
           "<tr><td>__kla_session</td><td>Session identification for email marketing</td><td>Klaviyo</td><td>Session</td></tr>" +
           "</tbody></table></div>" +
           "<p>Analytics and marketing cookies appear only if you accept them in the banner and if the corresponding tools are enabled by the store.</p>" +
-          "<p>If you accept analytics cookies, Google Analytics data is also shared with Google for its own purposes, as an independent controller. See the section “Controller and partner details” for the full description.</p>",
+          "<p>If you accept analytics cookies, Google Analytics data is also shared with Google for its own purposes, as an independent controller. See the section “Controller and partner details” for the full description.</p>" +
+          "<p>See also the <a href='/cookie-policy'>Cookie Policy</a> for the choice and withdrawal mechanism.</p>",
       },
       {
         id: "retention",
@@ -294,6 +327,15 @@
           "• a security audit log of key actions, storing no passwords or card data,",
           "• payments handled solely by an external payment provider — we never store full card details.",
           "Despite these measures, no transmission of data over the Internet is completely secure; we are committed to responding promptly to any security incident.",
+        ],
+      },
+      {
+        id: "policy-changes",
+        title: "8. Policy changes",
+        paragraphs: [
+          "The last-updated date is published at the start of this policy.",
+          "For a material change affecting an active account or introducing a new use of data, we provide a prominent website notice and, where appropriate or required, email notice before the new processing starts.",
+          "Where fresh consent is required, we do not rely on the previous choice. Continuing to use the website after non-material updates means you have been informed of the revised policy.",
         ],
       },
     ],

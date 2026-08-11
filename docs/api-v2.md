@@ -3,6 +3,11 @@
 All JSON responses include `ok`; errors include a stable `error` code and request ID.
 Monetary values are strings in order currency. Browser-supplied totals are rejected.
 
+The catalog also reconciles append-only effective-price periods for regular,
+manual-sale and promotion prices. It exposes `priorPrice`, the lowest price
+applied during the 30 days before the current reduction began. Administrators
+can inspect the evidence with `GET /api/admin/products/:id/price-history?days=90`.
+
 ## Public and customer
 
 - `POST /api/v2/quote`: product/variant IDs, quantity, coupon, shipping method, payment
@@ -13,15 +18,35 @@ Monetary values are strings in order currency. Browser-supplied totals are rejec
 - `POST /api/v2/orders/:id/card-session`: requires a new `Idempotency-Key` and order
   ownership (`X-Order-Access-Token` for guests). Returns the provider checkout URL.
 - `GET /api/v2/orders/:id/payment-status`: requires account ownership or guest token.
+- `GET /api/v2/orders/:id/return-options`: requires ownership and returns only order-item
+  quantities still eligible for a new return request.
 - `POST /api/v2/orders/:id/returns`: requires ownership, guest token when applicable and
   `Idempotency-Key`.
-- `POST /api/v2/stripe/webhook`: raw Stripe body and signature. Browser calls are invalid.
+- Worldline callback endpoint: pending the official integration documentation. It must
+  verify the provider signature over the unmodified request and reject browser calls.
 
 ## Admin
 
 `/api/v2/admin/*` requires a signed admin cookie, an active database session and verified
 MFA. Writes require `X-CSRF-Token`. Permissions are checked independently per action.
 Versioned order/shipment writes return HTTP 409 when the resource changed after it was read.
+
+- `GET /api/v2/admin/returns`: lists return requests with items, latest payment and refunds;
+  accepts an optional `status` filter.
+- `GET /api/v2/admin/orders/:id/return-options` and `POST .../returns`: let an authorised
+  operator open a request by order ID or order number using unclaimed order-item quantities.
+- `POST /api/v2/admin/returns/:id/approve|reject|cancel|receive`: advances the return
+  lifecycle. Reject and cancel require an audit reason.
+- `POST /api/v2/admin/returns/:id/handoff`: records the courier and voucher/tracking number
+  and moves an approved return to `in_transit`.
+- `GET /api/v2/admin/returns/:id/tracking`: retrieves the current checkpoints from ACS for
+  a recorded ACS return voucher. The official ACS June 2024 manual states that
+  `With_Return_Voucher=1` is the simultaneous RDO/document-return service and not a
+  post-delivery commercial return. It is therefore not used for customer product returns.
+- `POST /api/v2/admin/returns/:id/inspect`: records each item's condition and restock
+  decision. Damaged or defective items cannot be restored to stock.
+- Refund creation remains disabled until the Worldline refund API and signed callback are
+  implemented. A linked return must be fully inspected before a refund can be requested.
 
 ## Status codes
 

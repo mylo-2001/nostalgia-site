@@ -25,13 +25,15 @@ export function clearAdminClientSession() {
   try { window.sessionStorage.removeItem(CSRF_STORAGE_KEY); } catch { /* unavailable */ }
 }
 
-async function request<T = unknown>(method: string, path: string, body?: unknown): Promise<ApiResult<T>> {
+async function request<T = unknown>(method: string, path: string, body?: unknown,
+  customHeaders?: Record<string, string>): Promise<ApiResult<T>> {
   const headers: Record<string, string> = {};
   if (body) headers["Content-Type"] = "application/json";
   if (!["GET", "HEAD"].includes(method)) {
     const token = csrfToken();
     if (token) headers["X-CSRF-Token"] = token;
   }
+  Object.assign(headers, customHeaders || {});
   const res = await fetch(path, {
     method,
     headers: Object.keys(headers).length ? headers : undefined,
@@ -47,6 +49,8 @@ async function request<T = unknown>(method: string, path: string, body?: unknown
 export const api = {
   get: <T = unknown>(path: string) => request<T>("GET", path),
   post: <T = unknown>(path: string, body?: unknown) => request<T>("POST", path, body ?? {}),
+  postWithHeaders: <T = unknown>(path: string, body: unknown,
+    headers: Record<string, string>) => request<T>("POST", path, body ?? {}, headers),
   patch: <T = unknown>(path: string, body?: unknown) => request<T>("PATCH", path, body ?? {}),
   del: <T = unknown>(path: string) => request<T>("DELETE", path),
 };

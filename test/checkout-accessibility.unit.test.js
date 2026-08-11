@@ -31,6 +31,14 @@ test("checkout has visible keyboard focus and payment-obligation copy", () => {
   assert.match(translations, /checkout_submit:\s*"Place order with obligation to pay"/);
 });
 
+test("checkout requires explicit, unchecked Terms of Sale acceptance", () => {
+  const html = fs.readFileSync(path.join(root, "html", "checkout.html"), "utf8");
+  assert.match(html, /id="checkout-terms-accepted"[^>]*required/);
+  assert.doesNotMatch(html, /id="checkout-terms-accepted"[^>]*checked/);
+  assert.match(html, /href="\/terms"/);
+  assert.match(html, /href="\/privacy"/);
+});
+
 test("V2 checkout payload contains identifiers and choices, never browser totals", () => {
   const source = fs.readFileSync(path.join(root, "js", "checkout-v2.js"), "utf8");
   const start = source.indexOf("function productLines");

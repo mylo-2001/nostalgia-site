@@ -17,13 +17,35 @@
     if (!root || !window.NostalgiaPrivacyContent) return;
 
     var content = window.NostalgiaPrivacyContent.getContent(getLang());
+    var isEnglish = getLang() === "en";
+    var sourceSection = {
+      id: "official-sources",
+      title: isEnglish ? "Official legal sources" : "Επίσημες νομικές πηγές",
+      paragraphs: [isEnglish
+        ? "This policy applies the GDPR and the applicable data-protection framework. The following official sources are provided for direct reference."
+        : "Η παρούσα πολιτική εφαρμόζει τον GDPR και το ισχύον πλαίσιο προστασίας δεδομένων. Οι παρακάτω επίσημες πηγές παρέχονται για άμεση αναφορά."],
+      html: '<ul class="legal-source-list">' +
+        '<li><a href="https://eur-lex.europa.eu/eli/reg/2016/679/oj/eng" target="_blank" rel="noopener noreferrer">' +
+        (isEnglish ? "Regulation (EU) 2016/679 (GDPR) on EUR-Lex" : "Κανονισμός (ΕΕ) 2016/679 (GDPR) στο EUR-Lex") + '</a></li>' +
+        '<li><a href="https://www.dpa.gr/el/enimerwtiko/nomothesia/proswpika/nomothesia_prwsopikwn" target="_blank" rel="noopener noreferrer">' +
+        (isEnglish ? "Hellenic DPA: GDPR and Greek Law 4624/2019" : "ΑΠΔΠΧ: GDPR και Ν. 4624/2019") + '</a></li>' +
+        '<li><a href="https://commission.europa.eu/law/law-topic/data-protection/information-individuals_en" target="_blank" rel="noopener noreferrer">' +
+        (isEnglish ? "European Commission: information for individuals" : "Ευρωπαϊκή Επιτροπή: ενημέρωση για τα δικαιώματα των πολιτών") + '</a></li>' +
+        '<li><a href="https://www.edpb.europa.eu/documents/guideline/guidelines-052020-on-consent-under-regulation-2016679_en" target="_blank" rel="noopener noreferrer">' +
+        (isEnglish ? "EDPB Guidelines 05/2020 on consent" : "EDPB Κατευθυντήριες γραμμές 05/2020 για τη συγκατάθεση") + '</a></li>' +
+        '<li><a href="https://www.dpa.gr/el/enimerwtiko/thematikes_enotites/proothisiproiontwn/hlektronika_mesa_proothisi" target="_blank" rel="noopener noreferrer">' +
+        (isEnglish ? "Hellenic DPA: direct marketing by electronic means" : "ΑΠΔΠΧ: προώθηση με ηλεκτρονικά μέσα") + '</a></li>' +
+        '<li><a href="https://www.dpa.gr/el/foreis/asfaleia_dedomenwn/gnwstopoiisi_paraviasis/upovoli_gnwstopoihshs_paraviashs" target="_blank" rel="noopener noreferrer">' +
+        (isEnglish ? "Hellenic DPA: personal-data breach notification" : "ΑΠΔΠΧ: γνωστοποίηση παραβίασης δεδομένων") + '</a></li></ul>'
+    };
+    var sections = content.sections.concat([sourceSection]);
     var html = "";
 
     content.intro.forEach(function (p) {
       html += "<p>" + p + "</p>";
     });
 
-    content.sections.forEach(function (section) {
+    sections.forEach(function (section) {
       html += '<section class="legal-section" id="' + section.id + '">';
       html += "<h2>" + section.title + "</h2>";
       section.paragraphs.forEach(function (p) {
@@ -35,7 +57,7 @@
 
     root.innerHTML = html;
     enhanceTables(root);
-    renderToc(content.sections);
+    renderToc(sections);
   }
 
   function enhanceTables(root) {

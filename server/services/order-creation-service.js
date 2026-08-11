@@ -123,6 +123,8 @@ function normalizeCheckout(request, identity = {}) {
     gift: normalizeGift(request.gift),
     lang: request.lang === "en" ? "en" : "el",
     userEmail,
+    termsVersion: request.termsVersion ? text(request.termsVersion, 40) : null,
+    termsAcceptedAt: request.termsAccepted === true ? new Date() : null,
   };
 }
 
@@ -139,6 +141,7 @@ function canonicalCheckout(normalized) {
     gift: normalized.gift,
     lang: normalized.lang,
     userEmail: normalized.userEmail,
+    termsVersion: normalized.termsVersion,
   });
 }
 
@@ -278,17 +281,17 @@ async function createOrderTransaction(options, normalized, idempotency, now) {
       tax_included, shipping_method_id, billing_address_snapshot,
       shipping_address_snapshot, guest_access_token_hash, guest_access_expires_at,
       request_id, checkout_idempotency_id, checkout_request_hash,
-      customer_email_normalized, pricing_snapshot
+      customer_email_normalized, pricing_snapshot, terms_version, terms_accepted_at
     ) VALUES (
       $1, $2, $3, $4, $5, 'not_ready', $6, $7, $8, $9, $10, $11, $12, $13,
       $14, $15, 'not_ready', $16, $17, $18, $19, $20, $21, $22, $23, $24,
-      TRUE, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34
+      TRUE, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36
     )
   `, [
     orderId,
     number,
     "new",
-    "stripe",
+    "card",
     paymentStatus,
     normalized.couponCode || "",
     quote.breakdown.discountTotal,
@@ -319,6 +322,8 @@ async function createOrderTransaction(options, normalized, idempotency, now) {
     idempotency.requestHash,
     normalized.customer.email,
     quote,
+    normalized.termsVersion,
+    normalized.termsAcceptedAt,
   ]);
 
   const reservationLines = await insertOrderItems(client, orderId, quote);

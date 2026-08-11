@@ -3,6 +3,24 @@
  */
 
 /* ——— Privacy / legal page ——— */
+body[data-page="terms"] .editorial-hero__figure,
+body[data-page="privacy"] .editorial-hero__figure,
+body[data-page="cookie-policy"] .editorial-hero__figure,
+body[data-page="warranty"] .editorial-hero__figure,
+body[data-page="cancellations"] .editorial-hero__figure {
+  height: min(68vh, 680px);
+}
+
+@media (max-width: 640px) {
+  body[data-page="terms"] .editorial-hero__figure,
+  body[data-page="privacy"] .editorial-hero__figure,
+  body[data-page="cookie-policy"] .editorial-hero__figure,
+  body[data-page="warranty"] .editorial-hero__figure,
+  body[data-page="cancellations"] .editorial-hero__figure {
+    height: 58svh;
+  }
+}
+
 .legal-page {
   max-width: 46rem;
   margin: 0 auto;

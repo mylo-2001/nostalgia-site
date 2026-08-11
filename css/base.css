@@ -1397,23 +1397,25 @@ body.locale-drawer-open {
   padding-top: 1rem;
   border-top: 1px solid var(--rule-hairline);
   display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 0.7rem 1.5rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.85rem 1.5rem;
   text-align: center;
 }
 
-.site-footer__copyright {
-  justify-self: center;
+/* Trader identity + copyright stack under the legal/payment row. */
+.site-footer__identity {
+  grid-column: 1 / -1;
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  margin-top: 0.15rem;
+  text-align: center;
 }
 
-/* Trader identity (business-info.js). Spans the whole bar and sits last, so it
-   reads as a legal footnote and leaves the three-column layout the bar's other
-   children rely on untouched. */
 .site-footer__business {
-  grid-column: 1 / -1;
-  order: 1;
-  margin: 0.15rem 0 0;
+  margin: 0;
+  max-width: 52rem;
   font-family: var(--font-nav);
   /* Matches the legal links beside it (0.62rem ≈ 10px). Smaller than that and
      mandatory trader details stop being genuinely readable. */
@@ -1422,6 +1424,10 @@ body.locale-drawer-open {
   line-height: 1.65;
   color: var(--text-muted);
   text-align: center;
+}
+
+.site-footer__business:empty {
+  display: none;
 }
 
 .site-footer__legal a {
@@ -1447,6 +1453,8 @@ body.locale-drawer-open {
   letter-spacing: 0.03em;
   line-height: 1.5;
   color: var(--text-muted);
+  text-align: center;
+  justify-self: center;
 }
 
 [data-theme="dark"] .site-footer__copyright {
@@ -1573,6 +1581,12 @@ body.locale-drawer-open {
     text-align: left;
   }
 
+  .site-footer__identity {
+    justify-items: start;
+    text-align: left;
+  }
+
+  .site-footer__business,
   .site-footer__copyright {
     justify-self: start;
     text-align: left;

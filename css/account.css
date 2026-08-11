@@ -1604,6 +1604,22 @@ body[data-page="account"].account-view--logged .account-page__panel {
 .account-order__btn--cancel:hover { background: #a35043; color: #fff; }
 .account-order__btn:disabled { opacity: 0.5; cursor: default; }
 
+.account-return-form {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+}
+.account-return-form h4 { margin: 0; font-family: var(--font-nav); font-size: 0.85rem; }
+.account-return-form__item { display: grid; grid-template-columns: auto minmax(0, 1fr) 4.5rem; align-items: center; gap: 0.65rem; }
+.account-return-form__item span { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; font-size: 0.78rem; }
+.account-return-form__item small { color: var(--ink-muted); }
+.account-return-form__item input[type="number"] { width: 100%; min-width: 0; padding: 0.42rem; border: 1px solid var(--rule-strong); background: transparent; }
+.account-return-form__reason { display: grid; gap: 0.35rem; font-size: 0.75rem; }
+.account-return-form__reason textarea { width: 100%; resize: vertical; padding: 0.55rem; border: 1px solid var(--rule-strong); background: transparent; color: var(--ink); font: inherit; }
+.account-return-form__success { margin: 0; color: #4f7048; font-size: 0.82rem; }
+
 .account-toast {
   position: fixed;
   left: 50%;

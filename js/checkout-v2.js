@@ -100,6 +100,8 @@
       },
       billingSameAsShipping: true,
       lang: context.lang,
+      termsAccepted: !!context.termsAccepted,
+      termsVersion: context.termsVersion,
     };
   }
 
@@ -156,8 +158,8 @@
     if (pending.guestAccessToken) headers["X-Order-Access-Token"] = pending.guestAccessToken;
     return api().postWithHeaders("/api/v2/orders/" + encodeURIComponent(pending.orderId) +
       "/card-session", {
-        successUrl: window.location.origin + "/checkout?stripe=success&session_id={CHECKOUT_SESSION_ID}",
-        cancelUrl: window.location.origin + "/checkout?stripe=cancel",
+        successUrl: window.location.origin + "/checkout?payment=success",
+        cancelUrl: window.location.origin + "/checkout?payment=cancel",
       }, headers).then(function (result) {
         if (!result || !result.ok || !result.checkoutUrl) {
           var error = new Error(result && result.error || "PAYMENT_SESSION_FAILED");

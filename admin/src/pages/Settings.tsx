@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api, clearAdminClientSession } from "../api/client";
 
 interface SettingsData {
-  stripe: { configured: boolean; keyHint: string | null; fromEnv: boolean; publishableFromEnv: boolean; webhookFromEnv: boolean };
+  worldline: { enabled: boolean; implemented: boolean; documentationPending: boolean };
   analytics: { configured: boolean };
   email: { resend: boolean; smtp: boolean };
   cron: { configured: boolean };
@@ -30,17 +30,6 @@ export function Settings() {
     if (mfaResult.ok) setMfaStatus({ required: !!mfaResult.required, enabled: !!mfaResult.enabled });
   }, []);
   useEffect(() => { load(); }, [load]);
-
-  /* Stripe key */
-  const [stripeKey, setStripeKey] = useState("");
-  const [stripeMsg, setStripeMsg] = useState("");
-  async function saveStripe(e: React.FormEvent) {
-    e.preventDefault();
-    setStripeMsg("");
-    const res = await api.post("/api/admin/settings/stripe", { secretKey: stripeKey });
-    if (res.ok) { setStripeMsg("Αποθηκεύτηκε."); setStripeKey(""); load(); }
-    else setStripeMsg("Σφάλμα: " + (res.error || res.status));
-  }
 
   /* Password change */
   const [curPw, setCurPw] = useState("");
@@ -112,8 +101,7 @@ export function Settings() {
         <h3 className="card__title">Κατάσταση συστήματος</h3>
         <table className="tbl">
           <tbody>
-            <tr><td>Stripe πληρωμές</td><td><Dot on={data.stripe.configured} /> {data.stripe.keyHint ? <span className="muted">({data.stripe.keyHint}{data.stripe.fromEnv ? " · env" : ""})</span> : null}</td></tr>
-            <tr><td>Stripe webhook (env)</td><td><Dot on={data.stripe.webhookFromEnv} /></td></tr>
+            <tr><td>Worldline πληρωμές</td><td><Dot on={data.worldline.enabled} /> <span className="muted">{data.worldline.documentationPending ? "(αναμονή τεκμηρίωσης)" : ""}</span></td></tr>
             <tr><td>Google Analytics</td><td><Dot on={data.analytics.configured} /></td></tr>
             <tr><td>Email — Resend</td><td><Dot on={data.email.resend} /></td></tr>
             <tr><td>Email — SMTP</td><td><Dot on={data.email.smtp} /></td></tr>
@@ -121,20 +109,6 @@ export function Settings() {
             <tr><td>ACS Courier (αποστολές)</td><td><Dot on={data.acs.configured} /></td></tr>
           </tbody>
         </table>
-      </section>
-
-      <section className="card" style={{ marginBottom: 18 }}>
-        <h3 className="card__title">Stripe κλειδί</h3>
-        {data.stripe.fromEnv ? (
-          <p className="muted">Το κλειδί ορίζεται από μεταβλητή περιβάλλοντος (STRIPE_SECRET_KEY) και δεν μπορεί να αλλάξει από εδώ.</p>
-        ) : (
-          <form onSubmit={saveStripe} style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
-            <label className="field" style={{ flex: "1 1 320px" }}><span>Secret key (sk_…)</span>
-              <input type="password" value={stripeKey} onChange={(e) => setStripeKey(e.target.value)} placeholder="sk_live_…" autoComplete="off" /></label>
-            <button className="btn btn--primary" type="submit">Αποθήκευση</button>
-            {stripeMsg && <p className="muted" style={{ width: "100%" }}>{stripeMsg}</p>}
-          </form>
-        )}
       </section>
 
       <section className="card" style={{ marginBottom: 18 }}>

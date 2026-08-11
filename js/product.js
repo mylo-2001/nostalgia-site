@@ -320,14 +320,22 @@
 
   function priceHtml(product) {
     if (window.NostalgiaProducts && window.NostalgiaProducts.isOnSale(product)) {
+      var current = Number(product.salePrice);
+      var reference = product.priorPrice != null ? Number(product.priorPrice) : Number(product.price);
+      if (!(reference > current)) {
+        return '<p class="product-info__price">€' + current.toFixed(2) + "</p>";
+      }
+      var referenceLabel = /^en/i.test(document.documentElement.lang)
+        ? "Lowest price in the previous 30 days"
+        : "Χαμηλότερη τιμή προηγούμενων 30 ημερών";
       return (
         '<p class="product-info__price product-info__price--sale">' +
-        '<span class="product-info__price-was">€' +
-        Number(product.price).toFixed(2) +
+        '<span class="product-info__price-was" title="' + referenceLabel + '">€' +
+        reference.toFixed(2) +
         "</span>" +
         '<span class="product-info__price-now">€' +
-        Number(product.salePrice).toFixed(2) +
-        "</span></p>"
+        current.toFixed(2) +
+        '</span><small class="product-info__price-reference">' + referenceLabel + "</small></p>"
       );
     }
     if (product.price != null) {
@@ -759,10 +767,10 @@
         '<button type="button" class="product-gallery__nav product-gallery__nav--next" id="product-gallery-next" aria-label="Next image">' +
         '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>'
       : "";
-    var saleTag =
-      window.NostalgiaProducts && window.NostalgiaProducts.isOnSale(product)
-        ? '<span class="product-sale-badge">-' + window.NostalgiaProducts.discountPercent(product) + "%</span>"
-        : "";
+    var discount = window.NostalgiaProducts ? window.NostalgiaProducts.discountPercent(product) : 0;
+    var saleTag = discount > 0
+      ? '<span class="product-sale-badge">-' + discount + "%</span>"
+      : "";
     var html =
       '<div class="product-gallery__stage">' +
       '<div class="product-gallery__main" id="product-gallery-main">' +

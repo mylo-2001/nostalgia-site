@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
+import { PriceHistory } from "./PriceHistory";
 import { COLOR_FAMILIES } from "../lib/catalog";
 import type { AdminProduct, AdminVariant } from "../types/product";
 
@@ -273,6 +274,7 @@ function VariantEditor({ variant, onChanged }: { variant: AdminVariant; onChange
         </div>
       </div>
       {message ? <p className="variant-message" role="status">{message}</p> : null}
+      <PriceHistory itemId={variant.id} />
     </form>
   );
 }

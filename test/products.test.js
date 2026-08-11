@@ -85,6 +85,8 @@ test("sale helpers: isOnSale / discountPercent / getEffectivePrice", () => {
   assert.equal(P.isOnSale(notSale), false);
   assert.equal(P.isOnSale(badSale), false);
   assert.equal(P.discountPercent(onSale), 25);
+  assert.equal(P.discountPercent({ price: 100, salePrice: 75, priorPrice: 80 }), 6);
+  assert.equal(P.discountPercent({ price: 100, salePrice: 75, priorPrice: 70 }), 0);
   assert.equal(P.getEffectivePrice(onSale), 75);
   assert.equal(P.getEffectivePrice(notSale), 100);
 });

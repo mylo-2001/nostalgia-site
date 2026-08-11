@@ -1,10 +1,18 @@
 # GDPR production checklist — Nostalgia Collection
 
-Last technical review: 6 August 2026. This is an operational checklist, not legal advice. The controller should validate tax-retention fields and legal bases with its accountant/legal adviser before launch.
+Last technical review: 11 August 2026. This is an operational checklist, not legal advice. The controller should validate tax-retention fields and legal bases with its accountant/legal adviser before launch.
+
+## Completed in the application
+
+- [x] Separate Cookie Policy, complete Terms of Sale, warranty and cancellation/withdrawal pages are published in Greek and English.
+- [x] Checkout requires explicit acceptance of Terms of Sale version `2026-08-11` and stores the version and acceptance timestamp with the order.
+- [x] Legal links are rendered consistently through the shared footer.
+- [x] Card checkout is fail-closed: the only intended provider is Worldline and payments cannot be enabled before its adapter is implemented.
+- [x] Price reductions use append-only effective-price intervals per product/variant and expose the lowest price applied in the preceding 30 days as the storefront reference price.
 
 ## Launch blockers
 
-- [ ] Run every database migration, including `038_newsletter_double_opt_in.up.sql`, on the production PostgreSQL database.
+- [ ] Run every database migration, including `043_price_history.up.sql`, on the production PostgreSQL database.
 - [ ] Set unique production secrets (`SESSION_SECRET`, `CONSENT_HASH_SECRET`, admin credentials and database credentials) in the VPS secret store; never copy preview values.
 - [ ] Keep card checkout disabled until the Worldline hosted-payment adapter, signed callback verification, refunds and reconciliation have been implemented and tested. Stripe is still legacy code and must not be presented as Worldline.
 - [ ] Sign/record the Worldline data-processing and international-transfer terms, then replace the conditional wording “when enabled” in the privacy/payment pages.
@@ -12,6 +20,7 @@ Last technical review: 6 August 2026. This is an operational checklist, not lega
 - [ ] Set `RETENTION_ENABLED=true`, install `deploy/nostalgia.crontab`, run retention first in dry-run mode, review the counts, then run it with apply enabled.
 - [ ] Perform a test export and account deletion against a dedicated test account containing an order, newsletter history, review and contact message.
 - [ ] Verify that analytics, Meta and Klaviyo make no network requests before consent and stop after withdrawal/reload.
+- [ ] After migration `043`, verify with a production test product that a regular price is recorded before activating a reduction, that scheduled promotion boundaries are recorded, and that the storefront uses the resulting 30-day reference price.
 
 ## Record of processing activities (working register)
 
@@ -24,7 +33,6 @@ Last technical review: 6 August 2026. This is an operational checklist, not lega
 | Analytics | Pseudonymous browsing identifiers | Consent | Google Analytics | Provider cookies as listed in privacy policy |
 | Marketing tracking | Advertising/email identifiers | Consent | Meta and Klaviyo | Provider cookies as listed in privacy policy |
 | Security and consent evidence | Audit events; random consent ID and choices | Legitimate interest/legal accountability | VPS/PostgreSQL, Cloudflare | 6–60 months according to record type |
-| COD risk review | Order value/frequency, failed-delivery history, hashed phone/address indicators | Fraud prevention / legitimate interest | Authorised staff only | With the linked order/security record; review necessity regularly |
 
 For every processor retain: legal entity and contact, service, data categories, processing locations, DPA date, subprocessor list, transfer mechanism (adequacy/SCC where applicable), deletion/export procedure and review date.
 
@@ -69,4 +77,3 @@ real processing, not after.
 - Quarterly: processor/subprocessor and international-transfer review; test consent withdrawal and data export/deletion.
 - Annually or after a material change: refresh privacy/cookie text and consent version; review the processing register, retention periods, legitimate-interest assessment and whether a DPIA is required.
 - Before enabling a new tracker/provider: document it first, update CSP/privacy/cookie controls, and test the default-denied state.
-

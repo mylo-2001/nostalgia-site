@@ -72,12 +72,21 @@
     var onSale =
       window.NostalgiaProducts && window.NostalgiaProducts.isOnSale(item);
     if (onSale) {
+      var current = Number(item.salePrice);
+      var reference = item.priorPrice != null ? Number(item.priorPrice) : Number(item.price);
+      if (!(reference > current)) {
+        wrap.textContent = money(current);
+        return wrap;
+      }
       var was = document.createElement("span");
       was.className = "showcase-price__was";
-      was.textContent = money(item.price);
+      was.textContent = money(reference);
+      was.title = /^en/i.test(document.documentElement.lang)
+        ? "Lowest price in the previous 30 days"
+        : "Χαμηλότερη τιμή προηγούμενων 30 ημερών";
       var now = document.createElement("span");
       now.className = "showcase-price__now";
-      now.textContent = money(item.salePrice);
+      now.textContent = money(current);
       wrap.appendChild(was);
       wrap.appendChild(now);
     } else if (item.price != null) {

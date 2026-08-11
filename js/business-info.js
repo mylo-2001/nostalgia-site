@@ -82,11 +82,17 @@
   function render() {
     var bar = document.querySelector(".site-footer__bar");
     if (!bar) return false;
+    var identity = bar.querySelector(".site-footer__identity");
     var el = bar.querySelector(".site-footer__business");
     if (!el) {
       el = document.createElement("p");
       el.className = "site-footer__business";
-      bar.appendChild(el);
+      if (identity) {
+        var copyright = identity.querySelector(".site-footer__copyright");
+        identity.insertBefore(el, copyright || null);
+      } else {
+        bar.appendChild(el);
+      }
     }
     el.textContent = line(isEn());
     return true;

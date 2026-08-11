@@ -91,6 +91,10 @@ async function callAcs(alias, params) {
  *  Weight, Cod_Ammount, Acs_Delivery_Products, etc.) minus the credentials,
  *  which callAcs merges in automatically. Returns [{ Voucher_No, Voucher_No_Return, Error_Message }]. */
 async function createVoucher(input) {
+  /* The official June 2024 manual explicitly says With_Return_Voucher is RDO:
+     a simultaneous document/item collection during the original delivery. It
+     is not a post-delivery commercial product return, so this wrapper must not
+     synthesize reverse pickups by setting that flag. */
   const out = await callAcs("ACS_Create_Voucher", input);
   return (out.ACSValueOutput && out.ACSValueOutput[0]) || {};
 }

@@ -44,7 +44,7 @@ export const PAY_STATUS: Record<string, { label: string; color: BadgeColor; shor
   cod_awaiting_remittance: { label: "Αναμονή απόδοσης από courier", color: "blue", short: "Αναμονή απόδοσης" },
   cod: { label: "Αντικαταβολή – δεν έχει εισπραχθεί", color: "orange", short: "Δεν εισπράχθηκε" },
 };
-export const PAY_CARD_ORDER: PaymentStatus[] = ["pending", "paid", "failed", "refunded", "partial_refund"];
+export const PAY_CARD_ORDER: PaymentStatus[] = ["pending", "paid", "failed"];
 export const PAY_COD_ORDER: PaymentStatus[] = ["cod_pending", "cod_collected", "cod_awaiting_remittance", "cod_not_delivered"];
 
 export const COURIERS: Record<string, string> = {

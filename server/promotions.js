@@ -140,6 +140,7 @@ function resolveFinalPrice(promotions, product, regularPrice, manualPrice, now) 
         discountType: best.promotion.discountType,
         discountValue: best.promotion.discountValue,
         discountAmount: round2(regularPrice - best.price),
+        startsAt: best.promotion.startsAt || null,
         endsAt: best.promotion.endsAt || null,
       },
     };

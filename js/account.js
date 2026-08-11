@@ -380,6 +380,9 @@
     if (["shipped", "delivered"].indexOf(o.status) !== -1) return false;
     return true;
   }
+  function orderReturnable(o) {
+    return ["delivered", "returning", "returned"].indexOf(o.shippingStatus) !== -1;
+  }
   var accountOrders = [];
   function findAccountOrder(id) {
     for (var i = 0; i < accountOrders.length; i++) if (accountOrders[i].id === id) return accountOrders[i];
@@ -431,7 +434,7 @@
       if (!window.confirm(t("account_order_cancel_confirm"))) return;
       if (!(window.NostalgiaAPI && window.NostalgiaAPI.isAvailable())) return;
       cancelBtn.disabled = true;
-      window.NostalgiaAPI.post("/api/orders/" + cancelBtn.getAttribute("data-cancel-order") + "/cancel", {}).then(function (res) {
+      window.NostalgiaAPI.postWithHeaders("/api/orders/" + cancelBtn.getAttribute("data-cancel-order") + "/cancel", {}, {}).then(function (res) {
         if (res && res.ok) {
           acctToast(t("account_order_cancelled_ok"));
           renderMyOrders();
@@ -444,6 +447,75 @@
       }).catch(function () { cancelBtn.disabled = false; });
       return;
     }
+    var returnBtn = e.target.closest("[data-return-order]");
+    if (returnBtn) {
+      var orderId = returnBtn.getAttribute("data-return-order");
+      var card = returnBtn.closest(".account-order");
+      if (!card || !(window.NostalgiaAPI && window.NostalgiaAPI.isAvailable())) return;
+      var existing = card.querySelector("[data-return-panel]");
+      if (existing) { existing.remove(); return; }
+      returnBtn.disabled = true;
+      window.NostalgiaAPI.get("/api/v2/orders/" + encodeURIComponent(orderId) + "/return-options").then(function (res) {
+        returnBtn.disabled = false;
+        if (!res || !res.ok || !res.returnable || !res.items || !res.items.length) {
+          acctToast(isEnglish() ? "No items are available for return." : "Δεν υπάρχουν διαθέσιμα προϊόντα για επιστροφή.");
+          return;
+        }
+        var panel = document.createElement("form");
+        panel.className = "account-return-form";
+        panel.setAttribute("data-return-panel", "");
+        panel.setAttribute("data-return-form", orderId);
+        panel.innerHTML =
+          '<h4>' + (isEnglish() ? "Return request" : "Αίτημα επιστροφής") + '</h4>' +
+          res.items.map(function (item) {
+            return '<label class="account-return-form__item">' +
+              '<input type="checkbox" data-return-item="' + escapeHtml(item.orderItemId) + '" />' +
+              '<span><strong>' + escapeHtml(item.productName) + (item.variantName ? " · " + escapeHtml(item.variantName) : "") +
+              '</strong><small>' + (isEnglish() ? "Available" : "Διαθέσιμα") + ': ' + Number(item.returnableQuantity) + '</small></span>' +
+              '<input type="number" data-return-qty="' + escapeHtml(item.orderItemId) + '" min="1" max="' + Number(item.returnableQuantity) + '" value="1" aria-label="' + (isEnglish() ? "Quantity" : "Ποσότητα") + '" />' +
+              '</label>';
+          }).join("") +
+          '<label class="account-return-form__reason"><span>' + (isEnglish() ? "Reason" : "Αιτιολογία") + '</span>' +
+          '<textarea name="reason" rows="3" maxlength="500" required minlength="3"></textarea></label>' +
+          '<button type="submit" class="account-order__btn account-order__btn--reorder">' +
+          (isEnglish() ? "Submit request" : "Υποβολή αιτήματος") + '</button>';
+        card.appendChild(panel);
+      }).catch(function () { returnBtn.disabled = false; });
+      return;
+    }
+  });
+
+  document.addEventListener("submit", function (e) {
+    var form = e.target && e.target.closest ? e.target.closest("[data-return-form]") : null;
+    if (!form) return;
+    e.preventDefault();
+    if (!form.reportValidity()) return;
+    var reason = form.elements.reason.value.trim();
+    var items = Array.prototype.slice.call(form.querySelectorAll("[data-return-item]:checked")).map(function (checkbox) {
+      var id = checkbox.getAttribute("data-return-item");
+      var quantity = Number(form.querySelector('[data-return-qty="' + id + '"]').value);
+      return { orderItemId: id, quantity: quantity, reason: reason };
+    });
+    if (!items.length) {
+      acctToast(isEnglish() ? "Select at least one item." : "Επίλεξε τουλάχιστον ένα προϊόν.");
+      return;
+    }
+    var submit = form.querySelector('button[type="submit"]');
+    submit.disabled = true;
+    var key = window.crypto && window.crypto.randomUUID ? window.crypto.randomUUID() :
+      "return-" + Date.now() + "-" + Math.random().toString(16).slice(2);
+    window.NostalgiaAPI.postWithHeaders(
+      "/api/v2/orders/" + encodeURIComponent(form.getAttribute("data-return-form")) + "/returns",
+      { items: items, reason: reason }, { "Idempotency-Key": key }
+    ).then(function (res) {
+      if (!res || !res.ok) {
+        submit.disabled = false;
+        acctToast(isEnglish() ? "The return request could not be submitted." : "Το αίτημα επιστροφής δεν υποβλήθηκε.");
+        return;
+      }
+      form.innerHTML = '<p class="account-return-form__success">' +
+        (isEnglish() ? "Your return request was submitted." : "Το αίτημα επιστροφής υποβλήθηκε.") + '</p>';
+    }).catch(function () { submit.disabled = false; });
   });
 
   function escapeHtml(str) {
@@ -1400,6 +1472,9 @@
             '    <button type="button" class="account-order__btn account-order__btn--reorder" data-reorder="' + escapeHtml(o.id) + '">' + t("account_order_reorder") + "</button>" +
             (orderCancellable(o)
               ? '    <button type="button" class="account-order__btn account-order__btn--cancel" data-cancel-order="' + escapeHtml(o.id) + '">' + t("account_order_cancel") + "</button>"
+              : "") +
+            (orderReturnable(o)
+              ? '    <button type="button" class="account-order__btn" data-return-order="' + escapeHtml(o.id) + '">' + (isEnglish() ? "Return" : "Επιστροφή") + "</button>"
               : "") +
             "  </div>" +
             "</article>"

@@ -57,6 +57,9 @@ acs-test-pdf/
 *voucher*.pdf
 *lista-paralavis*.pdf
 
+# Official ACS API manuals and supplier documentation kept locally.
+acs-pdf/
+
 # Internal notes and supplier paperwork. THIS REPO IS PUBLIC on GitHub, so
 # anything here would be world-readable — these hold the ΑΦΜ, the ACS billing
 # code and username, and a full description of our security posture.

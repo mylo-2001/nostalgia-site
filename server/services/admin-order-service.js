@@ -80,9 +80,31 @@ async function getAdminOrder(options) {
 
 async function transitionAdminOrder(options) {
   return inTransaction(options, async (client) => {
+    if (["refunded", "partially_refunded", "partial_refund"]
+      .includes(options.changes?.paymentStatus)) {
+      throw new AdminOrderServiceError("PROVIDER_REFUND_REQUIRED",
+        "Refunded status can only be written by a verified provider callback");
+    }
     const isCancellation = options.changes?.orderStatus === "cancelled";
     await authorizeAdmin(client, options.adminUserId,
       isCancellation ? "order.cancel" : "order.update_status");
+    if (isCancellation) {
+      const payment = await client.query(`
+        SELECT o.payment_method_v2, o.payment_status_v2, o.grand_total,
+          COALESCE((SELECT p.amount FROM payments p WHERE p.order_id=o.id
+            ORDER BY p.attempt DESC LIMIT 1), o.grand_total) AS charged,
+          COALESCE((SELECT SUM(r.amount) FROM refunds r
+            WHERE r.order_id=o.id AND r.status='confirmed'),0) AS refunded
+        FROM orders o WHERE o.id=$1 FOR SHARE
+      `, [options.orderId]);
+      if (payment.rowCount && payment.rows[0].payment_method_v2 !== "cod" &&
+          ["paid", "refunded", "partially_refunded"].includes(payment.rows[0].payment_status_v2) &&
+          (Number(payment.rows[0].refunded) < Number(payment.rows[0].charged) ||
+           Number(payment.rows[0].charged) <= 0)) {
+        throw new AdminOrderServiceError("PROVIDER_REFUND_REQUIRED",
+          "Paid order cancellation requires a provider-confirmed full refund");
+      }
+    }
     const result = await transitionOrderStateInTransaction({
       client, orderId: options.orderId, changes: options.changes,
       expectedVersion: options.expectedVersion,

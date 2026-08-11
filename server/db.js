@@ -16,6 +16,7 @@ const path = require("path");
 const crypto = require("crypto");
 const { Pool, Client } = require("pg");
 const catalog = require("./catalog");
+const priceHistory = require("./services/price-history-service");
 
 const DATA_DIR = path.join(__dirname, "data");
 
@@ -1307,6 +1308,124 @@ async function setOverride(id, fields) {
   );
 }
 
+/* ---------- price-reduction history (Directive 98/6/EC as amended) ---------- */
+
+async function reconcilePriceHistory(rawObservations, observedAt) {
+  const observations = (rawObservations || []).map(priceHistory.normalizeObservation).filter(Boolean);
+  const result = {};
+  if (!observations.length) return result;
+  const now = observedAt ? new Date(observedAt) : new Date();
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+    for (const observation of observations) {
+      await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [observation.itemId]);
+      let latestResult = await client.query(
+        `SELECT * FROM product_price_history
+          WHERE item_id = $1 AND valid_to IS NULL
+          FOR UPDATE`,
+        [observation.itemId]
+      );
+      let latest = latestResult.rows[0] || null;
+      const sameState = latest &&
+        Number(latest.price) === observation.price &&
+        Number(latest.regular_price) === observation.regularPrice &&
+        (latest.source_type || null) === observation.sourceType &&
+        (latest.source_id || null) === observation.sourceId;
+
+      if (sameState) {
+        const storedStart = latest.source_started_at ? new Date(latest.source_started_at).getTime() : null;
+        const storedEnd = latest.source_ends_at ? new Date(latest.source_ends_at).getTime() : null;
+        const observedStart = observation.sourceStartedAt ? observation.sourceStartedAt.getTime() : null;
+        const observedEnd = observation.sourceEndsAt ? observation.sourceEndsAt.getTime() : null;
+        if (storedStart !== observedStart || storedEnd !== observedEnd) {
+          latestResult = await client.query(
+            `UPDATE product_price_history
+                SET source_started_at = $2, source_ends_at = $3
+              WHERE id = $1
+              RETURNING *`,
+            [latest.id, observation.sourceStartedAt, observation.sourceEndsAt]
+          );
+          latest = latestResult.rows[0];
+        }
+      } else {
+        const changedAt = priceHistory.transitionTime(latest, observation, now);
+        if (latest) {
+          await client.query(
+            "UPDATE product_price_history SET valid_to = $2 WHERE id = $1",
+            [latest.id, changedAt]
+          );
+        }
+        latestResult = await client.query(
+          `INSERT INTO product_price_history
+             (item_id, price, regular_price, source_type, source_id,
+              source_started_at, source_ends_at, valid_from)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+           RETURNING *`,
+          [
+            observation.itemId, observation.price, observation.regularPrice,
+            observation.sourceType, observation.sourceId,
+            observation.sourceStartedAt, observation.sourceEndsAt, changedAt,
+          ]
+        );
+        latest = latestResult.rows[0];
+      }
+
+      if (!priceHistory.isPriceReduction(observation)) {
+        result[observation.itemId] = null;
+        continue;
+      }
+      const startedAt = new Date(latest.valid_from);
+      const minimum = await client.query(
+        `SELECT MIN(price)::numeric AS prior_price
+           FROM product_price_history
+          WHERE item_id = $1
+            AND id <> $2
+            AND valid_from < $3
+            AND COALESCE(valid_to, $3) > $4`,
+        [observation.itemId, latest.id, startedAt, priceHistory.referenceWindowStart(startedAt)]
+      );
+      const prior = minimum.rows[0] && minimum.rows[0].prior_price;
+      /* A newly marketed item with no earlier applied price cannot acquire a
+         fictitious crossed-out reference price merely from its regular_price
+         field. Its current price is the only defensible reference. */
+      result[observation.itemId] = prior == null ? observation.price : parseFloat(prior);
+    }
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function listProductPriceHistory(itemId, days) {
+  const windowDays = Math.max(30, Math.min(730, parseInt(days, 10) || 90));
+  const r = await q(
+    `SELECT id, item_id, price, regular_price, source_type, source_id,
+            source_started_at, source_ends_at, valid_from, valid_to
+       FROM product_price_history
+      WHERE item_id = $1
+        AND COALESCE(valid_to, now()) >= now() - ($2::text || ' days')::interval
+      ORDER BY valid_from DESC`,
+    [String(itemId), String(windowDays)]
+  );
+  return r.rows.map((row) => ({
+    id: Number(row.id),
+    itemId: row.item_id,
+    price: parseFloat(row.price),
+    regularPrice: parseFloat(row.regular_price),
+    sourceType: row.source_type || null,
+    sourceId: row.source_id || null,
+    sourceStartedAt: row.source_started_at || null,
+    sourceEndsAt: row.source_ends_at || null,
+    validFrom: row.valid_from,
+    validTo: row.valid_to || null,
+  }));
+}
+
 /* ---------- coupons ---------- */
 
 function rowToCoupon(r) {
@@ -1983,8 +2102,8 @@ async function nextOrderNumber() {
 
 async function createOrder(o) {
   await q(
-    `INSERT INTO orders (id, number, status, payment, payment_status, coupon, discount, total, lang, user_email, customer, gift, items, access_token, promotion_snapshots, shipping_fee, cod_fee, coupon_free_shipping)
-     VALUES ($1,$2,'new',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
+    `INSERT INTO orders (id, number, status, payment, payment_status, coupon, discount, total, lang, user_email, customer, gift, items, access_token, promotion_snapshots, shipping_fee, cod_fee, coupon_free_shipping, terms_version, terms_accepted_at)
+     VALUES ($1,$2,'new',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)`,
     [
       o.id,
       o.number,
@@ -2003,6 +2122,8 @@ async function createOrder(o) {
       o.shippingFee == null ? null : o.shippingFee,
       o.codFee == null ? null : o.codFee,
       !!o.couponFreeShipping,
+      o.termsVersion || null,
+      o.termsAcceptedAt || null,
     ]
   );
 }
@@ -2668,6 +2789,8 @@ module.exports = {
   deleteCustomProduct,
   getOverrides,
   setOverride,
+  reconcilePriceHistory,
+  listProductPriceHistory,
   getAllProductDetails,
   getProductDetails,
   setProductDetails,

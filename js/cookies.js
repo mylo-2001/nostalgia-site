@@ -171,7 +171,8 @@
       '<span data-i18n="cookie_banner_title">Καλώς ήρθατε στη Nostalgia Collection</span></h2>' +
       '  <p class="cookie-banner__text">' +
       '    <span data-i18n="cookie_banner_text">Η Nostalgia Collection χρησιμοποιεί cookies πρώτου και τρίτου μέρους, καθώς και παρόμοιες τεχνολογίες παρακολούθησης, για τη σωστή λειτουργία του ιστότοπου, την ανάλυση της επισκεψιμότητας και την εξατομίκευση της εμπειρίας σας.</span> ' +
-      '    <a href="/privacy#cookies" data-i18n="cookie_privacy_policy">Πολιτική Απορρήτου</a>.' +
+      '    <a href="/cookie-policy" data-i18n="footer_cookie_policy">Πολιτική Cookies</a> · ' +
+      '    <a href="/privacy" data-i18n="cookie_privacy_policy">Πολιτική Απορρήτου</a>.' +
       "  </p>" +
       '  <div class="cookie-banner__actions">' +
       '    <button type="button" class="cookie-banner__btn cookie-banner__btn--secondary" data-cookie-continue-without data-i18n="cookie_reject_all">Αποδοχή μόνο των απαραίτητων</button>' +
@@ -195,7 +196,7 @@
       '<span data-i18n="cookie_settings_title">Κέντρο Προτιμήσεων Απορρήτου</span></h2>' +
       '  <p class="cookie-settings__lead">' +
       '    <span data-i18n="cookie_settings_lead">Χρησιμοποιούμε cookies για να βελτιώνουμε την εμπειρία σας, να αναλύουμε την επισκεψιμότητα και να εξατομικεύουμε το περιεχόμενο. Μπορείτε να επιλέξετε ποιες κατηγορίες επιθυμείτε να ενεργοποιήσετε.</span> ' +
-      '    <a href="/privacy#cookies" data-i18n="cookie_more_info">Περισσότερες πληροφορίες</a>.' +
+      '    <a href="/cookie-policy" data-i18n="cookie_more_info">Περισσότερες πληροφορίες</a>.' +
       "  </p>" +
       '  <button type="button" class="cookie-settings__allow-all" data-cookie-accept-all data-i18n="cookie_allow_all">Αποδοχή όλων</button>' +
       '  <h3 class="cookie-settings__section-title" data-i18n="cookie_manage_section">Διαχείριση προτιμήσεων</h3>' +

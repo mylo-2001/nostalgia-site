@@ -329,10 +329,11 @@
       var visual = document.createElement("div");
       visual.className = "collection-product__visual candle-hover";
 
-      if (window.NostalgiaProducts && window.NostalgiaProducts.isOnSale(item)) {
+      var discount = window.NostalgiaProducts ? window.NostalgiaProducts.discountPercent(item) : 0;
+      if (discount > 0) {
         var saleBadge = document.createElement("span");
         saleBadge.className = "product-sale-badge";
-        saleBadge.textContent = "-" + window.NostalgiaProducts.discountPercent(item) + "%";
+        saleBadge.textContent = "-" + discount + "%";
         visual.appendChild(saleBadge);
       }
 
@@ -384,10 +385,19 @@
         var price = document.createElement("p");
         price.className = "collection-product__price";
         if (window.NostalgiaProducts && window.NostalgiaProducts.isOnSale(item)) {
-          price.className += " collection-product__price--sale";
-          price.innerHTML =
-            '<span class="collection-product__price-now">€' + Number(item.salePrice).toFixed(2) + "</span>" +
-            '<span class="collection-product__price-was">€' + Number(item.price).toFixed(2) + "</span>";
+          var current = Number(item.salePrice);
+          var reference = item.priorPrice != null ? Number(item.priorPrice) : Number(item.price);
+          if (reference > current) {
+            var referenceLabel = /^en/i.test(document.documentElement.lang)
+              ? "Lowest price in the previous 30 days"
+              : "Χαμηλότερη τιμή προηγούμενων 30 ημερών";
+            price.className += " collection-product__price--sale";
+            price.innerHTML =
+              '<span class="collection-product__price-now">€' + current.toFixed(2) + "</span>" +
+              '<span class="collection-product__price-was" title="' + referenceLabel + '">€' + reference.toFixed(2) + "</span>";
+          } else {
+            price.textContent = "€" + current.toFixed(2);
+          }
         } else {
           price.textContent = "€" + Number(item.price).toFixed(2);
         }

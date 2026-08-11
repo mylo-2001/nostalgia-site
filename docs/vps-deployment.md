@@ -36,7 +36,7 @@ The app auto-loads `/var/www/nostalgia/.env`. Required / important keys:
 | `DATABASE_URL` | Postgres connection (Supabase session pooler or self-hosted) |
 | `SITE_URL=https://your-domain` | absolute links in emails + guest tracking link |
 | `CRON_TOKEN` | Bearer secret for `/api/cron/maintenance` (used by `run-maintenance.sh`) |
-| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | card payments + verified webhook |
+| Worldline credentials (names pending official docs) | add only after the Worldline adapter and callback verification are implemented |
 | `RESEND_API_KEY`+`EMAIL_FROM` **or** `SMTP_*` | order/notification emails |
 | `CHECKOUT_V2_ENABLED` | keep `false` until the go-live gate is done |
 
@@ -59,8 +59,8 @@ sudo ln -s /etc/nginx/sites-available/nostalgia /etc/nginx/sites-enabled/
 sudo certbot --nginx -d your-domain
 sudo nginx -t && sudo systemctl reload nginx
 ```
-Do **not** add body rewriting on `/api/v2/stripe/webhook` — it needs the raw body for
-signature verification.
+Preserve the raw request body on the future Worldline callback path once the official
+integration documentation defines its signature-verification requirements.
 
 ## 5. Maintenance scheduler (the Vercel-killer step)
 ```bash
@@ -75,17 +75,20 @@ ALLOW_REMOTE_MIGRATIONS=true ALLOW_PRODUCTION_MIGRATIONS=true npm run migrate:up
 ```
 (Already applied on the current shared DB — status shows 25/25.)
 
-## 7. Stripe webhook
-In the Stripe dashboard add an endpoint `https://your-domain/api/v2/stripe/webhook`
-subscribed to: checkout session completed, async payment failed / session expired,
-and the refund events. Put the signing secret in `STRIPE_WEBHOOK_SECRET`.
+## 7. Worldline payments
+Keep card checkout disabled. Implement the hosted-payment adapter, signed callback,
+refund and reconciliation flow from the official Worldline documentation before adding
+credentials or enabling checkout. Legacy Stripe routes are disabled and are not a
+production integration path.
 
 ## 8. Seed real data, then enable V2
 1. Replace the **sample** VAT/shipping/prices (`npm run seed:test:clear` to remove them)
    with real, accountant-approved `shipping_methods`, `tax_rates`, and prices/stock for
    **all** products.
-2. Smoke test guest card / guest COD / signed-in checkout.
-3. Set `CHECKOUT_V2_ENABLED=true`, `sudo systemctl restart nostalgia`, monitor.
+2. Smoke test guest and signed-in card checkout, including cancellation, delayed callback,
+   duplicate callback, failed payment and refund behavior.
+3. Set `PAYMENT_PROVIDER=worldline` and `CHECKOUT_V2_ENABLED=true` only after the adapter's
+   launch gate passes; restart and monitor.
 
 ## Update / redeploy
 ```bash

@@ -236,7 +236,10 @@
       '          <li><button type="button" class="side-nav__link side-nav__link--small" data-newsletter-open><span class="side-nav__link-text" data-i18n="newsletter_title">Newsletter</span></button></li>' +
       '          <li><a class="side-nav__link side-nav__link--small" href="/cart"><span class="side-nav__link-text" data-i18n="cart_heading">Το καλάθι σου</span></a></li>' +
       '          <li><a class="side-nav__link side-nav__link--small" href="/wishlist"><span class="side-nav__link-text" data-i18n="wishlist_heading">Αγαπημένα</span></a></li>' +
+      '          <li><a class="side-nav__link side-nav__link--small" href="/terms"><span class="side-nav__link-text" data-i18n="footer_terms">Όροι Πώλησης</span></a></li>' +
       '          <li><a class="side-nav__link side-nav__link--small" href="/privacy"><span class="side-nav__link-text" data-i18n="footer_privacy">Προστασία Δεδομένων</span></a></li>' +
+      '          <li><a class="side-nav__link side-nav__link--small" href="/cookie-policy"><span class="side-nav__link-text" data-i18n="footer_cookie_policy">Πολιτική Cookies</span></a></li>' +
+      '          <li><a class="side-nav__link side-nav__link--small" href="/shipping-returns"><span class="side-nav__link-text" data-i18n="footer_shipping_returns">Αποστολές &amp; Επιστροφές</span></a></li>' +
       "        </ul>" +
       '        <div class="side-nav__utils" id="side-nav-utils" hidden>' +
       '          <div class="side-nav__utils-row" id="side-nav-utils-row">' +
@@ -972,6 +975,22 @@
     isOpen: isDrawerOpen,
     placeHeaderUtilities: placeHeaderUtilities,
   };
+
+  /* Every storefront page loads side-nav.js. Load the shared chrome once so
+     legacy inline footers are upgraded to the same complete legal footer. */
+  if (!window.NostalgiaSiteChrome && !document.querySelector('script[src*="js/site-chrome.js"]')) {
+    var chromeScript = document.createElement("script");
+    chromeScript.src = "/js/site-chrome.js?v=footer-identity1";
+    chromeScript.defer = true;
+    chromeScript.onload = function () {
+      if (window.NostalgiaSiteChrome && typeof window.NostalgiaSiteChrome.init === "function") {
+        window.NostalgiaSiteChrome.init();
+      }
+    };
+    document.head.appendChild(chromeScript);
+  } else if (window.NostalgiaSiteChrome && typeof window.NostalgiaSiteChrome.init === "function") {
+    window.NostalgiaSiteChrome.init();
+  }
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);

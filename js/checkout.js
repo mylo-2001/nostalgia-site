@@ -4,6 +4,8 @@
   var orderCaptcha = null;
   var checkoutSubmitting = false;
   var checkoutCouponBound = false;
+  var cardPaymentsEnabled = false;
+  var TERMS_VERSION = "2026-08-11";
 
   function v2Context(lines, payment) {
     var currentShipping = Object.assign({}, shippingData || {});
@@ -16,6 +18,8 @@
       payment: payment || getPayMethod(),
       couponCode: getStoredCoupon(),
       lang: getLang(),
+      termsAccepted: isTermsAccepted(),
+      termsVersion: TERMS_VERSION,
     };
   }
 
@@ -24,7 +28,7 @@
     var cta = document.getElementById("checkout-cta");
     if (status) status.textContent = message || "";
     if (cta) {
-      cta.disabled = !!busy;
+      cta.disabled = !!busy || (step === 2 && !cardPaymentsEnabled);
       cta.setAttribute("aria-busy", busy ? "true" : "false");
     }
   }
@@ -84,6 +88,20 @@
   function getPayMethod() {
     var selected = document.querySelector('input[name="pay_method"]:checked');
     return selected && selected.value === "card" ? "card" : "card";
+  }
+
+  function isTermsAccepted() {
+    var checkbox = document.getElementById("checkout-terms-accepted");
+    return !!(checkbox && checkbox.checked);
+  }
+
+  function validateTermsAcceptance() {
+    var checkbox = document.getElementById("checkout-terms-accepted");
+    var error = document.getElementById("checkout-terms-error");
+    var valid = !!(checkbox && checkbox.checked);
+    if (error) error.hidden = valid;
+    if (!valid && checkbox) checkbox.focus();
+    return valid;
   }
 
   function getCourier() {
@@ -586,6 +604,7 @@
       cta.textContent = t("checkout_submit");
       cta.setAttribute("data-i18n", "checkout_submit");
     }
+    cta.disabled = step === 2 && (!cardPaymentsEnabled || !isTermsAccepted());
   }
 
   function updateStepIndicators() {
@@ -601,7 +620,7 @@
     var shipping = document.getElementById("checkout-step-shipping");
     var payment = document.getElementById("checkout-step-payment");
     var back = document.getElementById("checkout-back");
-    var stripeNote = document.getElementById("checkout-stripe-note");
+    var worldlineNote = document.getElementById("checkout-worldline-note");
     var nextBtn = document.getElementById("checkout-next");
 
     if (shipping) shipping.hidden = n !== 1;
@@ -611,9 +630,7 @@
       back.href = n === 1 ? "/cart" : "#";
       back.textContent = n === 1 ? t("checkout_back") : t("checkout_back");
     }
-    if (stripeNote) {
-      stripeNote.hidden = getPayMethod() !== "stripe";
-    }
+    if (worldlineNote) worldlineNote.hidden = n !== 2;
     updateStepIndicators();
     updateCta();
     renderSummary();
@@ -668,6 +685,11 @@
 
   function submitOrder() {
     if (!shippingData) return;
+    if (!validateTermsAcceptance()) return;
+    if (!cardPaymentsEnabled) {
+      setCheckoutStatus(t("checkout_worldline_unavailable"), false);
+      return;
+    }
     var payment = getPayMethod();
     var lines = window.NostalgiaCart.getLineItems().slice();
 
@@ -686,6 +708,7 @@
           result.order.orderId, {
             courier: getCourier(), date: Date.now(), email: shippingData.email,
             firstname: shippingData.firstname, lastname: shippingData.lastname,
+            guestAccessToken: result.order.guestAccessToken,
           });
       }).catch(function (error) {
         checkoutSubmitting = false;
@@ -717,6 +740,8 @@
         coupons: getStoredCoupons(),
         coupon: getStoredCoupon(),
         lang: getLang(),
+        termsAccepted: true,
+        termsVersion: TERMS_VERSION,
         captchaToken: window.NostalgiaCaptcha ? window.NostalgiaCaptcha.getToken(orderCaptcha) : "",
       }).then(function (res) {
         if (res.error === "captcha_failed") {
@@ -729,7 +754,7 @@
           return;
         }
         if (res.ok && res.checkoutUrl) {
-          /* Stripe is configured and the cart is priced → pay by card. */
+          /* The configured hosted provider owns the card-entry screen. */
           try {
             sessionStorage.setItem("nostalgia-pending-order", JSON.stringify({
               lines: lines.map(function (line) {
@@ -738,6 +763,7 @@
               payment: payment,
               orderNumber: res.order && res.order.number,
               orderId: res.order && res.order.id,
+              guestAccessToken: res.guestAccessToken || null,
               courier: shippingData && shippingData.courier,
               date: Date.now(),
               email: shippingData && shippingData.email,
@@ -753,6 +779,7 @@
             email: shippingData && shippingData.email,
             firstname: shippingData && shippingData.firstname,
             lastname: shippingData && shippingData.lastname,
+            guestAccessToken: res.guestAccessToken || null,
           });
         } else if (res.error && String(res.error).indexOf("out_of_stock") === 0) {
           alert(
@@ -772,7 +799,7 @@
     submitOrderByEmail(lines, payment);
   }
 
-  var PAY_ICON_STRIPE =
+  var PAY_ICON_CARD =
     '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">' +
     '<rect x="6" y="12" width="36" height="24" rx="3.5" />' +
     '<path d="M6 20h36" />' +
@@ -795,7 +822,7 @@
       .replace(/"/g, "&quot;");
   }
 
-  function setupOrderCancel(orderId, payment) {
+  function setupOrderCancel(orderId, payment, guestAccessToken) {
     var wrap = document.getElementById("order-success-cancel");
     var btn = document.getElementById("order-success-cancel-btn");
     var result = document.getElementById("order-success-cancel-result");
@@ -811,7 +838,8 @@
     btn.onclick = function () {
       if (!window.confirm(t("checkout_cancel_confirm"))) return;
       btn.disabled = true;
-      window.NostalgiaAPI.post("/api/orders/" + encodeURIComponent(orderId) + "/cancel", {}).then(function (res) {
+      var headers = guestAccessToken ? { "X-Order-Access-Token": guestAccessToken } : {};
+      window.NostalgiaAPI.postWithHeaders("/api/orders/" + encodeURIComponent(orderId) + "/cancel", {}, headers).then(function (res) {
         if (res && res.ok) {
           btn.hidden = true;
           if (result) {
@@ -902,7 +930,7 @@
 
     if (payIcon) {
       payIcon.className = "order-success__pay-icon order-success__pay-icon--" + payment;
-      payIcon.innerHTML = PAY_ICON_STRIPE;
+      payIcon.innerHTML = PAY_ICON_CARD;
     }
 
     if (productsEl) {
@@ -951,7 +979,7 @@
       });
     }
 
-    setupOrderCancel(orderId, payment);
+    setupOrderCancel(orderId, payment, extra.guestAccessToken);
     setupCreateAccountCard(extra.email, extra.firstname, extra.lastname);
 
     if (window.NostalgiaI18n && window.NostalgiaI18n.applyLang) {
@@ -1095,11 +1123,18 @@
 
     document.querySelectorAll('input[name="pay_method"]').forEach(function (radio) {
       radio.addEventListener("change", function () {
-        var note = document.getElementById("checkout-stripe-note");
+        var note = document.getElementById("checkout-worldline-note");
         if (note) note.hidden = false;
         renderSummary();
         updateCta();
       });
+    });
+
+    var terms = document.getElementById("checkout-terms-accepted");
+    if (terms) terms.addEventListener("change", function () {
+      var error = document.getElementById("checkout-terms-error");
+      if (error && terms.checked) error.hidden = true;
+      updateCta();
     });
 
     document.querySelectorAll('input[name="courier"]').forEach(function (radio) {
@@ -1203,12 +1238,13 @@
     var lines = (pending.lines || []).map(function (l) {
       return { qty: l.qty, product: { image: l.image, title: l.title } };
     });
-    showOrderSuccess(lines, pending.payment || "stripe", pending.orderNumber, orderId || pending.orderId, {
+    showOrderSuccess(lines, pending.payment || "card", pending.orderNumber, orderId || pending.orderId, {
       courier: pending.courier,
       date: pending.date,
       email: pending.email,
       firstname: pending.firstname,
       lastname: pending.lastname,
+      guestAccessToken: pending.guestAccessToken,
     });
     window.NostalgiaCart.clearCart();
   }
@@ -1285,20 +1321,20 @@
   }
 
   /**
-   * Handle the redirect back from Stripe Checkout.
-   * Returns true if a Stripe return was handled (init should stop).
+   * Handle a hosted payment provider return for an existing V2 order.
+   * Provider callbacks, not URL parameters, determine whether payment succeeded.
    */
-  function handleStripeReturn() {
+  function handlePaymentReturn() {
     var params = new URLSearchParams(window.location.search);
-    var stripe = params.get("stripe");
-    if (!stripe) return false;
+    var paymentResult = params.get("payment");
+    if (!paymentResult) return false;
 
     /* clean the URL so a refresh doesn't re-trigger */
     try {
       history.replaceState(null, "", "/checkout");
     } catch (e) {}
 
-    if (stripe === "cancel") {
+    if (paymentResult === "cancel") {
       var cancelledPending = getPendingOrder();
       if (!cancelledPending || !cancelledPending.v2) {
         try { sessionStorage.removeItem("nostalgia-pending-order"); } catch (e) {}
@@ -1311,27 +1347,15 @@
       return false; // let normal checkout init continue
     }
 
-    if (stripe === "success") {
+    if (paymentResult === "success") {
       var pending = getPendingOrder();
-      var sessionId = params.get("session_id");
       if (pending && pending.v2 && window.NostalgiaCheckoutV2) {
         showSuccessFromPending(pending, pending.orderId);
         applyV2PaymentState(pending, { paymentStatus: "pending" });
         pollV2PaymentState(pending, 0);
         return true;
       }
-      if (window.NostalgiaAPI && window.NostalgiaAPI.isAvailable() && sessionId) {
-        window.NostalgiaAPI.get(
-          "/api/orders/confirm?session_id=" + encodeURIComponent(sessionId)
-        ).then(function (res) {
-          var oid = res && res.order && res.order.id;
-          if (pending) showSuccessFromPending(pending, oid);
-        }).catch(function () {
-          if (pending) showSuccessFromPending(pending);
-        });
-      } else if (pending) {
-        showSuccessFromPending(pending);
-      }
+      if (pending) showSuccessFromPending(pending);
       try { sessionStorage.removeItem("nostalgia-pending-order"); } catch (e) {}
       return true;
     }
@@ -1402,7 +1426,7 @@
   }
 
   function init() {
-    if (handleStripeReturn()) return;
+    if (handlePaymentReturn()) return;
     if (!window.NostalgiaCart.getLineItems().length) {
       window.location.href = "/cart";
       return;
@@ -1419,6 +1443,17 @@
     bindEvents();
     bindCheckoutCoupon();
     initAccountBanner();
+    if (window.NostalgiaAPI) {
+      window.NostalgiaAPI.get("/api/public-config").then(function (config) {
+        cardPaymentsEnabled = !!(config && config.worldlinePaymentsEnabled);
+        var radio = document.querySelector('input[name="pay_method"][value="card"]');
+        if (radio) radio.disabled = !cardPaymentsEnabled;
+        updateCta();
+      }).catch(function () {
+        cardPaymentsEnabled = false;
+        updateCta();
+      });
+    }
     if (window.NostalgiaCheckoutV2) {
       window.NostalgiaCheckoutV2.loadConfig().then(renderSummary);
     }

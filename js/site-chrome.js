@@ -161,6 +161,8 @@
       '        <li><a href="/how-it-works" data-i18n="footer_how_it_works">' + t("footer_how_it_works") + "</a></li>" +
       '        <li><a href="/shipping-returns" data-i18n="footer_shipping_returns">' + t("footer_shipping_returns") + "</a></li>" +
       '        <li><a href="/payments" data-i18n="footer_payments">' + t("footer_payments") + "</a></li>" +
+      '        <li><a href="/cancellations" data-i18n="footer_cancellations">' + t("footer_cancellations") + "</a></li>" +
+      '        <li><a href="/warranty" data-i18n="footer_warranty">' + t("footer_warranty") + "</a></li>" +
       '        <li><a href="/faq" data-i18n="footer_faq">' + t("footer_faq") + "</a></li>" +
       "      </ul>" +
       "    </section>" +
@@ -231,18 +233,21 @@
       '  <nav class="site-footer__legal site-footer__legal--bottom">' +
       '    <a href="/terms" data-i18n="footer_terms">Terms</a>' +
       '    <a href="/privacy" data-i18n="footer_privacy">Privacy</a>' +
+      '    <a href="/cookie-policy" data-i18n="footer_cookie_policy">Cookies</a>' +
+      '    <a href="/shipping-returns" data-i18n="footer_shipping_returns">Shipping</a>' +
+      '    <a href="/payments" data-i18n="footer_payments">Payments</a>' +
+      '    <a href="/contact" data-i18n="nav_contact">Contact</a>' +
       "  </nav>" +
-      '  <p class="site-footer__copyright" data-i18n="footer_copyright">' + t("footer_copyright") + "</p>" +
       '  <div class="site-footer__payments" aria-label="Accepted payments">' +
-      '    <span class="site-footer__pay site-footer__pay--stripe">Worldline — soon</span>' +
-      '    <span class="site-footer__pay site-footer__pay--visa">VISA</span>' +
-      '    <span class="site-footer__pay site-footer__pay--mc" aria-label="Mastercard">' +
-      '      <svg viewBox="0 0 36 24" aria-hidden="true"><circle cx="15" cy="12" r="7" fill="#eb001b"/><circle cx="21" cy="12" r="7" fill="#f79e1b"/><path fill="#ff5f00" d="M18 6.5a7 7 0 0 0 0 11 7 7 0 0 0 0-11z"/></svg>' +
-      "    </span>" +
+      '    <span class="site-footer__pay site-footer__pay--worldline" data-i18n="footer_worldline_soon">Worldline — coming soon</span>' +
       '    <span class="site-footer__pay site-footer__pay--ssl">' +
       '      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.2 10.5V7.8a3.8 3.8 0 0 1 7.6 0v2.7" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>' +
       "      <span>SSL Secure</span>" +
       "    </span>" +
+      "  </div>" +
+      '  <div class="site-footer__identity">' +
+      '    <p class="site-footer__business"></p>' +
+      '    <p class="site-footer__copyright" data-i18n="footer_copyright">' + t("footer_copyright") + "</p>" +
       "  </div>" +
       "</div>" +
       '<div class="site-footer__partners" aria-label="Partners and service providers">' +
@@ -342,13 +347,13 @@
   function ensureFooterStyles() {
     var legacy = document.getElementById("site-chrome-footer-style");
     if (legacy) legacy.remove();
-    ["site-chrome-footer-style-v15", "site-chrome-footer-style-v16", "site-chrome-footer-style-v17", "site-chrome-footer-style-v18", "site-chrome-footer-style-v19", "site-chrome-footer-style-v20", "site-chrome-footer-style-v21"].forEach(function (id) {
+    ["site-chrome-footer-style-v15", "site-chrome-footer-style-v16", "site-chrome-footer-style-v17", "site-chrome-footer-style-v18", "site-chrome-footer-style-v19", "site-chrome-footer-style-v20", "site-chrome-footer-style-v21", "site-chrome-footer-style-v22", "site-chrome-footer-style-v23"].forEach(function (id) {
       var old = document.getElementById(id);
       if (old) old.remove();
     });
-    if (document.getElementById("site-chrome-footer-style-v22")) return;
+    if (document.getElementById("site-chrome-footer-style-v24")) return;
     var style = document.createElement("style");
-    style.id = "site-chrome-footer-style-v22";
+    style.id = "site-chrome-footer-style-v24";
     style.textContent = `
       .site-footer {
         padding-top: 3rem;
@@ -605,14 +610,16 @@
       }
       .site-footer__bar {
         display: grid;
-        grid-template-columns: auto 1fr auto;
-        align-items: center;
-        gap: 0.75rem 1.5rem;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+        gap: 0.85rem 1.5rem;
       }
       .site-footer__legal--bottom {
         display: inline-flex;
-        gap: 0.9rem;
+        flex-wrap: wrap;
+        gap: 0.55rem 0.9rem;
         justify-self: start;
+        max-width: min(100%, 42rem);
       }
       .site-footer__legal--bottom a {
         font-family: var(--font-nav);
@@ -624,18 +631,40 @@
       .site-footer__legal--bottom a:hover {
         color: var(--accent);
       }
-      .site-footer__copyright {
-        font-family: var(--font-nav);
-        font-size: 0.72rem;
-        letter-spacing: 0.06em;
-        color: var(--ink-muted);
-        text-align: center;
-      }
       .site-footer__payments {
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
         justify-self: end;
+      }
+      .site-footer__identity {
+        grid-column: 1 / -1;
+        display: grid;
+        justify-items: center;
+        gap: 0.35rem;
+        margin-top: 0.15rem;
+        text-align: center;
+      }
+      .site-footer__business {
+        margin: 0;
+        max-width: 52rem;
+        font-family: var(--font-nav);
+        font-size: 0.62rem;
+        letter-spacing: 0.05em;
+        line-height: 1.65;
+        color: var(--text-muted, var(--ink-muted));
+        text-align: center;
+      }
+      .site-footer__business:empty {
+        display: none;
+      }
+      .site-footer__copyright {
+        margin: 0;
+        font-family: var(--font-nav);
+        font-size: 0.72rem;
+        letter-spacing: 0.06em;
+        color: var(--ink-muted);
+        text-align: center;
       }
       .site-footer__partners {
         display: flex;
@@ -734,7 +763,7 @@
         font-size: 0.62rem;
         line-height: 1;
       }
-      .site-footer__pay--stripe {
+      .site-footer__pay--worldline {
         color: #635bff;
         font-weight: 700;
         font-style: italic;
@@ -786,6 +815,11 @@
           justify-self: start;
           justify-content: flex-start;
         }
+        .site-footer__identity {
+          justify-items: start;
+          text-align: left;
+        }
+        .site-footer__business,
         .site-footer__copyright {
           text-align: left;
           justify-self: start;

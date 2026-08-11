@@ -367,7 +367,7 @@
     var lang = document.documentElement.lang === "en" ? "en" : "el";
     var shippingAmount = t("cart_shipping_note");
     if (window.NostalgiaOrderFees) {
-      var shipFee = window.NostalgiaOrderFees.extraFees("stripe", subtotal).shipping;
+      var shipFee = window.NostalgiaOrderFees.extraFees("card", subtotal).shipping;
       shippingAmount = window.NostalgiaOrderFees.formatFee(shipFee, lang);
     }
 

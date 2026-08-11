@@ -70,7 +70,7 @@ export interface Order {
   id: string;
   number: string;
   status: OrderStatus;
-  payment: string; // "cod" | "stripe"
+  payment: string; // legacy display value; current card orders use "card"
   paymentStatus: PaymentStatus;
   shippingStatus: ShippingStatus;
   tracking: string;

@@ -7,7 +7,7 @@
   <title>Nostalgia Collection · Ολοκλήρωση παραγγελίας</title>
   <meta name="robots" content="noindex, nofollow" />
   <link rel="stylesheet" href="css/fonts.css?v=1" />
-<link rel="stylesheet" href="css/base.css?v=mobile-fix1" />
+<link rel="stylesheet" href="css/base.css?v=footer-identity1" />
   <link rel="stylesheet" href="css/side-nav.css?v=header-icons2" />
   <link rel="stylesheet" href="css/shop.css?v=street-focus1" />
   <link rel="stylesheet" href="css/experience.css?v=svg-pass1" />
@@ -289,17 +289,25 @@
               <div class="checkout-options checkout-options--payment" role="radiogroup" aria-labelledby="checkout-pay-label">
                 <span class="visually-hidden" id="checkout-pay-label" data-i18n="checkout_payment_title">Επίλεξε τον τρόπο πληρωμής</span>
                 <label class="checkout-option checkout-option--payment">
-                  <input type="radio" name="pay_method" value="card" checked />
+                  <input type="radio" name="pay_method" value="card" checked disabled />
                   <span class="checkout-option__box">
-                    <span class="checkout-option__title" data-i18n="checkout_pay_stripe">Κάρτα (Worldline — σύντομα)</span>
-                    <span class="checkout-option__desc" data-i18n="checkout_pay_stripe_desc">Ασφαλής online πληρωμή με πιστωτική ή χρεωστική κάρτα.</span>
+                    <span class="checkout-option__title" data-i18n="checkout_pay_worldline">Κάρτα (Worldline — σύντομα)</span>
+                    <span class="checkout-option__desc" data-i18n="checkout_pay_worldline_desc">Ασφαλής online πληρωμή με πιστωτική ή χρεωστική κάρτα.</span>
                   </span>
                 </label>
               </div>
 
-              <p class="checkout-stripe-note" id="checkout-stripe-note" data-i18n="checkout_stripe_note">
+              <p class="checkout-worldline-note" id="checkout-worldline-note" data-i18n="checkout_worldline_note">
                 Η πληρωμή με κάρτα θα ενεργοποιηθεί μετά τη σύνδεση της ασφαλούς φιλοξενούμενης σελίδας της Worldline.
               </p>
+
+              <div class="checkout-legal-consent">
+                <label class="checkout-legal-consent__label" for="checkout-terms-accepted">
+                  <input type="checkbox" id="checkout-terms-accepted" name="termsAccepted" required />
+                  <span><span data-i18n="checkout_terms_prefix">Αποδέχομαι τους</span> <a href="/terms" target="_blank" rel="noopener" data-i18n="checkout_terms_link">Όρους Πώλησης</a> <span data-i18n="checkout_terms_and_ack">και έχω ενημερωθεί για τις πολιτικές</span> <a href="/privacy" target="_blank" rel="noopener" data-i18n="checkout_privacy_link">Προστασίας Δεδομένων</a>, <a href="/cancellations" target="_blank" rel="noopener" data-i18n="checkout_cancellations_link">Ακυρώσεων &amp; Υπαναχώρησης</a> <span data-i18n="checkout_terms_and">και</span> <a href="/cookie-policy" target="_blank" rel="noopener" data-i18n="checkout_cookie_link">Cookies</a>.</span>
+                </label>
+                <p class="checkout-legal-consent__error" id="checkout-terms-error" hidden role="alert" data-i18n="checkout_terms_required">Για να υποβάλετε παραγγελία πρέπει να αποδεχθείτε τους Όρους Πώλησης.</p>
+              </div>
 
               <div class="checkout-captcha" id="checkout-captcha"></div>
             </div>
@@ -495,8 +503,13 @@
         </ul>
       </div>
       <div class="site-footer__bar">
-        <nav class="site-footer__legal" data-i18n-aria="footer_legal_aria">
+                <nav class="site-footer__legal" data-i18n-aria="footer_legal_aria">
+          <a href="/terms" data-i18n="footer_terms">Όροι Πώλησης</a>
           <a href="/privacy" data-i18n="footer_privacy">Προστασία Δεδομένων</a>
+          <a href="/cookie-policy" data-i18n="footer_cookie_policy">Πολιτική Cookies</a>
+          <a href="/shipping-returns" data-i18n="footer_shipping_returns">Αποστολές &amp; Επιστροφές</a>
+          <a href="/payments" data-i18n="footer_payments">Πληρωμές</a>
+          <a href="/contact" data-i18n="nav_contact">Επικοινωνία</a>
         </nav>
         <p class="site-footer__copyright" data-i18n="footer_copyright">© 2026 Nostalgia. Με επιφύλαξη παντός δικαιώματος.</p>
       </div>
@@ -511,12 +524,12 @@
   <script defer src="js/i18n-bundles/shop.js?v=vat24"></script>
   <script defer src="js/i18n-bundles/content.js?v=ship35"></script>
   <script defer src="js/i18n-core.js?v=1"></script>
-    <script defer src="js/business-info.js?v=1"></script>
-  <script defer src="js/cookies.js?v=cookie-necessary1"></script>
+    <script defer src="js/business-info.js?v=2"></script>
+  <script defer src="js/cookies.js?v=cookie-policy2"></script>
   <script src="js/tracking.js?v=1" defer></script>
   <script src="js/welcome-offer.js?v=3" defer></script>
   <script defer src="js/products.js"></script>
-  <script defer src="js/side-nav.js?v=cat10"></script>
+  <script defer src="js/side-nav.js?v=footer-identity1"></script>
   <script defer src="js/cart.js"></script>
   <script defer src="js/order-fees.js?v=gift0"></script>
   <script defer src="js/greek-prefectures.js"></script>

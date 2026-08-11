@@ -57,10 +57,52 @@ test("tracking is consent gated and clears optional provider storage on withdraw
   assert.match(tracking, /fbq\("consent", "revoke"\)/);
 });
 
-test("legacy Stripe cannot activate accidentally during the Worldline migration", () => {
+test("storefront payments remain Worldline-only and disabled until implemented", () => {
   const server = read("server/server.js");
-  assert.match(server, /PAYMENT_PROVIDER[\s\S]*!== "stripe"\) return null/);
+  assert.match(server, /WORLDLINE_INTEGRATION_IMPLEMENTED = false/);
+  assert.match(server, /async function getStripe\(\)\s*\{[\s\S]*return null;/);
+  assert.doesNotMatch(server, /stripePublishableKey:/);
+  assert.match(server, /worldlinePaymentsEnabled:/);
   assert.match(server, /card_provider_not_configured/);
   assert.match(read("js/privacy-content.js"), /Worldline for hosted card payments when enabled/);
 });
 
+test("legal pages and checkout terms acceptance are wired end to end", () => {
+  ["terms", "cookie-policy", "warranty", "cancellations"].forEach((page) => {
+    assert.match(read(`html/${page}.html`), /legal-dynamic-content/);
+  });
+  const checkout = read("html/checkout.html");
+  const client = read("js/checkout.js");
+  const server = read("server/server.js");
+  assert.match(checkout, /id="checkout-terms-accepted"[^>]*required/);
+  assert.match(client, /!cardPaymentsEnabled \|\| !isTermsAccepted\(\)/);
+  assert.match(client, /terms\.addEventListener\("change"[\s\S]*updateCta\(\)/);
+  assert.match(client, /termsAccepted: true/);
+  assert.match(client, /termsVersion: TERMS_VERSION/);
+  assert.match(server, /terms_not_accepted/);
+  assert.match(read("server/migrations/041_order_terms_acceptance.up.sql"), /terms_accepted_at/);
+  assert.match(read("js/privacy.js"), /eur-lex\.europa\.eu\/eli\/reg\/2016\/679\/oj\/eng/);
+  assert.match(read("js/privacy.js"), /commission\.europa\.eu\/law\/law-topic\/data-protection\/information-individuals_en/);
+  assert.match(read("js/privacy.js"), /dpa\.gr\/el\/enimerwtiko\/nomothesia\/proswpika\/nomothesia_prwsopikwn/);
+  assert.match(read("js/privacy.js"), /dpa\.gr\/el\/foreis\/asfaleia_dedomenwn\/gnwstopoiisi_paraviasis/);
+  assert.match(read("js/legal-pages.js"), /eur-lex\.europa\.eu\/eli\/dir\/2011\/83\/oj\/eng/);
+  assert.match(read("js/legal-pages.js"), /CELEX%3A32019L2161/);
+  assert.match(read("js/review-policy.js"), /CELEX%3A32019L2161/);
+  assert.match(read("js/legal-pages.js"), /gov\.gr\/ipiresies\/polites-kai-kathemerinoteta\/kataggelies\/kataggelia-katanalote/);
+  assert.match(read("js/legal-pages.js"), /european-union\.europa\.eu\/contact-eu\/make-complaint_el/);
+  assert.doesNotMatch(read("js/legal-pages.js"), /ec\.europa\.eu\/consumers\/odr/);
+});
+
+test("admin return workflow supports inspection but keeps Worldline refunds disabled", () => {
+  const app = read("admin/src/App.tsx");
+  const page = read("admin/src/pages/Returns.tsx");
+  const router = read("server/routes/v2-router.js");
+  const service = read("server/services/return-refund-service.js");
+  assert.match(app, /id: "returns"/);
+  assert.match(page, /value="defective"/);
+  assert.match(page, /<button[^>]*disabled>Refund μέσω Worldline/);
+  assert.match(router, /get\("\/admin\/returns"/);
+  assert.match(router, /\/admin\/returns\/:id\/reject/);
+  assert.match(service, /RETURN_NOT_COMPLETED/);
+  assert.match(service, /UNSELLABLE_RESTOCK/);
+});

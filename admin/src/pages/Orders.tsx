@@ -263,11 +263,16 @@ function OrderDetail({ o, onChanged }: { o: Order; onChanged: () => void }) {
 
       <section className="osec"><h4>Πληρωμή</h4>
         <p><strong>Τρόπος:</strong> {payMethodLabel(o)}</p>
-        <div className="ofield"><label>Κατάσταση πληρωμής</label>
-          <select value={o.paymentStatus} onChange={(e) => patch({ paymentStatus: e.target.value })}>
-            {payOpts.map((s) => <option key={s} value={s}>{PAY_STATUS[s]?.label ?? s}</option>)}
-          </select>
-        </div>
+        {o.payment === "cod" ? (
+          <div className="ofield"><label>Κατάσταση πληρωμής</label>
+            <select value={o.paymentStatus} onChange={(e) => patch({ paymentStatus: e.target.value })}>
+              {payOpts.map((s) => <option key={s} value={s}>{PAY_STATUS[s]?.label ?? s}</option>)}
+            </select>
+          </div>
+        ) : (
+          <p><strong>Κατάσταση:</strong> {PAY_STATUS[o.paymentStatus]?.label ?? o.paymentStatus}<br />
+            <span className="muted">Ενημερώνεται μόνο από επιβεβαιωμένη απάντηση του παρόχου πληρωμών.</span></p>
+        )}
         {o.coupon ? <p>Κουπόνι: <strong>{o.coupon}</strong>{o.discount ? " (−" + money(o.discount) + ")" : ""}</p> : null}
         {o.total ? <p>Σύνολο: <strong>{money(o.total)}</strong></p> : null}
       </section>

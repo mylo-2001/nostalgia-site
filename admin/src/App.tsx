@@ -5,6 +5,7 @@ import { MfaSetup } from "./pages/MfaSetup";
 import { Layout, type Section } from "./components/Layout";
 import { Overview } from "./pages/Overview";
 import { Orders } from "./pages/Orders";
+import { Returns } from "./pages/Returns";
 import { NewProduct } from "./pages/NewProduct";
 import { Products } from "./pages/Products";
 import { Promotions } from "./pages/Promotions";
@@ -22,6 +23,7 @@ import { Settings } from "./pages/Settings";
 const SECTIONS: Section[] = [
   { id: "overview", label: "Επισκόπηση" },
   { id: "orders", label: "Παραγγελίες" },
+  { id: "returns", label: "Ακυρώσεις & Επιστροφές" },
   { id: "new-product", label: "Νέο προϊόν" },
   { id: "products", label: "Προϊόντα & Stock" },
   { id: "promotions", label: "Εκπτώσεις" },
@@ -41,6 +43,7 @@ function render(section: string, goTo: (s: string) => void) {
   switch (section) {
     case "overview": return <Overview onNavigate={goTo} />;
     case "orders": return <Orders />;
+    case "returns": return <Returns />;
     case "new-product": return <NewProduct />;
     case "products": return <Products />;
     case "promotions": return <Promotions />;

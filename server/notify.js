@@ -70,6 +70,8 @@ function money(n) {
 
 const PAYMENT_LABEL = {
   cod: "Αντικαταβολή",
+  card: "Κάρτα",
+  worldline: "Κάρτα",
   stripe: "Κάρτα",
   offline: "Τραπεζική κατάθεση",
 };

@@ -11,7 +11,8 @@ const { reviewCodOrder } = require("../services/cod-service");
 const { expireInventoryReservations } = require("../services/inventory-service");
 const { getAdminOrder, transitionAdminOrder, updateAdminAddress,
   updateAdminShipment, authorizeAdmin } = require("../services/admin-order-service");
-const { approveReturn, createReturn, inspectReturn, receiveReturn, requestRefund } =
+const { approveReturn, cancelReturn, createReturn, getReturnOptions, getReturnShipment,
+  handReturnToCourier, inspectReturn, listAdminReturns, receiveReturn, rejectReturn } =
   require("../services/return-refund-service");
 const { consumeDatabaseRateLimit, revokeAdminSessions, secureEqualHash,
   validateAdminDatabaseSession } = require("../services/admin-session-service");
@@ -23,7 +24,7 @@ function asyncRoute(handler) {
 
 function statusForError(error) {
   if (/NOT_FOUND$/.test(error.code || "")) return 404;
-  if (/VERSION_CONFLICT|IDEMPOTENCY_KEY_REUSED|IN_PROGRESS/.test(error.code || "")) return 409;
+  if (/VERSION_CONFLICT|IDEMPOTENCY_KEY_REUSED|IN_PROGRESS|PROVIDER_REFUND_REQUIRED/.test(error.code || "")) return 409;
   if (/PERMISSION|FORBIDDEN/.test(error.code || "")) return 403;
   if (/DENIED|UNAUTHORIZED|SESSION_INVALID/.test(error.code || "")) return 401;
   if (/INSUFFICIENT_STOCK|QUANTITY_EXCEEDED/.test(error.code || "")) return 409;
@@ -103,6 +104,12 @@ function createV2Router(options) {
   }
 
   router.post("/checkout", limit("checkout", 20), asyncRoute(async (req, res) => {
+    if (req.body?.termsAccepted !== true || req.body?.termsVersion !== "2026-08-11") {
+      return res.status(400).json({ ok: false, error: "TERMS_NOT_ACCEPTED" });
+    }
+    if (typeof options.worldlinePaymentsEnabled !== "function" || !options.worldlinePaymentsEnabled()) {
+      return res.status(503).json({ ok: false, error: "PAYMENT_NOT_CONFIGURED" });
+    }
     await expireInventoryReservations({ pool: pool(), batchSize: 25,
       workerId: "checkout-opportunistic-expiry", requestId: req.requestId });
     const user = auth.getUserSession(req);
@@ -137,6 +144,9 @@ function createV2Router(options) {
 
   router.post("/orders/:id/card-session", limit("card-session", 20),
     asyncRoute(async (req, res) => {
+      if (typeof options.worldlinePaymentsEnabled !== "function" || !options.worldlinePaymentsEnabled()) {
+        return res.status(503).json({ ok: false, error: "PAYMENT_NOT_CONFIGURED" });
+      }
       const user = auth.getUserSession(req);
       await getOrderPaymentStatus({ pool: pool(), orderId: req.params.id,
         userEmail: user?.sub || null,
@@ -169,6 +179,15 @@ function createV2Router(options) {
         idempotencyKey: req.get("idempotency-key"), requestId: req.requestId,
         actor: user ? { type: "customer", id: user.sub } : { type: "guest" } });
       res.status(201).json({ ok: true, ...result });
+    }));
+
+  router.get("/orders/:id/return-options", limit("return-options", 30),
+    asyncRoute(async (req, res) => {
+      const user = auth.getUserSession(req);
+      await getOrderPaymentStatus({ pool: pool(), orderId: req.params.id,
+        userEmail: user?.sub || null, guestAccessToken: req.get("x-order-access-token") || null });
+      const result = await getReturnOptions({ pool: pool(), orderId: req.params.id });
+      res.json({ ok: true, ...result });
     }));
 
   router.use("/admin", requireAdmin, limit("admin-v2", 120));
@@ -215,12 +234,53 @@ function createV2Router(options) {
       adminUserId: req.v2Admin.adminUserId, requestId: req.requestId });
     res.json({ ok: true, ...result });
   }));
+  router.get("/admin/returns", requirePermission("return.manage"),
+    asyncRoute(async (req, res) => {
+    const result = await listAdminReturns({ pool: pool(), status: req.query.status,
+      limit: req.query.limit });
+    res.json({ ok: true, ...result });
+  }));
+  router.get("/admin/orders/:id/return-options", requirePermission("return.manage"),
+    asyncRoute(async (req, res) => {
+      const result = await getReturnOptions({ pool: pool(), orderId: req.params.id,
+        allowOrderNumber: true });
+      res.json({ ok: true, ...result });
+    }));
+  router.post("/admin/orders/:id/returns", requirePermission("return.manage"),
+    asyncRoute(async (req, res) => {
+      const order = await getReturnOptions({ pool: pool(), orderId: req.params.id,
+        allowOrderNumber: true });
+      const result = await createReturn({ pool: pool(), orderId: order.orderId,
+        items: req.body.items, reason: req.body.reason,
+        idempotencyKey: req.get("idempotency-key"), requestId: req.requestId,
+        actor: { type: "admin", id: req.v2Admin.adminUserId } });
+      res.status(result.idempotent ? 200 : 201).json({ ok: true, ...result });
+    }));
+  router.post("/admin/returns/:id/reject", requirePermission("return.manage"),
+    asyncRoute(async (req, res) => {
+    const result = await rejectReturn({ pool: pool(), returnId: req.params.id,
+      adminUserId: req.v2Admin.adminUserId, reason: req.body.reason, requestId: req.requestId });
+    res.json({ ok: true, ...result });
+  }));
+  router.post("/admin/returns/:id/cancel", requirePermission("return.manage"),
+    asyncRoute(async (req, res) => {
+    const result = await cancelReturn({ pool: pool(), returnId: req.params.id,
+      adminUserId: req.v2Admin.adminUserId, reason: req.body.reason, requestId: req.requestId });
+    res.json({ ok: true, ...result });
+  }));
   router.post("/admin/returns/:id/receive", requirePermission("return.manage"),
     asyncRoute(async (req, res) => {
     const result = await receiveReturn({ pool: pool(), returnId: req.params.id,
       adminUserId: req.v2Admin.adminUserId, requestId: req.requestId });
     res.json({ ok: true, ...result });
   }));
+  router.post("/admin/returns/:id/handoff", requirePermission("return.manage"),
+    asyncRoute(async (req, res) => {
+      const result = await handReturnToCourier({ pool: pool(), returnId: req.params.id,
+        adminUserId: req.v2Admin.adminUserId, carrier: req.body.carrier,
+        trackingNumber: req.body.trackingNumber, requestId: req.requestId });
+      res.json({ ok: true, ...result });
+    }));
   router.post("/admin/returns/:id/inspect", requirePermission("return.manage"),
     asyncRoute(async (req, res) => {
     const result = await inspectReturn({ pool: pool(), returnId: req.params.id,
@@ -228,15 +288,29 @@ function createV2Router(options) {
       requestId: req.requestId });
     res.json({ ok: true, ...result });
   }));
+  router.get("/admin/returns/:id/tracking", requirePermission("return.manage"),
+    asyncRoute(async (req, res) => {
+      const shipment = await getReturnShipment({ pool: pool(), returnId: req.params.id });
+      if (shipment.carrier !== "acs") {
+        return res.status(400).json({ ok: false, error: "RETURN_CARRIER_NOT_SUPPORTED" });
+      }
+      if (!options.acs?.configured()) {
+        return res.status(503).json({ ok: false, error: "ACS_NOT_CONFIGURED" });
+      }
+      const [summary, details] = await Promise.all([
+        options.acs.trackingSummary(shipment.trackingNumber),
+        options.acs.trackingDetails(shipment.trackingNumber),
+      ]);
+      res.json({ ok: true, shipment, summary, checkpoints: details.map((point) => ({
+        at: point.checkpoint_date_time || null,
+        action: point.checkpoint_action || "",
+        location: point.checkpoint_location || "",
+      })) });
+    }));
   router.post("/admin/refunds", requirePermission("refund.manage"),
     asyncRoute(async (req, res) => {
-    const stripe = await options.getStripe();
-    if (!stripe) return res.status(503).json({ ok: false, error: "PAYMENT_NOT_CONFIGURED" });
-    const result = await requestRefund({ pool: pool(), paymentId: req.body.paymentId,
-      returnId: req.body.returnId, amount: req.body.amount, reason: req.body.reason,
-      provider: new StripePaymentProvider(stripe), idempotencyKey: req.get("idempotency-key"),
-      actor: { type: "admin", id: req.v2Admin.adminUserId }, requestId: req.requestId });
-    res.status(201).json({ ok: true, ...result });
+    res.status(503).json({ ok: false, error: "WORLDLINE_REFUNDS_NOT_CONFIGURED",
+      requestId: req.requestId });
   }));
   router.post("/admin/logout-all", asyncRoute(async (req, res) => {
     const result = await revokeAdminSessions({ pool: pool(),
